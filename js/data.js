@@ -1,355 +1,345 @@
-/* Fog of Fallacy - content for a young reader (about age 5).
-   Short lines, one idea each, a picture for every trick and every place.
-   Each dialogue line: { who, text, f (trick id or null), why }. */
+/* Fog of Fallacy - Maple Street stories.
+   Every trick is one story with real kids and grown-ups. The other child tries to
+   talk the player into something. Going along with the trick plays out its
+   natural consequence. Pushing back the right way earns a badge. */
 
 window.FOG = (function () {
 
-  const CAST = {
-    pip:   { name: 'Pip',           emoji: '🐉' },
-    sly:   { name: 'Sly Fox',       emoji: '🦊', img: 'img/cast-sly.jpg', villain: true },
-    bea:   { name: 'Bea Bear',      emoji: '🐻', img: 'img/cast-bea.jpg' },
-    ollie: { name: 'Ollie Owl',     emoji: '🦉', img: 'img/cast-ollie.jpg' },
-    milo:  { name: 'Milo Mouse',    emoji: '🐭', img: 'img/cast-milo.jpg' },
-    hazel: { name: 'Hazel',         emoji: '🦔', img: 'img/cast-hazel.jpg' },
-    rex:   { name: 'Rex Raccoon',   emoji: '🦝', img: 'img/cast-rex.jpg' },
-    tilly: { name: 'Tilly Turtle',  emoji: '🐢', img: 'img/cast-tilly.jpg' },
-    goose: { name: 'Grandma Goose', emoji: '🦢', img: 'img/cast-goose.jpg' }
+  const TRICKS = [
+    { id: 'bandwagon', nick: "Everyone's Doing It", icon: '👣', img: 'img/trick-bandwagon.jpg',
+      one: 'Everybody does it, so it must be OK.', spot: 'Lots of people can all be wrong together.' },
+    { id: 'adHominem', nick: 'The Insult Trick', icon: '🗯️', img: 'img/trick-adHominem.jpg',
+      one: "Don't listen to them. They're just a baby.", spot: 'Who says it does not make it wrong or right.' },
+    { id: 'falseDilemma', nick: 'Only Two Doors', icon: '🚪', img: 'img/trick-falseDilemma.jpg',
+      one: 'Do this, or that. Nothing else!', spot: 'There is almost always a third door.' },
+    { id: 'strawMan', nick: 'The Scarecrow', icon: '🌾', img: 'img/trick-strawMan.jpg',
+      one: 'Twisting what someone said into something silly.', spot: 'Is that really what they said?' },
+    { id: 'postHoc', nick: 'The Lucky Socks', icon: '🧦', img: 'img/trick-postHoc.jpg',
+      one: 'It came first, so it must be the reason.', spot: 'Coming first is not the same as causing.' },
+    { id: 'hastyGen', nick: 'The Big Jump', icon: '🦘', img: 'img/trick-hastyGen.jpg',
+      one: 'One person, so all of them.', spot: 'One is not everyone.' },
+    { id: 'emotion', nick: 'The Tear Trick', icon: '😢', img: 'img/trick-emotion.jpg',
+      one: 'Do it, or I will cry!', spot: 'Feelings are real. But they are not reasons.' },
+    { id: 'redHerring', nick: 'Look Over There!', icon: '👉', img: 'img/trick-redHerring.jpg',
+      one: 'Changing the subject to dodge the question.', spot: 'Did they answer the question?' }
+  ];
+
+  /* Player looks to choose from. */
+  const LOOKS = [
+    { size: 'm', skin: '#F1C9A5', hair: '#4A2E1A', hairStyle: 'long', shirt: '#FF7B6B', pants: '#3E5C8A' },
+    { size: 'm', skin: '#8D5A3B', hair: '#1E1410', hairStyle: 'curly', shirt: '#F6B544', pants: '#3E5C8A' },
+    { size: 'm', skin: '#F5D7B8', hair: '#E0A23A', hairStyle: 'bun', shirt: '#63C48F', pants: '#5B4F47' },
+    { size: 'm', skin: '#C68B59', hair: '#2A2420', hairStyle: 'short', shirt: '#7FA8F0', pants: '#3E5C8A' }
+  ];
+
+  /* Everyone on Maple Street. x,y are tiles. quest = the trick this person tries. */
+  const NPCS = [
+    { id: 'mum', name: 'Mum', x: 3, y: 5, dir: 'right', spec: { size: 'xl', skin: '#F1C9A5', hair: '#4A2E1A', hairStyle: 'bun', shirt: '#7FA8A6', pants: '#5B4F47' },
+      talk: ['Morning, {name}! Kids with a ! above them want to talk to you.', 'Watch out for tricky talk. If it sounds wrong, think first.'],
+      done: ['Eight badges! The fog is gone from Maple Street.', 'I am so proud of you.'] },
+    { id: 'tom', name: 'Tom (big brother)', x: 7, y: 3, dir: 'down', quest: 'falseDilemma',
+      spec: { size: 'l', skin: '#F1C9A5', hair: '#4A2E1A', hairStyle: 'short', shirt: '#F4E8CC', pants: '#3E5C8A' },
+      after: ['Half each was the best door.'] },
+    { id: 'leo', name: 'Leo', x: 28, y: 5, dir: 'down', quest: 'bandwagon',
+      spec: { size: 'l', skin: '#F1C9A5', hair: '#8B4A1F', hairStyle: 'short', shirt: '#2F80ED', pants: '#3E5C8A' },
+      after: ["Next time I'll check the ice first."] },
+    { id: 'jo', name: 'Jo', x: 29, y: 3, dir: 'right', spec: { size: 'm', skin: '#8D5A3B', hair: '#1E1410', hairStyle: 'curly', shirt: '#F6B544', pants: '#3E5C8A' },
+      talk: ["I'm going on the ice because Leo is!"], afterQuest: 'bandwagon', after: ['Brr. We ALL fell in. Everybody was wrong.'] },
+    { id: 'kim', name: 'Kim', x: 29, y: 6, dir: 'right', spec: { size: 'm', skin: '#F5D7B8', hair: '#E0A23A', hairStyle: 'long', shirt: '#E4574F', pants: '#5B4F47' },
+      talk: ["Everybody's sliding on the pond. So it's fine, right?"], afterQuest: 'bandwagon', after: ['My socks are still wet.'] },
+    { id: 'ava', name: 'Ava', x: 16, y: 4, dir: 'down', quest: 'strawMan',
+      spec: { size: 'm', skin: '#F5D7B8', hair: '#B04A2A', hairStyle: 'long', shirt: '#9B6BD6', pants: '#3E5C8A' },
+      after: ['Helmets are itchy. But bumps are worse.'] },
+    { id: 'mia', name: 'Mia (little)', x: 11, y: 15, dir: 'down', spec: { size: 's', skin: '#F1C9A5', hair: '#4A2E1A', hairStyle: 'bun', shirt: '#FF9FD0', pants: '#5B4F47' },
+      talk: ["The stream path is all mud today. Use the bridge!"], afterQuest: 'adHominem', after: ['See? Little kids know things too.'] },
+    { id: 'sam', name: 'Sam', x: 11, y: 17, dir: 'up', quest: 'adHominem',
+      spec: { size: 'l', skin: '#C68B59', hair: '#2A2420', hairStyle: 'short', shirt: '#63C48F', pants: '#3E5C8A' },
+      after: ['Little kids can be right too.'] },
+    { id: 'teacher', name: 'Mr Okafor', x: 5, y: 18, dir: 'up', spec: { size: 'xl', skin: '#C68B59', hair: '#2A2420', hairStyle: 'short', shirt: '#F4E8CC', pants: '#5B4F47', glasses: true },
+      talk: ['A good thinker asks: is that a reason, or a trick?'] },
+    { id: 'ruby', name: 'Ruby', x: 17, y: 17, dir: 'down', quest: 'emotion',
+      spec: { size: 'l', skin: '#F5D7B8', hair: '#E0A23A', hairStyle: 'long', shirt: '#E4574F', pants: '#5B4F47' },
+      after: ['I asked Mum. She said maybe for my birthday.'] },
+    { id: 'icecream', name: 'Ice cream man', x: 22, y: 16, dir: 'left', spec: { size: 'xl', skin: '#F5D7B8', hair: '#E0A23A', hairStyle: 'short', shirt: '#FFFFFF', pants: '#5B4F47', apron: true },
+      talk: ['Three coins for a cone. Best ice cream on Maple Street!'] },
+    { id: 'zoe', name: 'Zoe', x: 26, y: 17, dir: 'right', quest: 'hastyGen',
+      spec: { size: 'm', skin: '#F1C9A5', hair: '#2A2420', hairStyle: 'curly', shirt: '#F6B544', pants: '#3E5C8A' },
+      after: ["Priya's my friend now."] },
+    { id: 'priya', name: 'Priya', x: 29, y: 17, dir: 'left', spec: { size: 'm', skin: '#A8683F', hair: '#1E1410', hairStyle: 'long', shirt: '#FF7B6B', pants: '#5B4F47', partyhat: true },
+      talk: ["It's my party today! Everyone is welcome."], afterQuest: 'hastyGen', after: ['Thanks for coming to my party!'] },
+    { id: 'coach', name: 'Coach Dana', x: 22, y: 22, dir: 'right', spec: { size: 'xl', skin: '#8D5A3B', hair: '#1E1410', hairStyle: 'short', shirt: '#E4574F', pants: '#2A2420', cap: '#2A2420' },
+      talk: ['Race day! Warm up those legs.'], afterQuest: 'postHoc', after: ['Legs win races. Not caps.'] },
+    { id: 'ben', name: 'Ben (cousin)', x: 26, y: 23, dir: 'left', quest: 'postHoc',
+      spec: { size: 'm', skin: '#8D5A3B', hair: '#1E1410', hairStyle: 'short', shirt: '#F4E8CC', pants: '#3E5C8A', cap: '#E4574F' },
+      after: ['I still like my cap. But I practise now.'] },
+    { id: 'dad', name: 'Dad', x: 3, y: 24, dir: 'right', spec: { size: 'xl', skin: '#F1C9A5', hair: '#2A2420', hairStyle: 'short', shirt: '#3E5C8A', pants: '#5B4F47', beard: true },
+      talk: ["I'm planting flowers. Careful with the pots!"], afterQuest: 'redHerring', after: ['Accidents happen. Telling the truth fixes them.'] },
+    { id: 'max', name: 'Max (little brother)', x: 5, y: 24, dir: 'right', quest: 'redHerring',
+      spec: { size: 's', skin: '#F1C9A5', hair: '#4A2E1A', hairStyle: 'short', shirt: '#63C48F', pants: '#3E5C8A' },
+      after: ['I say sorry now. Then rainbows.'] }
+  ];
+
+  /* Fog rectangles (tiles) that lift when a quest is done. */
+  const FOG = {
+    bandwagon: [19, 1, 34, 8], adHominem: [1, 11, 11, 21], falseDilemma: [1, 1, 10, 7], strawMan: [14, 1, 18, 6],
+    postHoc: [19, 20, 34, 27], hastyGen: [26, 11, 34, 19], emotion: [14, 11, 23, 19], redHerring: [1, 22, 11, 27]
   };
 
-  const FALLACIES = [
-    {
-      id: 'adHominem', name: 'Ad Hominem', nick: 'The Insult Trick', icon: '🗯️', img: 'img/trick-adHominem.jpg',
-      one: 'Being mean about WHO said it, not WHAT they said.',
-      spot: 'Is it about the idea? Or about the person?',
-      examples: [
-        { who: 'rex', text: 'You\'re small, so your idea is silly.', why: 'Small has nothing to do with the idea.' },
-        { who: 'sly', text: 'Don\'t listen to Hazel. She\'s the youngest.', why: 'Young doesn\'t make an idea bad.' }
+  /* Story scripts. Steps: {who,text} | {scene,text} | {end:'fail'|'win'|'oops'}.
+     who: an npc id, 'you', or 'n' (narrator). */
+  const QUESTS = {
+    bandwagon: {
+      npc: 'leo',
+      intro: [
+        { who: 'leo', text: 'Hi {name}! The pond is frozen. Everybody is sliding on it!' },
+        { who: 'leo', text: "Jo's on it. Kim's on it. Everybody does it. Come on!" }
       ],
-      drills: [
-        'You wear funny socks, so you\'re wrong.',
-        'Rex is late a lot. Ignore his idea.',
-        'Tilly is slow, so her plan is bad.',
-        'You\'re new, so your answer is wrong.'
+      options: [
+        { key: 'ok', text: 'OK! Everybody does it.' },
+        { key: 'right', text: "Everybody doing it doesn't make it safe. Let's ask a grown-up." },
+        { key: 'oops', text: "You're a big silly, Leo!" }
+      ],
+      ok: [
+        { who: 'n', text: 'You step onto the ice with everyone.' },
+        { who: 'n', text: 'CRACK.' },
+        { scene: 'img/fail-bandwagon.jpg', text: 'Splash! Everybody falls in. Everybody is soaked. Everybody was wrong.' },
+        { who: 'leo', text: 'B-b-brr. Maybe everybody was wrong.' },
+        { end: 'fail' }
+      ],
+      right: [
+        { who: 'leo', text: "Fine. I'm going on anyway!" },
+        { who: 'n', text: 'You stay on the path and watch.' },
+        { who: 'n', text: 'CRACK.' },
+        { scene: 'img/fail-bandwagon.jpg', text: 'Splash! Everybody falls in. You are dry. Everybody was wrong.' },
+        { who: 'leo', text: 'You were right, {name}. Everybody was wrong.' },
+        { end: 'win' }
+      ],
+      oops: [
+        { who: 'leo', text: "Hey! That's mean." },
+        { who: 'n', text: 'Leo stomps off. Nobody learned anything.' },
+        { end: 'oops' }
       ]
     },
-    {
-      id: 'bandwagon', name: 'Bandwagon', nick: 'Everyone\'s Doing It', icon: '🐑', img: 'img/trick-bandwagon.jpg',
-      one: 'It must be right, because everyone does it.',
-      spot: 'Listen for "everyone" and "nobody".',
-      examples: [
-        { who: 'rex', text: 'Everyone jumps the queue, so it\'s fine.', why: 'Lots of people doing it doesn\'t make it right.' },
-        { who: 'milo', text: 'All my friends skip brushing. So can I!', why: 'Friends doing it isn\'t a reason.' }
+
+    adHominem: {
+      npc: 'sam',
+      intro: [
+        { who: 'mia', text: "Don't take the stream path. It's all mud today. Use the bridge." },
+        { who: 'sam', text: "Ha! Mia's a baby. She's four. Don't listen to babies." },
+        { who: 'sam', text: 'The stream path is faster. Go!' }
       ],
-      drills: [
-        'Everyone skips breakfast, so it\'s healthy.',
-        'All the kids climb the fence. It\'s fine.',
-        'Nobody reads the sign, so it doesn\'t matter.',
-        'You\'re the only one, so you\'re wrong.'
+      options: [
+        { key: 'ok', text: "OK. Babies don't know things." },
+        { key: 'right', text: "Mia's little, but she might be right. Let's look." },
+        { key: 'oops', text: "Sam, YOU'RE the baby!" }
+      ],
+      ok: [
+        { who: 'n', text: 'You run down the stream path.' },
+        { who: 'n', text: 'SQUELCH.' },
+        { scene: 'img/fail-adHominem.jpg', text: 'Stuck in mud up to your knees. Shoes ruined. Mia was right.' },
+        { who: 'mia', text: 'I told you!' },
+        { end: 'fail' }
+      ],
+      right: [
+        { who: 'n', text: 'You look at the stream path. Deep, sticky mud.' },
+        { who: 'sam', text: 'Oh. It really is muddy.' },
+        { who: 'n', text: 'You take the bridge. Your shoes stay clean.' },
+        { scene: 'img/fail-adHominem.jpg', text: 'Sam tries the stream path anyway. Squelch. Being little did not make Mia wrong.' },
+        { who: 'sam', text: 'Little kids can be right. Got it.' },
+        { end: 'win' }
+      ],
+      oops: [
+        { who: 'sam', text: 'Am not!' },
+        { who: 'n', text: 'Now everyone argues about babies. Nobody looks at the path.' },
+        { end: 'oops' }
       ]
     },
-    {
-      id: 'falseDilemma', name: 'False Dilemma', nick: 'Only Two Doors', icon: '🚪', img: 'img/trick-falseDilemma.jpg',
-      one: 'Only two choices, when there are really more.',
-      spot: 'Look for a third door.',
-      examples: [
-        { who: 'rex', text: 'Play my game, or go home.', why: 'You could play a different game together.' },
-        { who: 'sly', text: 'Eat it all, or you get nothing.', why: 'You could eat some of it.' }
+
+    falseDilemma: {
+      npc: 'tom',
+      intro: [
+        { who: 'n', text: 'Mum gave you a chocolate bar.' },
+        { who: 'tom', text: "Give me your whole chocolate bar. Or I'll never play with you again." },
+        { who: 'tom', text: 'Those are the only two choices. Whole bar, or no playing. Ever.' }
       ],
-      drills: [
-        'Lend me your bike or we\'re not friends.',
-        'Inside and bored, or outside and wet. Pick!',
-        'Eat all your peas or no dinner at all.',
-        'Play football or you hate sports.'
+      options: [
+        { key: 'ok', text: 'OK. Take the whole bar.' },
+        { key: 'right', text: "There's another way. We share. Half each." },
+        { key: 'oops', text: "You're greedy, Tom!" }
+      ],
+      ok: [
+        { who: 'n', text: 'Tom eats the whole bar.' },
+        { who: 'tom', text: "Thanks! Bye, I'm off to football." },
+        { scene: 'img/fail-falseDilemma.jpg', text: 'No chocolate. No playing. Tom left anyway. Two doors were not the only doors.' },
+        { end: 'fail' }
+      ],
+      right: [
+        { who: 'tom', text: 'Hmm. Half? ...OK, deal.' },
+        { who: 'n', text: 'You both eat chocolate. Then you play football together.' },
+        { who: 'n', text: 'There is almost always a third door.' },
+        { end: 'win' }
+      ],
+      oops: [
+        { who: 'tom', text: "And you're stingy!" },
+        { who: 'n', text: "Now you're both cross. Nobody plays." },
+        { end: 'oops' }
       ]
     },
-    {
-      id: 'strawMan', name: 'Straw Man', nick: 'The Scarecrow', icon: '🌾', img: 'img/trick-strawMan.jpg',
-      one: 'Changing what you said into something silly.',
-      spot: 'Is that really what they said?',
-      examples: [
-        { who: 'rex', text: '"Less candy"? So you want NO fun ever!', why: 'Less candy is not no fun.' },
-        { who: 'sly', text: '"Let\'s share"? So you want ALL my toys!', why: 'Sharing is not taking everything.' }
+
+    strawMan: {
+      npc: 'ava',
+      intro: [
+        { who: 'n', text: 'Mum said: wear your helmet when you ride on the road.' },
+        { who: 'ava', text: "Let's ride on the road! No helmets. They're itchy." },
+        { who: 'you', text: 'Mum said to wear a helmet on the road.' },
+        { who: 'ava', text: 'Your mum said you can NEVER ride a bike? That is silly!' },
+        { who: 'ava', text: "Silly rules don't count. Ride without it." }
       ],
-      drills: [
-        'You want to walk? So you hate cars!',
-        'Quiet please? So nobody can ever talk!',
-        'Wash your paws? So we\'re all filthy!',
-        'Stay in tonight? So you hate friends!'
+      options: [
+        { key: 'ok', text: 'Yeah, that IS silly. No helmet!' },
+        { key: 'right', text: "That's not what Mum said. She said wear a helmet on the road." },
+        { key: 'oops', text: "You're a bad friend, Ava!" }
+      ],
+      ok: [
+        { who: 'n', text: 'You ride fast. A bump. A wobble. CRASH.' },
+        { scene: 'img/fail-strawMan.jpg', text: "Ouch. A bump, an ice pack, no more bikes today. Mum never said 'never ride'. She said 'wear a helmet'." },
+        { end: 'fail' }
+      ],
+      right: [
+        { who: 'ava', text: "Oh. That's... actually a fair rule." },
+        { who: 'n', text: 'You both put on helmets. Ava hits a bump and wobbles. Her helmet keeps her safe.' },
+        { who: 'ava', text: 'Phew. Real rules are better than silly pretend ones.' },
+        { end: 'win' }
+      ],
+      oops: [
+        { who: 'ava', text: 'I am not!' },
+        { who: 'n', text: 'Ava rides off upset. The real rule got lost.' },
+        { end: 'oops' }
       ]
     },
-    {
-      id: 'postHoc', name: 'Post Hoc', nick: 'The Lucky Socks', icon: '🧦', img: 'img/trick-postHoc.jpg',
-      one: 'It came first, so it must have caused it.',
-      spot: 'Did it really cause it? Or just come first?',
-      examples: [
-        { who: 'milo', text: 'I wore green socks and won. Magic socks!', why: 'Practice won the race, not socks.' },
-        { who: 'rex', text: 'The rooster crowed, then the sun came up. Rooster did it!', why: 'The sun comes up anyway.' }
+
+    postHoc: {
+      npc: 'ben',
+      intro: [
+        { who: 'ben', text: 'The race is in ten minutes! Yesterday I wore my red cap and I won.' },
+        { who: 'ben', text: "The cap did it! Don't practise. Just wear my red cap. Easy." }
       ],
-      drills: [
-        'I sneezed and the light went out. My sneeze!',
-        'The bakery opened, then it rained. Bakery made rain.',
-        'I ate a carrot, then got a star. Carrots!',
-        'Grandma sat down, then it rained. Grandma\'s fault.'
+      options: [
+        { key: 'ok', text: 'OK! Give me the lucky cap.' },
+        { key: 'right', text: "The cap came first. But practice made you win. Let's practise." },
+        { key: 'oops', text: "That's a stupid cap, Ben." }
+      ],
+      ok: [
+        { who: 'n', text: 'You sit in the shade wearing the cap. Everyone else practises.' },
+        { who: 'n', text: 'Ready, steady, GO!' },
+        { scene: 'img/fail-postHoc.jpg', text: 'You finish last, out of breath. The cap came first yesterday. Practice made Ben win.' },
+        { end: 'fail' }
+      ],
+      right: [
+        { who: 'ben', text: 'Hmm. I did practise a lot yesterday...' },
+        { who: 'n', text: 'You both practise. Ready, steady, GO! You finish strong.' },
+        { who: 'coach', text: 'Great running! Legs win races, not caps.' },
+        { end: 'win' }
+      ],
+      oops: [
+        { who: 'ben', text: 'It is NOT!' },
+        { who: 'n', text: 'Ben sulks. Nobody practises. Nobody learns why he really won.' },
+        { end: 'oops' }
       ]
     },
-    {
-      id: 'hastyGen', name: 'Hasty Generalization', nick: 'The Big Jump', icon: '🦘', img: 'img/trick-hastyGen.jpg',
-      one: 'One example, then a rule about everyone.',
-      spot: 'How many did they really see?',
-      examples: [
-        { who: 'hazel', text: 'One grumpy cat. All cats are grumpy!', why: 'One cat isn\'t all cats.' },
-        { who: 'milo', text: 'One yucky berry. All berries are yucky!', why: 'One berry isn\'t all berries.' }
+
+    hastyGen: {
+      npc: 'zoe',
+      intro: [
+        { who: 'zoe', text: "Priya's party is today. Don't go." },
+        { who: 'zoe', text: 'A kid from Oak Street pushed me once. Priya is from Oak Street.' },
+        { who: 'zoe', text: 'So ALL Oak Street kids are mean.' }
       ],
-      drills: [
-        'One boring book. All books are boring.',
-        'Two loud kids. Everyone here is loud.',
-        'It rained two Saturdays. It always rains Saturdays.',
-        'My first swim was hard. I\'ll never swim.'
+      options: [
+        { key: 'ok', text: "OK. I'll stay away from Oak Street kids." },
+        { key: 'right', text: "One kid isn't all kids. Let's meet Priya first." },
+        { key: 'oops', text: "You're just a scaredy-cat, Zoe." }
+      ],
+      ok: [
+        { who: 'n', text: 'You stay outside. Music and laughing come from the window.' },
+        { scene: 'img/fail-hastyGen.jpg', text: 'Everyone had cake and games. Priya was kind to everyone. One kid is not all kids.' },
+        { end: 'fail' }
+      ],
+      right: [
+        { who: 'n', text: 'You knock. Priya opens the door with a big smile.' },
+        { who: 'priya', text: "You came! Come in, there's cake!" },
+        { who: 'zoe', text: "She's... really nice. One kid isn't all kids." },
+        { end: 'win' }
+      ],
+      oops: [
+        { who: 'zoe', text: "I'm not!" },
+        { who: 'n', text: 'Zoe runs home. Nobody goes to the party.' },
+        { end: 'oops' }
       ]
     },
-    {
-      id: 'emotion', name: 'Appeal to Emotion', nick: 'The Tear Trick', icon: '😢', img: 'img/trick-emotion.jpg',
-      one: 'Making you feel sad or scared, instead of a reason.',
-      spot: 'Is it a reason? Or just feelings?',
-      examples: [
-        { who: 'sly', text: 'Buy it, or the bunny will cry.', why: 'A sad bunny is not a reason.' },
-        { who: 'rex', text: 'If you loved me, you\'d let me stay up.', why: 'Love is not a reason to stay up.' }
+
+    emotion: {
+      npc: 'ruby',
+      intro: [
+        { who: 'n', text: 'You have three coins. You are saving them for ice cream.' },
+        { who: 'ruby', text: 'I want that toy. Give me your three coins.' },
+        { who: 'ruby', text: "If you don't, I'll cry ALL day. And it will be YOUR fault. Do you want me to cry?" }
       ],
-      drills: [
-        'If you loved me you\'d let me stay up.',
-        'Think how sad the toy will be.',
-        'Do it, or something scary will happen.',
-        'Don\'t be cross. My hamster is sick.'
+      options: [
+        { key: 'ok', text: "Don't cry! Here, take my coins." },
+        { key: 'right', text: "I'm sorry you're sad. But that's not a reason. I'm keeping my coins." },
+        { key: 'oops', text: 'Cry-baby! Cry-baby!' }
+      ],
+      ok: [
+        { who: 'n', text: "Ruby buys the toy and skips away. She doesn't cry at all." },
+        { scene: 'img/fail-emotion.jpg', text: 'No coins. No ice cream. Ruby is happy. Tears were never a reason.' },
+        { end: 'fail' }
+      ],
+      right: [
+        { who: 'ruby', text: 'Hmph. Fine.' },
+        { who: 'n', text: "Ruby doesn't cry. She goes to ask her mum instead." },
+        { who: 'icecream', text: 'One cone, three coins. Enjoy!' },
+        { who: 'n', text: 'Feelings are real. But they are not reasons.' },
+        { end: 'win' }
+      ],
+      oops: [
+        { who: 'ruby', text: "That's mean!" },
+        { who: 'n', text: 'Now Ruby really is crying. That helped nobody.' },
+        { end: 'oops' }
       ]
     },
-    {
-      id: 'redHerring', name: 'Red Herring', nick: 'The Sneaky Squirrel', icon: '🐿️', img: 'img/trick-redHerring.jpg',
-      one: 'Changing the subject to dodge the question.',
-      spot: 'Did they answer the question?',
-      examples: [
-        { who: 'rex', text: '"Did you eat the cake?" "Look, a butterfly!"', why: 'The butterfly dodges the question.' },
-        { who: 'sly', text: '"Where\'s your homework?" "Owls can turn their heads!"', why: 'Owls have nothing to do with homework.' }
+
+    redHerring: {
+      npc: 'max',
+      intro: [
+        { who: 'n', text: "CRASH! Dad's big flower pot is broken. Max is standing right next to it." },
+        { who: 'you', text: 'Max, did you break the pot?' },
+        { who: 'max', text: "Look! A RAINBOW! Quick, let's go see it before it's gone!" }
       ],
-      drills: [
-        'Who ate the cake? Well, nobody thanks me!',
-        'Is the bridge safe? Look at those flowers!',
-        'Where\'s your reading? Owls turn their heads!',
-        'Did I break it? The sun is shining!'
+      options: [
+        { key: 'ok', text: "A rainbow! Let's go!" },
+        { key: 'right', text: 'The rainbow can wait. Max, did you break the pot?' },
+        { key: 'oops', text: 'Liar! You always break things!' }
+      ],
+      ok: [
+        { who: 'n', text: 'You both run off. The rainbow fades before you get there.' },
+        { who: 'n', text: 'Dad finds the broken pot.' },
+        { scene: 'img/fail-redHerring.jpg', text: 'Dad thinks you BOTH did it. The rainbow was gone anyway. The question never got answered.' },
+        { end: 'fail' }
+      ],
+      right: [
+        { who: 'max', text: '...Yes. It was an accident.' },
+        { who: 'n', text: 'You help Max tell Dad. Then you sweep up together.' },
+        { who: 'dad', text: 'Thanks for telling me. Accidents happen. Now, who wants to see a rainbow?' },
+        { end: 'win' }
+      ],
+      oops: [
+        { who: 'max', text: 'Waaah!' },
+        { who: 'n', text: 'Max runs inside crying. The pot is still broken. Nobody knows what happened.' },
+        { end: 'oops' }
       ]
     }
-  ];
+  };
 
-  /* Fair statements for practice. None of these is a trick. */
-  const FAIR_LINES = [
-    { text: 'Let\'s bring umbrellas. The sky is grey.', why: 'A real reason.' },
-    { text: 'This shop is cheaper. I checked three.', why: 'She checked.' },
-    { text: 'The sign says the bridge is safe.', why: 'A fact from the sign.' },
-    { text: 'I don\'t know. Let\'s ask everyone.', why: 'No jumping to answers.' },
-    { text: 'Last time we were late. Let\'s go earlier.', why: 'Learning from last time.' },
-    { text: 'Good idea. Let\'s mix your plan and mine.', why: 'A third door.' },
-    { text: 'The doctor said rest helps you get better.', why: 'A doctor knows about that.' },
-    { text: 'I\'m not sure yet. Let me look.', why: 'Honest.' },
-    { text: 'There\'s a third way. The lake!', why: 'A new door.' },
-    { text: 'You\'re right. I was late. Sorry.', why: 'No dodge.' }
-  ];
-
-  const CHAPTERS = [
-    {
-      n: 1, title: 'The Playground', place: 'Under the big oak', img: 'img/scene-1.jpg',
-      unlocks: ['adHominem', 'bandwagon'],
-      intro: [
-        'The Fog comes when a bad argument wins.',
-        'Sly Fox loves bad arguments.',
-        'Crack! An egg opens. It\'s Pip. Pip grows when you catch a trick.'
-      ]
-    },
-    {
-      n: 2, title: 'The Market', place: 'Market day', img: 'img/scene-2.jpg',
-      unlocks: ['falseDilemma', 'strawMan'],
-      intro: [
-        'Market day! Sly has a golden stall.',
-        'The fog hangs over it like a blanket.'
-      ]
-    },
-    {
-      n: 3, title: 'The River', place: 'The beaver dam', img: 'img/scene-3.jpg',
-      unlocks: ['postHoc', 'hastyGen'],
-      intro: [
-        'The river. The fog is thickest here.',
-        'Pip can glide now. Let\'s go!'
-      ]
-    },
-    {
-      n: 4, title: 'The Big Vote', place: 'The Council Hall', img: 'img/scene-4.jpg',
-      unlocks: ['emotion', 'redHerring'],
-      intro: [
-        'Voting day! Sly is on the stage.',
-        'Pip has never been so ready.'
-      ]
-    }
-  ];
-
-  const SCENES = [
-    /* ---------------- Chapter 1 ---------------- */
-    {
-      id: 'c1s1', chapter: 1, title: 'The Swing', where: 'First break',
-      lines: [
-        { who: 'milo', text: 'Let\'s take turns on the swing.', f: null, why: 'A fair idea.' },
-        { who: 'rex', text: 'You\'re tiny, Milo. Your idea is tiny too.', f: 'adHominem', why: 'Tiny doesn\'t make an idea bad.' },
-        { who: 'hazel', text: 'Turns sound good to me.', f: null, why: 'She talks about the idea.' },
-        { who: 'rex', text: 'Everyone just grabs the swing. That\'s the rule.', f: 'bandwagon', why: 'Lots of kids doing it doesn\'t make it right.' }
-      ]
-    },
-    {
-      id: 'c1s2', chapter: 1, title: 'Glow Shoes', where: 'Outside the bakery',
-      lines: [
-        { who: 'rex', text: 'Everyone has glow shoes. They\'re the best.', f: 'bandwagon', why: 'Everyone having them doesn\'t make them best.' },
-        { who: 'bea', text: 'Are they comfy?', f: null, why: 'A good question.' },
-        { who: 'rex', text: 'You bake bread. What do you know about shoes?', f: 'adHominem', why: 'Mean about Bea, not about the question.' },
-        { who: 'hazel', text: 'I tried them. The bottoms are thin.', f: null, why: 'She really tried them.' }
-      ]
-    },
-    {
-      id: 'c1b', chapter: 1, boss: true, title: 'Sly at the Fence', where: 'The torn sign',
-      lines: [
-        { who: 'milo', text: 'Sly, why did you rip our swing sign?', f: null, why: 'A question.' },
-        { who: 'sly', text: 'A little mouse asking me? How cute.', f: 'adHominem', why: 'Milo\'s size is not an answer.' },
-        { who: 'hazel', text: 'The sign stopped the fights.', f: null, why: 'That\'s what happened.' },
-        { who: 'sly', text: 'Nobody liked that sign. Everybody says so.', f: 'bandwagon', why: 'Even if lots didn\'t like it, it worked.' },
-        { who: 'ollie', text: 'I liked it. Twelve kids signed it.', f: null, why: 'A fact.' },
-        { who: 'sly', text: 'Says the owl who sleeps all day!', f: 'adHominem', why: 'Sleeping in the day has nothing to do with it.' }
-      ],
-      rebuttal: {
-        prompt: 'Sly says nobody liked the sign. What do you say?',
-        options: [
-          { text: 'Maybe. But it stopped the fights.', good: true, why: 'You went back to what really happened.' },
-          { text: 'You\'re a smelly fox!', good: false, why: 'That\'s the Insult Trick.' }
-        ]
-      }
-    },
-
-    /* ---------------- Chapter 2 ---------------- */
-    {
-      id: 'c2s1', chapter: 2, title: 'Apples', where: 'The fruit stall',
-      lines: [
-        { who: 'bea', text: 'Apples are two coins each.', f: null, why: 'Just the price.' },
-        { who: 'rex', text: 'One coin, or I never come back!', f: 'falseDilemma', why: 'More choices: buy one, or buy a pear.' },
-        { who: 'milo', text: 'I need three apples for a pie.', f: null, why: 'Just what he needs.' },
-        { who: 'rex', text: 'So Milo says nobody can buy more than three!', f: 'strawMan', why: 'Milo never said that.' }
-      ]
-    },
-    {
-      id: 'c2s2', chapter: 2, title: 'Less Sugar', where: 'The bakery',
-      lines: [
-        { who: 'bea', text: 'A little less sugar in the buns.', f: null, why: 'A small, clear idea.' },
-        { who: 'sly', text: 'Bea wants to ban ALL sweets!', f: 'strawMan', why: 'Bea said a little less. Not none.' },
-        { who: 'hazel', text: 'She said a little less, Sly.', f: null, why: 'She says what Bea really said.' },
-        { who: 'sly', text: 'Buns are sweet, or buns are bricks. Pick!', f: 'falseDilemma', why: 'There\'s lots in between.' }
-      ]
-    },
-    {
-      id: 'c2b', chapter: 2, boss: true, title: 'Sly\'s Stall', where: 'The golden tent',
-      lines: [
-        { who: 'goose', text: 'Why are your prices double, dear?', f: null, why: 'A question.' },
-        { who: 'sly', text: 'Pay my price, or go hungry!', f: 'falseDilemma', why: 'There are six other stalls.' },
-        { who: 'goose', text: 'There are six other stalls.', f: null, why: 'A fact.' },
-        { who: 'sly', text: 'So Grandma wants me to give it all away free?', f: 'strawMan', why: 'Nobody said free.' },
-        { who: 'tilly', text: 'She said other stalls. Not free.', f: null, why: 'She fixes the words.' },
-        { who: 'sly', text: 'Who listens to a slow old turtle?', f: 'adHominem', why: 'Slow has nothing to do with it.' }
-      ],
-      rebuttal: {
-        prompt: 'Sly says pay or go hungry. What do you say?',
-        options: [
-          { text: 'There are other stalls. I\'ll go there.', good: true, why: 'You found the third door.' },
-          { text: 'Everyone hates your stall!', good: false, why: 'That\'s Everyone\'s Doing It.' }
-        ]
-      }
-    },
-
-    /* ---------------- Chapter 3 ---------------- */
-    {
-      id: 'c3s1', chapter: 3, title: 'Lucky Goggles', where: 'Swim lane three',
-      lines: [
-        { who: 'milo', text: 'I wore green goggles and won. Magic goggles!', f: 'postHoc', why: 'He also practised every day.' },
-        { who: 'tilly', text: 'You practised every morning, Milo.', f: null, why: 'The real reason.' },
-        { who: 'hazel', text: 'One goggle broke. All goggles are rubbish!', f: 'hastyGen', why: 'One goggle isn\'t all goggles.' },
-        { who: 'tilly', text: 'Let\'s try another pair first.', f: null, why: 'Check before deciding.' }
-      ]
-    },
-    {
-      id: 'c3s2', chapter: 3, title: 'The Creaky Bridge', where: 'The old footbridge',
-      lines: [
-        { who: 'rex', text: 'The bridge creaked after Tilly. Tilly broke it!', f: 'postHoc', why: 'It creaked before, too.' },
-        { who: 'tilly', text: 'It creaked all spring, before me.', f: null, why: 'A fact.' },
-        { who: 'rex', text: 'One creaky bridge. All bridges are dangerous!', f: 'hastyGen', why: 'One bridge isn\'t all bridges.' },
-        { who: 'goose', text: 'Let\'s ask the beavers to check it.', f: null, why: 'A good plan.' }
-      ]
-    },
-    {
-      id: 'c3b', chapter: 3, boss: true, title: 'Sly at the Dam', where: 'The beaver dam',
-      lines: [
-        { who: 'ollie', text: 'Sly, why do you say the dam is bad?', f: null, why: 'A question.' },
-        { who: 'sly', text: 'My tail got wet after the dam. The dam did it!', f: 'postHoc', why: 'He was swimming.' },
-        { who: 'tilly', text: 'You were swimming, Sly.', f: null, why: 'The real reason.' },
-        { who: 'sly', text: 'I saw one wet beaver. All beavers are trouble!', f: 'hastyGen', why: 'One beaver isn\'t all beavers.' },
-        { who: 'milo', text: 'Beavers built dams here for years. No floods.', f: null, why: 'Lots of examples.' },
-        { who: 'sly', text: 'Everyone knows dams are bad. Ask anyone!', f: 'bandwagon', why: 'Everyone saying it isn\'t a reason.' }
-      ],
-      rebuttal: {
-        prompt: 'Sly says his wet tail proves the dam is bad. What do you say?',
-        options: [
-          { text: 'You were swimming. That\'s why you\'re wet.', good: true, why: 'You found the real reason.' },
-          { text: 'Fix the dam or we\'ll all drown!', good: false, why: 'That\'s Only Two Doors.' }
-        ]
-      }
-    },
-
-    /* ---------------- Chapter 4 ---------------- */
-    {
-      id: 'c4s1', chapter: 4, title: 'The Missing Pie', where: 'Bea\'s kitchen',
-      lines: [
-        { who: 'bea', text: 'Half the pie is gone. Who was here?', f: null, why: 'A question.' },
-        { who: 'rex', text: 'Nobody ever thanks me for sweeping!', f: 'redHerring', why: 'Sweeping has nothing to do with pie.' },
-        { who: 'hazel', text: 'Don\'t ask. Someone might cry!', f: 'emotion', why: 'Crying isn\'t a reason to stop asking.' },
-        { who: 'bea', text: 'I\'ll look for crumbs.', f: null, why: 'Looking for clues.' }
-      ]
-    },
-    {
-      id: 'c4s2', chapter: 4, title: 'Sparkle Cereal', where: 'The fair gate',
-      lines: [
-        { who: 'milo', text: 'Buy Sparkle Cereal or the bunny will cry!', f: 'emotion', why: 'A sad bunny is not a reason.' },
-        { who: 'ollie', text: 'What\'s in it?', f: null, why: 'A good question.' },
-        { who: 'milo', text: 'Hey, look! A butterfly!', f: 'redHerring', why: 'The butterfly dodges the question.' },
-        { who: 'tilly', text: 'Sugar. Lots of sugar.', f: null, why: 'The answer.' }
-      ]
-    },
-    {
-      id: 'c4b', chapter: 4, boss: true, title: 'The Big Vote', where: 'On stage',
-      lines: [
-        { who: 'ollie', text: 'Sly, what will you do about the fog?', f: null, why: 'The big question.' },
-        { who: 'sly', text: 'Look at my beautiful bow tie!', f: 'redHerring', why: 'A bow tie isn\'t a plan.' },
-        { who: 'goose', text: 'Lovely. What about the fog, dear?', f: null, why: 'Back to the question.' },
-        { who: 'sly', text: 'Think of my poor cubs if I lose!', f: 'emotion', why: 'Sad cubs aren\'t a plan either.' },
-        { who: 'tilly', text: 'Cubs aren\'t a plan, Sly.', f: null, why: 'She names it.' },
-        { who: 'sly', text: 'Vote for me, or the sun never comes back!', f: 'falseDilemma', why: 'The sun doesn\'t work like that.' },
-        { who: 'milo', text: 'There\'s a third way. We spot the tricks!', f: null, why: 'The third door.' },
-        { who: 'sly', text: 'Says a mouse with a squeaky voice!', f: 'adHominem', why: 'A squeaky voice isn\'t an answer.' }
-      ],
-      rebuttal: {
-        prompt: 'Sly says vote for him, or the sun never comes back. What do you say?',
-        options: [
-          { text: 'That\'s not true. There are other choices.', good: true, why: 'You opened the third door.' },
-          { text: 'Everyone says you\'re a liar!', good: false, why: 'That\'s Everyone\'s Doing It.' }
-        ]
-      }
-    }
-  ];
-
-  const ENDING = [
-    'The votes are counted. Sly loses!',
-    'The fog is gone. Pip is big now.',
-    '"More tricks will come," says Pip. "We\'ll be ready."'
-  ];
-
-  return { CAST, FALLACIES, FAIR_LINES, CHAPTERS, SCENES, ENDING };
+  return { TRICKS, LOOKS, NPCS, FOG, QUESTS };
 })();

@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fog of Fallacy</title>
+<meta name="description" content="A story game for spotting logical fallacies in dialogue. Catch the tricks, clear the fog, and watch Pip the dragon grow.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Andika:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    corePlugins: { preflight: false },
+    theme: { extend: {
+      colors: { pine: '#14262B', mist: '#8FB3B0', paper: '#F4E8CC', ink: '#2A2420', lantern: '#F6B544', coral: '#FF7B6B', mint: '#BFEBD6', fair: '#63C48F' },
+      fontFamily: { display: ['"Baloo 2"', 'system-ui', 'sans-serif'], body: ['Andika', 'Verdana', 'sans-serif'] }
+    } }
+  };
+</script>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div class="fog" aria-hidden="true"><i></i><i></i><i></i></div>
+<main id="app"></main>
+<script src="js/data.js"></script>
+<script src="js/dragon.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

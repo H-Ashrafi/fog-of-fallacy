@@ -71,22 +71,27 @@ window.FOG = (function () {
   /* ---------------- missions (buildings) ---------------- */
   const MISSIONS = [
     { id: 'well', kind: 'well', name: 'The Village Well', region: 0, site: { x: 14, y: 12, w: 2, h: 2 }, camp: [[16, 12], [16, 13], [14, 11], [15, 11]], cost: 60, buildSec: 15, xp: 100, unlocks: 1,
+      start: 'Your crew rolls up their sleeves. Work on the well begins!', lift: 'The fog lifts from River Farms.',
       needs: [{ role: 'water', level: 1 }, { role: 'mason', level: 1 }], income: { rate: 3, cap: 30 },
       blurb: 'The village drinks muddy river water. A well in the square would give clean water. People will pay a coin to fill their buckets.',
       done: ['Clean water bubbles up from the ground. The whole village cheers.', 'Elder Otto opens the south gate. He says, "River Farms could use a builder like you."'] },
     { id: 'bridge', kind: 'bridge', name: 'The River Bridge', region: 1, site: { x: 27, y: 42, w: 4, h: 2 }, camp: [[25, 41], [24, 41], [26, 44], [23, 44]], cost: 100, buildSec: 18, xp: 120, unlocks: 2, walkWhenBuilt: true,
+      start: 'Your crew rolls up their sleeves. Work on the bridge begins!', lift: 'The fog lifts from Market Town.',
       needs: [{ role: 'carpenter', level: 1 }, { role: 'surveyor', level: 1 }], income: { rate: 4, cap: 40 },
       blurb: 'The ferry is the only way across, and the ferryman charges what he likes. A bridge would carry carts, and a small toll would pay you back.',
       done: ['The last plank drops into place. Carts roll across the river for the first time.', 'Ferryman Gus grumbles. Everyone else is delighted. Market Town lies ahead.'] },
     { id: 'school', kind: 'school', name: 'Engineering School', region: 2, site: { x: 50, y: 33, w: 4, h: 4 }, camp: [[49, 34], [49, 35], [54, 34], [54, 35]], cost: 150, buildSec: 20, xp: 150, unlocks: 3,
+      start: 'Your crew rolls up their sleeves. Work on the school begins!', lift: 'The fog lifts from the Hill Mine.',
       needs: [{ role: 'mason', level: 2 }, { role: 'carpenter', level: 2 }, { role: 'scholar', level: 1 }], income: { rate: 8, cap: 80 },
       blurb: 'Market Town has clever young people and nobody to teach them. A school earns fees, and your crew can train there to learn faster.',
       done: ['The school bell rings. Students run in with their notebooks.', 'The first class measures the rockfall north of town and clears a path to the Hill Mine.'] },
     { id: 'mill', kind: 'mill', name: 'The Waterwheel Mill', region: 3, site: { x: 31, y: 18, w: 3, h: 4 }, camp: [[34, 20], [34, 17], [32, 22], [33, 22]], cost: 220, buildSec: 22, xp: 180, unlocks: 4,
+      start: 'Your crew rolls up their sleeves. Work on the mill begins!', lift: 'The fog lifts from the Harbour.',
       needs: [{ role: 'millwright', level: 1 }, { role: 'mason', level: 3 }, { role: 'carpenter', level: 3 }], income: { rate: 12, cap: 120 },
       blurb: 'The miners crush ore by hand, and it takes forever. A waterwheel would do it a hundred times faster. The mine will pay well for it.',
       done: ['The wheel turns. The ore crunches. The miners whoop and throw their hats.', 'The foreman unlocks the harbour wall. She says, "Go on. The coast needs you more than we do."'] },
     { id: 'lighthouse', kind: 'lighthouse', name: 'The Lighthouse', region: 4, site: { x: 44, y: 77, w: 2, h: 3 }, camp: [[43, 69], [42, 69], [47, 68], [48, 68]], cost: 320, buildSec: 25, xp: 200, unlocks: 5,
+      start: 'Your crew rolls up their sleeves. Work on the lighthouse begins!', lift: null,
       needs: [{ role: 'smith', level: 1 }, { role: 'mason', level: 4 }, { role: 'surveyor', level: 2 }, { role: 'millwright', level: 2 }], income: { rate: 0, cap: 0 },
       blurb: 'Ships crash on the rocks every winter. A lighthouse at the end of the pier would guide them home. It would also lift the fog from the whole Valley.',
       done: ['The great lamp flares. Its beam sweeps across the sea.', 'All over the Valley, the fog thins and then vanishes. Clear heads make clear skies.'] }
@@ -95,78 +100,101 @@ window.FOG = (function () {
   /* ---------------- tasks (one-time paid work) and jobs (repeatable) ---------------- */
   const TASKS = {
     // village
-    bread: { giver: 'hana', kind: 'deliver', target: 'idris', pay: 12, title: 'Bread for the barn',
+    bread: { giver: 'hana', kind: 'deliver', target: 'idris', pay: 12, title: 'Bread for the barn', item: 'bread',
       offer: ['Farmer Idris ordered six loaves, but I cannot leave my oven.', 'Please carry them to his barn in the south-east. He will pay you 12 coins.'],
       accept: 'Here you go. They are still warm. Mind the goats!', active: ['Idris waits by the barn in the south-east. Go down the lane and turn left.'],
       deliver: ['You brought the bread! You saved my lunch. Here are 12 coins, as I promised.'], done: ['Idris told me the bread was perfect. You run fast.'] },
-    goat: { giver: 'sal', kind: 'spot', target: 'goat', pay: 10, title: 'The lost goat',
+    goat: { giver: 'sal', kind: 'spot', target: 'goat', pay: 10, title: 'The lost goat', anim: 'call', follow: 'goat',
       offer: ['My goat Pickle ran off again. She likes the trees behind the barn.', 'Please bring her home. I will give you 10 coins.'],
       accept: 'She is white and she wears a bell. Listen for it.', active: ['Pickle likes the trees behind the barn, in the far south-east corner.'],
       found: ['You find Pickle chewing a bush behind the barn.', 'You take her bell in your hand and lead her home.'], reward: ['You found Pickle! Here are 10 coins. You earned them.'], done: ['Pickle has stayed home since you found her. Thank you.'] },
-    fence: { giver: 'idris', kind: 'spot', target: 'brokenfence', pay: 12, title: 'The broken fence',
+    fence: { giver: 'idris', kind: 'spot', target: 'brokenfence', pay: 12, title: 'The broken fence', anim: 'hammer',
       offer: ['The goats knocked down my fence on the west side of the field.', 'Please fix the rails. I will pay you 12 coins.'],
       accept: 'I left a hammer and nails by the gap. Mind your thumbs.', active: ['The gap is on the west side of my field, next to the square.'],
       found: ['You line up the rails and hammer them straight.', 'The fence looks as good as new.'], reward: ['That fence is straighter than the one I built! Here are 12 coins.'], done: ['The fence is holding. The goats are furious.'] },
     // farms
-    apples: { giver: 'pia', kind: 'spot', target: 'apples', pay: 30, title: 'Apple harvest',
+    apples: { giver: 'pia', kind: 'spot', target: 'apples', pay: 30, title: 'Apple harvest', anim: 'pick', item: 'basket',
       offer: ['The trees are dropping apples faster than I can pick them.', 'Please fill the basket in the orchard, to the north-west. I will pay you 30 coins.'],
       accept: 'The basket sits under the trees. Fill it right to the top.', active: ['The orchard is north-west of my farm. Follow the lane north.'],
       found: ['You pick apples until the basket is heavy and your arms ache.', 'You count about two hundred apples.'], reward: ['You picked a proper harvest! Here are 30 coins, and take an apple for the road.'], done: ['I am baking apple pie tonight. Come by if you like.'] },
-    seeds: { giver: 'pia', kind: 'deliver', target: 'sal', pay: 30, pre: 'apples', title: 'Seeds for Old Sal',
+    seeds: { giver: 'pia', kind: 'deliver', target: 'sal', pay: 30, pre: 'apples', title: 'Seeds for Old Sal', item: 'sack',
       offer: ['Old Sal in the village wants bean seeds for the spring.', 'Please take this bag to her cottage. She will pay you 30 coins when it arrives.'],
       accept: 'Hold it tight. If you drop it, there will be beans everywhere.', active: ['Sal lives in the village, in the south-west, back through the gate.'],
       deliver: ['You brought my bean seeds, just in time! Here are 30 coins. Please thank Pia for me.'], done: ['I planted the beans already. You did good work.'] },
-    scarecrow: { giver: 'ren', kind: 'spot', target: 'scarecrow', pay: 30, title: 'The fallen scarecrow',
+    scarecrow: { giver: 'ren', kind: 'spot', target: 'scarecrow', pay: 30, title: 'The fallen scarecrow', anim: 'lift',
       offer: ['Our scarecrow fell over, and now the crows are having a party.', 'Please stand him up again at the bottom of the big field. I will pay 30 coins.'],
       accept: 'His hat fell in the mud somewhere. Good luck.', active: ['The scarecrow lies at the bottom of the big field, east of the lane.'],
       found: ['You heave the scarecrow up, straighten his hat, and tie his arms.', 'The crows fly away in a huff.'], reward: ['The crows are gone! Here are 30 coins, and thank you.'], done: ['We have not seen a crow for a week.'] },
     // market
-    parcel: { giver: 'dot', kind: 'deliver', target: 'ossian', pay: 45, title: 'Parcel to the Town Hall',
+    parcel: { giver: 'dot', kind: 'deliver', target: 'ossian', pay: 45, title: 'Parcel to the Town Hall', item: 'parcel',
       offer: ['This parcel is for Clerk Ossian at the Town Hall. I think it holds papers. Heavy ones.', 'Please deliver it. He will pay you 45 coins.'],
       accept: 'Be careful, the string is loose. The Town Hall stands north of the square.', active: ['The Town Hall stands at the top of the square. Ossian waits outside.'],
       deliver: ['You brought the deeds! At last. Here are 45 coins. The town thanks you.'], done: ['Ossian says the papers were the deeds for the school land. You came at the right time.'] },
-    lamp: { giver: 'ossian', kind: 'spot', target: 'lamp', pay: 45, title: 'The dark lamp',
+    lamp: { giver: 'ossian', kind: 'spot', target: 'lamp', pay: 45, title: 'The dark lamp', anim: 'light',
       offer: ['The lamp in the south-west corner of the square has been dark for weeks.', 'Please climb up and light it again. The town will pay you 45 coins.'],
       accept: 'You will find matches in the base. Mind the ladder.', active: ['The dark lamp stands at the south-west corner of the square.'],
       found: ['You climb up, clean the glass, and strike a match.', 'Warm light spills over the cobbles.'], reward: ['We have light at last! Here are 45 coins from the town purse.'], done: ['The square feels much friendlier at night now.'] },
-    lostsign: { giver: 'nell', kind: 'spot', target: 'lostsign', pay: 45, title: 'The missing sign',
+    lostsign: { giver: 'nell', kind: 'spot', target: 'lostsign', pay: 45, title: 'The missing sign', anim: 'lift', item: 'sign',
       offer: ['Somebody stole my shop sign! I heard it is lying in the field north-east of the hall.', 'Please bring it back. I will pay you 45 coins.'],
       accept: 'It is a big wooden sign that says SHOP. You cannot miss it.', active: ['Look in the grass north-east of the Town Hall, near the trees.'],
       found: ['You find the sign lying face-down in the grass. It is muddy but whole.', 'You lift it onto your shoulder and carry it back.'], reward: ['You found my sign! Here are 45 coins and my thanks.'], done: ['Business is better now that people can find me.'] },
     // mine
-    oil: { giver: 'tam', kind: 'deliver', target: 'quill', pay: 75, title: 'Lamp oil for the mine',
+    oil: { giver: 'tam', kind: 'deliver', target: 'quill', pay: 75, title: 'Lamp oil for the mine', item: 'oilcan',
       offer: ['The miners are working in the dark. This can of lamp oil must reach Quill at the mine mouth.', 'Please carry it there. You will get 75 coins.'],
       accept: 'Do not spill it, and do not stand near the camp fire.', active: ['Quill waits at the mine entrance, north-east, up the road.'],
       deliver: ['You brought the oil! Now we can see the ore we are hitting. Here are 75 coins, friend.'], done: ['Quill says the lamps are burning bright.'] },
-    cart: { giver: 'quill', kind: 'spot', target: 'cart', pay: 75, title: 'The broken ore cart',
+    cart: { giver: 'quill', kind: 'spot', target: 'cart', pay: 75, title: 'The broken ore cart', anim: 'hammer',
       offer: ['Our ore cart lost a wheel on the road south of here.', 'Please fix it. The mine will pay you 75 coins.'],
       accept: 'We strapped a spare wheel underneath. It is heavy, mind.', active: ['The cart sits on the grass south of the mine, near the road.'],
       found: ['You lift the cart onto a rock and bolt the wheel back on.', 'You give it a push. It rolls.'], reward: ['The cart is rolling again! Here are 75 coins from the mine.'], done: ['That cart has hauled ten loads since you fixed it.'] },
-    canary: { giver: 'mab', kind: 'spot', target: 'canary', pay: 75, title: 'The escaped canary',
+    canary: { giver: 'mab', kind: 'spot', target: 'canary', pay: 75, title: 'The escaped canary', anim: 'call', follow: 'canary',
       offer: ['Our canary flew out of her cage! She keeps the miners safe from bad air.', 'She likes the bushes north-east of the mine. Please bring her back. I will pay 75 coins.'],
       accept: 'Whistle to her. She likes whistling.', active: ['Look in the grass north-east of the mine, up by the rocks.'],
       found: ['You whistle. A yellow flash lands on your shoulder.', 'She sings all the way back.'], reward: ['You found Goldie! She is safe and sound. Here are 75 coins.'], done: ['Goldie is singing again, and the miners are happy.'] },
     // harbour
-    oar: { giver: 'orla', kind: 'spot', target: 'oar', pay: 90, title: 'The lost oar',
+    oar: { giver: 'orla', kind: 'spot', target: 'oar', pay: 90, title: 'The lost oar', anim: 'dig', item: 'oar',
       offer: ['The tide took my best oar. It washed up on the west beach, past the old footbridge.', 'Please bring it back. I will pay you 90 coins.'],
       accept: 'It is long, and the handle is carved. My father made it.', active: ['Cross the old footbridge to the west, then walk along the beach.'],
       found: ['You spot a long oar with a carved handle, half buried in the sand.', 'You dig it out and shake off the seaweed.'], reward: ['You found my father\'s oar! Here are 90 coins. You have no idea what this means to me.'], done: ['Orla rows out every morning now.'] },
-    fish: { giver: 'lin', kind: 'deliver', target: 'bea', pay: 90, title: 'Fish for the tavern',
+    fish: { giver: 'lin', kind: 'deliver', target: 'bea', pay: 90, title: 'Fish for the tavern', item: 'fishcrate',
       offer: ['This crate of fish must reach Bea at the Tavern before it goes off.', 'She pays 90 coins for a fresh crate.'],
       accept: 'Go quickly. If you get lost, follow your nose.', active: ['Walk west along the quay, then go up. Bea stands outside the Tavern.'],
       deliver: ['This fish is as fresh as the sea! Here are 90 coins, and I will give you a bowl of chowder if you want one.'], done: ['Bea says that was the best crate all season.'] },
-    ledger: { giver: 'bea', kind: 'deliver', target: 'lin', pay: 90, pre: 'fish', title: 'The tavern ledger',
+    ledger: { giver: 'bea', kind: 'deliver', target: 'lin', pay: 90, pre: 'fish', title: 'The tavern ledger', item: 'book',
       offer: ['Lin forgot her ledger here. Without it she cannot sell a single fish.', 'Please take it back to her on the quay. I will pay you 90 coins.'],
       accept: 'It is the blue book. Do not get it wet.', active: ['Lin stands on the quay next to the pier.'],
       deliver: ['You brought my ledger! I would have lost a whole day. Here are 90 coins.'], done: ['Lin keeps the ledger on a string now.'] }
   };
 
+  /* Repeatable jobs. `anim` plays on the player at the spot. With `deliverTo` the player then
+     carries `item` to that person, who says `thanks` and pays. Without it the pay comes at the spot. */
   const JOBS = {
-    water: { spot: 'bucket', region: 0, pay: 4, cooldown: 25, title: 'Carry water', lines: ['You haul two heavy buckets up to the bakery.', 'Hana pays you 4 coins.'] },
-    milk: { spot: 'milk', region: 1, pay: 5, cooldown: 25, title: 'Milk the goats', lines: ['You milk the goats. One of them stands on your foot.', 'The twins pay you 5 coins.'] },
-    sweep: { spot: 'broom', region: 2, pay: 6, cooldown: 25, title: 'Sweep the square', lines: ['You sweep the cobbles until they shine.', 'The stall-holders chip in 6 coins.'] },
-    ore: { spot: 'orepile', region: 3, pay: 8, cooldown: 25, title: 'Sort ore', lines: ['You pick shiny ore out of dull rock for an hour.', 'Cook Mab pays you 8 coins.'] },
-    ropes: { spot: 'ropes', region: 4, pay: 10, cooldown: 25, title: 'Coil ropes', lines: ['You coil wet rope until your hands are sore.', 'The harbour pays you 10 coins.'] }
+    water: { spot: 'bucket', region: 0, pay: 4, cooldown: 25, title: 'Carry water', anim: 'pick', item: 'buckets', deliverTo: 'hana',
+      steps: ['Fill the two buckets at the river.', 'Carry the water to Baker Hana at the bakery.'], thanks: 'Thank you for the water! Here are 4 coins.' },
+    milk: { spot: 'milk', region: 1, pay: 5, cooldown: 25, title: 'Milk the goats', anim: 'milk', item: 'pail', deliverTo: 'rin',
+      steps: ['Milk the goats in the pen.', 'Carry the pail of milk to Rin.'], thanks: 'Fresh milk! Here are 5 coins.' },
+    sweep: { spot: 'broom', region: 2, pay: 6, cooldown: 25, title: 'Sweep the square', anim: 'sweep',
+      steps: ['Sweep the square with the broom.'] },
+    ore: { spot: 'orepile', region: 3, pay: 8, cooldown: 25, title: 'Sort ore', anim: 'sort', item: 'orebasket', deliverTo: 'mab',
+      steps: ['Sort the shiny ore out of the rock pile.', 'Carry the basket of ore to Cook Mab.'], thanks: 'Good ore! Here are 8 coins.' },
+    ropes: { spot: 'ropes', region: 4, pay: 10, cooldown: 25, title: 'Coil ropes', anim: 'coil',
+      steps: ['Coil the wet ropes on the quay.'] }
+  };
+
+  /* Fixed lines the engine used to compose at runtime. Fixed text means every line can be recorded. */
+  const LINES = {
+    cooldown: 'Nothing more to do here yet. Come back in a little while.',
+    handsFull: 'Your hands are full. Deliver what you are carrying first.',
+    crewLearned: 'Your crew learned a lot from the work. Open the Crew panel to see how much.',
+    why: {
+      building: ['We ARE working. Look, it is going up right now.'],
+      built: ['We finished it. Tell me when the next job opens.'],
+      notNeeded: ['This job does not need my craft. Call me when something does.'],
+      lowLevel: ['I am not skilled enough for this job yet.', 'More building will teach me. So would a lesson at the school.'],
+      missing: ['I cannot build it alone. We still need more experts.', 'Look at the site to see who is missing. Find them and clear their heads.'],
+      coins: ['We are ready. We only need more coins.', 'Look at the top of the screen to see how many. Then press A at the site.'],
+      ready: ['Everything is ready! Go to the site and press A. I will be right behind you.']
+    }
   };
 
   /* ---------------- people ---------------- */
@@ -200,7 +228,7 @@ window.FOG = (function () {
               { text: 'Everyone does it and nobody complains, so yes, river sand will be fine for the well.' },
               { text: 'Everyone in this village is a fool.' }
             ],
-            right: ['You want to test it? Fine. Look, the river sand crumbles. The pit sand holds.', 'Everyone was wrong together. My head feels lighter already.'],
+            right: [{ text: 'You want to test it? Fine. Look, the river sand crumbles. The pit sand holds.', anim: 'hammer' }, 'Everyone was wrong together. My head feels lighter already.'],
             wrong: ['Right. I will use river sand.', 'A month later, the mortar crumbles. Everyone was wrong together.'] }
         ],
         crew: ['I am ready when you are. Stone does not build itself.'] } },
@@ -214,7 +242,7 @@ window.FOG = (function () {
               { text: 'Fair point. If nobody in the whole valley has one, wells must not work here.' },
               { text: "Ditch-diggers don't know anything about wells." }
             ],
-            right: ['You want to test the ground? I have a probe rod. Give me a moment.', 'I found water. It sits four metres down. Nobody ever checked.', 'All right, builder. I charge 15 coins a job, and I am yours.'],
+            right: [{ text: 'You want to test the ground? I have a probe rod. Give me a moment.', anim: 'dig' }, { text: 'I found water. It sits four metres down. Nobody ever checked.', anim: 'dig' }, 'All right, builder. I charge 15 coins a job, and I am yours.'],
             wrong: ['Exactly. Now, let us talk about ditches.', 'Wren goes back to sharpening her spade.'] },
           { fallacy: 'bandwagon', topic: 'Digging at the full moon',
             intro: ['Everyone says you must dig a well at the full moon, or it runs dry.', 'I know it sounds odd, but everyone says it. So we wait two weeks.'],
@@ -254,7 +282,7 @@ window.FOG = (function () {
               { text: 'The sawmill boss is a crook, so you should hate him.' }
             ],
             right: ['You want me to work for you? On a bridge?', 'I never thought of a third door. I was too busy hating door number one.', 'I charge 25 coins a job. We have a deal.'],
-            wrong: ['You see? Even you agree. There are two doors, and both are bad.', 'Cass goes back to whittling a stick.'] },
+            wrong: ['You see? Even you agree. There are two doors, and both are bad.', { text: 'Cass goes back to whittling a stick.', anim: 'whittle' }] },
           { fallacy: 'falseDilemma', topic: 'Oak or pine for the deck',
             intro: ['We must pick wood for the bridge deck. Either we use oak and it takes a year, or we use pine and it rots in two winters.', 'Pick one. Slow or rotten.'],
             options: [
@@ -276,7 +304,7 @@ window.FOG = (function () {
               { text: "True. Without the King's men and their brass tools, nothing here can be measured properly." },
               { text: "The King's men are lazy snobs anyway." }
             ],
-            right: ['You want me to do it myself? With my own tripod?', 'The river is twenty-two paces wide, bank to bank. I just measured it.', 'I charge 20 coins a job, and I am on your crew.'],
+            right: ['You want me to do it myself? With my own tripod?', { text: 'The river is twenty-two paces wide, bank to bank. I just measured it.', anim: 'measure' }, 'I charge 20 coins a job, and I am on your crew.'],
             wrong: ["Exactly. So we wait for the King. We will wait forever.", 'Sy polishes his glasses and stares at the water.'] },
           { fallacy: 'falseDilemma', topic: 'Where the bridge should go',
             intro: ['The bridge must go right here at the ferry, or it must not go anywhere.', 'If we put it anywhere else, the whole plan fails.'],
@@ -316,7 +344,7 @@ window.FOG = (function () {
               { text: 'Crying students are weak. Ignore them.' }
             ],
             right: ['Did they learn? Forty of them passed. Two of them cried.', 'I let two tears decide for forty students.', 'Very well. I charge 40 coins a job, and I will run your school.'],
-            wrong: ['Then we agree. There will be no school.', 'Ada returns to her book.'] },
+            wrong: ['Then we agree. There will be no school.', { text: 'Ada returns to her book.', anim: 'read' }] },
           { fallacy: 'postHoc', topic: 'The lucky green scarf',
             intro: ['I always lecture in my green scarf. The one year I forgot it, three students failed.', 'The scarf must be lucky. I cannot teach without it, and it is at the cleaners.'],
             options: [
@@ -366,8 +394,8 @@ window.FOG = (function () {
               { text: "Three in a row! You're definitely due. Let's start now before the luck wears off." },
               { text: 'Three failures? You are obviously a terrible millwright.' }
             ],
-            right: ['Why did they fall? The wheel was too heavy for the axle. It happened all three times.', 'Luck was never coming. A stronger axle is.', 'I charge 60 coins a job, and I will draw it properly this time.'],
-            wrong: ['That is the spirit! We need no plan!', 'Fen picks up a hammer and a hopeful look.'] },
+            right: [{ text: 'Why did they fall? The wheel was too heavy for the axle. It happened all three times.', anim: 'hammer' }, 'Luck was never coming. A stronger axle is.', 'I charge 60 coins a job, and I will draw it properly this time.'],
+            wrong: ['That is the spirit! We need no plan!', { text: 'Fen picks up a hammer and a hopeful look.', anim: 'hammer' }] },
           { fallacy: 'sunkCost', topic: 'The 400-coin design',
             intro: ['I have spent 400 coins on a mill design that cannot work. The axle is wrong.', 'But I spent 400 coins! I cannot throw that away. I must spend 200 more to finish it.'],
             options: [
@@ -407,8 +435,8 @@ window.FOG = (function () {
               { text: 'The Guild Master would know better than us. Best not risk it, the sea wind is fierce.' },
               { text: 'The Guild Master is an old fool.' }
             ],
-            right: ['Has any lamp cracked? He has never built a lamp. He only inspects ledgers.', 'I have built a hundred lamps. Not one of them cracked.', 'I charge 80 coins a job. Let me forge the biggest lamp yet.'],
-            wrong: ['Yes. Best not.', 'Iva bangs a horseshoe flat and thinks about gold chains.'] },
+            right: ['Has any lamp cracked? He has never built a lamp. He only inspects ledgers.', { text: 'I have built a hundred lamps. Not one of them cracked.', anim: 'forge' }, 'I charge 80 coins a job. Let me forge the biggest lamp yet.'],
+            wrong: ['Yes. Best not.', { text: 'Iva bangs a horseshoe flat and thinks about gold chains.', anim: 'forge' }] },
           { fallacy: 'slipperySlope', topic: 'One lamp leads to ruin',
             intro: ['If I forge one giant lamp, every harbour will want one. Then I will never sleep. Then the forge will burn out. Then I will lose everything.', 'One lamp leads to ruin. So I will make no lamp.'],
             options: [
@@ -642,5 +670,5 @@ window.FOG = (function () {
       oops: [{ who: 'orla', text: 'A thief?! After all I have done for this quay?' }, { who: 'n', text: 'Now you are arguing about her character. Your question is still unanswered.' }, { end: 'oops' }] }
   };
 
-  return { FALLACIES, LOOKS, ROLES, XP_LEVELS, START_MONEY, LEVELS, MISSIONS, TASKS, JOBS, NPCS, TRICKS };
+  return { FALLACIES, LOOKS, ROLES, XP_LEVELS, START_MONEY, LEVELS, MISSIONS, TASKS, JOBS, LINES, NPCS, TRICKS };
 })();

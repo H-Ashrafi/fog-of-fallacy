@@ -25,19 +25,21 @@ const MODEL = VOICES._model || 'eleven_v3';
 /* ---------- collect every line that showLine/showScene can speak ---------- */
 const lines = new Map();   // key "who|raw" -> { who, raw }
 const add = (who, raw) => { if (typeof raw !== 'string' || !raw.trim()) return; lines.set(who + '|' + raw, { who, raw }); };
-const steps = (arr, who) => (arr || []).forEach(s => { if (typeof s === 'string') add(who, s); else if (s && s.who && s.text) add(s.who, s.text); else if (s && s.scene && s.text) add('n', s.text); });
+const steps = (arr, who) => (arr || []).forEach(s => { if (typeof s === 'string') add(who, s); else if (s && s.who && s.text) add(s.who, s.text); else if (s && s.scene && s.text) add('n', s.text); else if (s && s.text) add(who, s.text); });
 
 D.LEVELS.forEach(l => l.intro.forEach(t => add('n', t)));
-D.MISSIONS.forEach(m => m.done.forEach(t => add('n', t)));
+D.MISSIONS.forEach(m => { m.done.forEach(t => add('n', t)); add('n', m.start); add('n', m.lift); });
+add('n', D.LINES.cooldown); add('n', D.LINES.handsFull); add('n', D.LINES.crewLearned);
+Object.values(D.JOBS).forEach(j => { if (j.deliverTo) add(j.deliverTo, j.thanks); });
 Object.values(D.TASKS).forEach(t => {
   (t.offer || []).forEach(x => add(t.giver, x)); add(t.giver, t.accept); (t.active || []).forEach(x => add(t.giver, x));
   (t.deliver || []).forEach(x => add(t.target, x)); (t.found || []).forEach(x => add('n', x)); (t.reward || []).forEach(x => add(t.giver, x)); (t.done || []).forEach(x => add(t.giver, x));
   add(t.giver, 'Come back when you have time.');
 });
-Object.values(D.JOBS).forEach(j => j.lines.forEach(x => add('n', x)));
+Object.values(D.JOBS).forEach(j => (j.lines || []).forEach(x => add('n', x)));
 D.NPCS.forEach(n => {
   (n.talk || []).forEach(x => add(n.id, x)); (n.after || []).forEach(x => add(n.id, x));
-  if (n.expert) { n.expert.fog.forEach(f => { steps(f.intro, n.id); steps(f.right, n.id); steps(f.wrong, n.id); }); (n.expert.crew || []).forEach(x => add(n.id, x)); add(n.id, 'Right you are.'); }
+  if (n.expert) { n.expert.fog.forEach(f => { steps(f.intro, n.id); steps(f.right, n.id); steps(f.wrong, n.id); }); (n.expert.crew || []).forEach(x => add(n.id, x)); add(n.id, 'Right you are.'); Object.values(D.LINES.why).forEach(arr => arr.forEach(x => add(n.id, x))); }
 });
 Object.values(D.TRICKS).forEach(tr => Object.entries(tr).forEach(([k, v]) => { if (Array.isArray(v) && k !== 'options') { steps(v, tr.npc); v.forEach(s => { if (s && s.choice) { /* choices are not spoken */ } }); } }));
 // narrator lines the engine composes from fixed text

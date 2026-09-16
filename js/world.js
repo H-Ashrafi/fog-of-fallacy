@@ -523,6 +523,136 @@ window.World = (function () {
     return null;
   }
 
+  /* ================= actions, carried items, followers, site glow ================= */
+  /* Deterministic scatter so particles do not flicker between frames. */
+  const jit = (i, s) => ((Math.sin(i * 127.1 + s * 311.7) * 43758.5453) % 1 + 1) % 1;
+
+  /* A tool animation drawn over a person standing at (cx, feetY). `p` is 0..1 progress. */
+  function drawAction(ctx, kind, cx, feetY, t, p, dir) {
+    const side = dir === 'left' ? -1 : 1;
+    const hx = cx + 9 * side, hy = feetY - 16;      // hand
+    ctx.save(); ctx.lineCap = 'round';
+    switch (kind) {
+      case 'hammer': case 'forge': {
+        const a = Math.sin(t / 110) * 0.9 - 0.6;
+        ctx.translate(hx, hy); ctx.rotate(a * side);
+        ctx.strokeStyle = '#7A4F2A'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -16); ctx.stroke();
+        ctx.fillStyle = '#5B4F47'; rr(ctx, -7, -21, 14, 7, 2); ctx.fill();
+        ctx.restore(); ctx.save();
+        if (Math.sin(t / 110) > 0.85) for (let i = 0; i < 6; i++) { ctx.fillStyle = kind === 'forge' ? '#F6B544' : '#FFE8A3'; circ(ctx, hx + side * 14 + (jit(i, 1) - 0.5) * 22, feetY - 6 - jit(i, 2) * 22, 1.5 + jit(i, 3)); }
+        if (kind === 'forge') { ctx.fillStyle = '#5B4F47'; rr(ctx, cx + side * 14, feetY - 8, 18, 8, 2); ctx.fill(); ctx.fillStyle = '#FF7B6B'; rr(ctx, cx + side * 17, feetY - 10, 12, 3, 1); ctx.fill(); }
+        break; }
+      case 'dig': {
+        const a = Math.sin(t / 160) * 0.6 + 0.3;
+        ctx.translate(hx, hy); ctx.rotate(a * side);
+        ctx.strokeStyle = '#7A4F2A'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(0, -8); ctx.lineTo(0, 18); ctx.stroke();
+        ctx.fillStyle = '#8E8A80'; ctx.beginPath(); ctx.moveTo(-6, 16); ctx.lineTo(6, 16); ctx.lineTo(4, 26); ctx.lineTo(-4, 26); ctx.fill();
+        ctx.restore(); ctx.save();
+        for (let i = 0; i < 5; i++) { const f = ((t / 500 + jit(i, 4)) % 1); ctx.fillStyle = '#8B6A3E'; circ(ctx, cx + side * 18 + (jit(i, 5) - 0.5) * 20, feetY - 4 - f * 24 + f * f * 30, 2.5 - f); }
+        break; }
+      case 'sweep': {
+        const s = Math.sin(t / 220) * 10;
+        ctx.strokeStyle = '#A2703F'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(hx, hy - 4); ctx.lineTo(cx + side * 16 + s, feetY + 2); ctx.stroke();
+        ctx.fillStyle = '#E2B93B'; ctx.beginPath(); ctx.moveTo(cx + side * 10 + s, feetY - 2); ctx.lineTo(cx + side * 22 + s, feetY - 2); ctx.lineTo(cx + side * 26 + s, feetY + 6); ctx.lineTo(cx + side * 6 + s, feetY + 6); ctx.fill();
+        for (let i = 0; i < 4; i++) { ctx.fillStyle = 'rgba(200,190,170,.6)'; circ(ctx, cx + side * 20 + s + (jit(i, 6) - 0.5) * 18, feetY + 2 - jit(i, 7) * 8 - ((t / 300 + i) % 1) * 6, 2); }
+        break; }
+      case 'pick': case 'sort': {
+        const b = Math.abs(Math.sin(t / 260));
+        ctx.fillStyle = kind === 'sort' ? '#F6B544' : '#E4574F'; circ(ctx, hx + side * 4, hy + 10 - b * 22, 3.5);
+        if (kind === 'sort') for (let i = 0; i < 3; i++) { ctx.fillStyle = '#FFE8A3'; circ(ctx, cx + side * 20 + (jit(i, 8) - 0.5) * 16, feetY - 4 - jit(i, 9) * 10, 1.2); }
+        break; }
+      case 'milk': {
+        ctx.fillStyle = '#8E8A80'; ctx.beginPath(); ctx.moveTo(cx + side * 14, feetY - 8); ctx.lineTo(cx + side * 26, feetY - 8); ctx.lineTo(cx + side * 24, feetY + 2); ctx.lineTo(cx + side * 16, feetY + 2); ctx.fill();
+        for (let i = 0; i < 3; i++) { const f = ((t / 350 + i / 3) % 1); ctx.fillStyle = '#fff'; circ(ctx, cx + side * 20 + (i - 1) * 2, feetY - 18 + f * 12, 1.5); }
+        break; }
+      case 'coil': {
+        const r = 6 + Math.abs(Math.sin(t / 300)) * 6;
+        ctx.strokeStyle = '#B08A5A'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(hx + side * 6, hy + 6, r, 0, Math.PI * 2); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(hx + side * 6 + r, hy + 6); ctx.quadraticCurveTo(cx + side * 30, feetY - 20, cx + side * 34, feetY + 4); ctx.stroke();
+        break; }
+      case 'lift': {
+        const a = -1.2 * Math.min(1, p * 1.4);
+        ctx.translate(cx + side * 16, feetY); ctx.rotate(a * side);
+        ctx.fillStyle = '#A2703F'; rr(ctx, -3, -28, 6, 28, 2); ctx.fill();
+        break; }
+      case 'light': {
+        const f = Math.min(1, p * 1.3);
+        ctx.fillStyle = '#F6B544'; circ(ctx, hx + side * 2, hy - 10 - f * 14, 2 + f * 4);
+        const g = ctx.createRadialGradient(hx, hy - 20, 2, hx, hy - 20, 30 * f + 4); g.addColorStop(0, 'rgba(246,181,68,.5)'); g.addColorStop(1, 'rgba(246,181,68,0)'); ctx.fillStyle = g; circ(ctx, hx, hy - 20, 30 * f + 4);
+        break; }
+      case 'call': {
+        for (let i = 0; i < 3; i++) { const f = ((t / 900 + i / 3) % 1); ctx.fillStyle = 'rgba(42,36,32,' + (1 - f) + ')'; ctx.font = 'bold 12px system-ui'; ctx.textAlign = 'center'; ctx.fillText('♪', cx + side * (10 + f * 26), feetY - 30 - f * 22 + Math.sin(f * 9) * 3); }
+        break; }
+      case 'measure': {
+        ctx.strokeStyle = '#2A2420'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx + side * 18, feetY - 20); ctx.lineTo(cx + side * 12, feetY); ctx.moveTo(cx + side * 18, feetY - 20); ctx.lineTo(cx + side * 24, feetY); ctx.stroke();
+        ctx.fillStyle = '#F6B544'; ctx.fillRect(cx + side * 13, feetY - 26, 10, 7);
+        ctx.strokeStyle = 'rgba(246,181,68,' + (0.4 + 0.4 * Math.sin(t / 200)) + ')'; ctx.lineWidth = 1.5; ctx.setLineDash([3, 4]); ctx.beginPath(); ctx.moveTo(cx + side * 22, feetY - 23); ctx.lineTo(cx + side * 90, feetY - 30); ctx.stroke(); ctx.setLineDash([]);
+        break; }
+      case 'whittle': {
+        const s = Math.sin(t / 150) * 3;
+        ctx.strokeStyle = '#A2703F'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(hx - 6, hy + 2); ctx.lineTo(hx + 8, hy - 2); ctx.stroke();
+        ctx.strokeStyle = '#8E8A80'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(hx + 2 + s, hy - 6); ctx.lineTo(hx + 8 + s, hy + 2); ctx.stroke();
+        for (let i = 0; i < 3; i++) { const f = ((t / 400 + i / 3) % 1); ctx.fillStyle = '#E2CD95'; ctx.fillRect(hx + 4 + (i - 1) * 5, hy + 2 + f * 14, 2, 1); }
+        break; }
+      case 'read': {
+        ctx.fillStyle = '#6B5BB3'; rr(ctx, cx - 8, feetY - 22, 16, 11, 2); ctx.fill(); ctx.fillStyle = '#F4E8CC'; ctx.fillRect(cx - 6, feetY - 20, 5, 7); ctx.fillRect(cx + 1, feetY - 20, 5, 7);
+        break; }
+    }
+    ctx.restore();
+  }
+
+  /* Something carried over the head with both hands. */
+  function drawItem(ctx, item, cx, y, t) {
+    const b = Math.sin(t / 300) * 1.2, top = y - 10 + b;
+    ctx.save();
+    switch (item) {
+      case 'buckets': ctx.fillStyle = '#8E8A80'; [-9, 9].forEach(o => { ctx.beginPath(); ctx.moveTo(cx + o - 5, top - 4); ctx.lineTo(cx + o + 5, top - 4); ctx.lineTo(cx + o + 4, top + 6); ctx.lineTo(cx + o - 4, top + 6); ctx.fill(); ctx.fillStyle = '#5FB3D9'; ctx.fillRect(cx + o - 4, top - 3, 8, 2); ctx.fillStyle = '#8E8A80'; }); break;
+      case 'pail': ctx.fillStyle = '#8E8A80'; ctx.beginPath(); ctx.moveTo(cx - 6, top - 4); ctx.lineTo(cx + 6, top - 4); ctx.lineTo(cx + 5, top + 6); ctx.lineTo(cx - 5, top + 6); ctx.fill(); ctx.fillStyle = '#fff'; ctx.fillRect(cx - 5, top - 3, 10, 2); break;
+      case 'bread': ctx.fillStyle = '#D98F1F'; rr(ctx, cx - 9, top - 4, 18, 8, 4); ctx.fill(); ctx.fillStyle = '#F6B544'; ctx.fillRect(cx - 6, top - 3, 3, 1); ctx.fillRect(cx - 1, top - 3, 3, 1); ctx.fillRect(cx + 4, top - 3, 3, 1); break;
+      case 'sack': ctx.fillStyle = '#C98B5B'; rr(ctx, cx - 7, top - 5, 14, 11, 4); ctx.fill(); ctx.fillStyle = '#7A4F2A'; ctx.fillRect(cx - 5, top - 6, 10, 2); break;
+      case 'parcel': ctx.fillStyle = '#B08A5A'; ctx.fillRect(cx - 8, top - 5, 16, 11); ctx.strokeStyle = '#E4574F'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(cx, top - 5); ctx.lineTo(cx, top + 6); ctx.moveTo(cx - 8, top); ctx.lineTo(cx + 8, top); ctx.stroke(); break;
+      case 'oilcan': ctx.fillStyle = '#5B4F47'; rr(ctx, cx - 6, top - 3, 12, 10, 2); ctx.fill(); ctx.fillRect(cx - 2, top - 7, 4, 4); ctx.fillStyle = '#F6B544'; ctx.fillRect(cx - 4, top, 8, 3); break;
+      case 'fishcrate': ctx.fillStyle = '#B08A5A'; ctx.fillRect(cx - 9, top - 3, 18, 9); ctx.fillStyle = '#5FB3D9'; [-5, 0, 5].forEach(o => { ctx.beginPath(); ctx.ellipse(cx + o, top - 3, 3, 1.5, 0, 0, Math.PI * 2); ctx.fill(); }); break;
+      case 'book': ctx.fillStyle = '#2F80ED'; rr(ctx, cx - 7, top - 4, 14, 10, 1); ctx.fill(); ctx.fillStyle = '#F4E8CC'; ctx.fillRect(cx - 5, top - 2, 10, 6); break;
+      case 'basket': ctx.fillStyle = '#B08A5A'; ctx.beginPath(); ctx.moveTo(cx - 9, top - 2); ctx.lineTo(cx + 9, top - 2); ctx.lineTo(cx + 7, top + 7); ctx.lineTo(cx - 7, top + 7); ctx.fill(); ctx.fillStyle = '#E4574F'; circ(ctx, cx - 4, top - 3, 3); circ(ctx, cx + 4, top - 3, 3); circ(ctx, cx, top - 5, 3); break;
+      case 'orebasket': ctx.fillStyle = '#B08A5A'; ctx.beginPath(); ctx.moveTo(cx - 9, top - 2); ctx.lineTo(cx + 9, top - 2); ctx.lineTo(cx + 7, top + 7); ctx.lineTo(cx - 7, top + 7); ctx.fill(); ctx.fillStyle = '#6E6A62'; circ(ctx, cx - 4, top - 3, 3); circ(ctx, cx + 4, top - 3, 3); ctx.fillStyle = '#F6B544'; circ(ctx, cx, top - 4, 1.5); break;
+      case 'sign': ctx.fillStyle = '#F4E8CC'; rr(ctx, cx - 14, top - 6, 28, 10, 2); ctx.fill(); ctx.fillStyle = '#2A2420'; ctx.font = 'bold 6px system-ui'; ctx.textAlign = 'center'; ctx.fillText('SHOP', cx, top + 1); break;
+      case 'oar': ctx.save(); ctx.translate(cx, top); ctx.rotate(-0.2); ctx.fillStyle = '#A2703F'; ctx.fillRect(-18, -2, 36, 3); ctx.fillStyle = '#7A4F2A'; rr(ctx, 12, -5, 10, 9, 3); ctx.fill(); ctx.restore(); break;
+    }
+    ctx.restore();
+  }
+
+  /* A companion: the goat trots behind, the canary rides on the shoulder. */
+  function drawFollower(ctx, kind, cx, feetY, t, dir) {
+    if (kind === 'goat') {
+      const hop = Math.abs(Math.sin(t / 180)) * 2;
+      ctx.fillStyle = '#F4E8CC'; rr(ctx, cx - 10, feetY - 12 - hop, 20, 11, 5); ctx.fill(); circ(ctx, cx + 10 * (dir === 'left' ? -1 : 1), feetY - 13 - hop, 5.5);
+      ctx.fillStyle = '#5B4F47'; ctx.fillRect(cx - 8, feetY - 3 - hop, 3, 4 + hop); ctx.fillRect(cx + 4, feetY - 3 - hop, 3, 4 + hop);
+      ctx.fillStyle = '#F6B544'; circ(ctx, cx, feetY - 8 - hop, 1.6);
+    } else if (kind === 'canary') {
+      const side = dir === 'left' ? -1 : 1, bob = Math.sin(t / 250);
+      ctx.fillStyle = '#F6B544'; circ(ctx, cx + 9 * side, feetY - 27 + bob, 4); circ(ctx, cx + 12 * side, feetY - 30 + bob, 2.8);
+      ctx.fillStyle = '#E4574F'; ctx.beginPath(); ctx.moveTo(cx + 14 * side, feetY - 30 + bob); ctx.lineTo(cx + 17 * side, feetY - 29 + bob); ctx.lineTo(cx + 14 * side, feetY - 28 + bob); ctx.fill();
+    }
+  }
+
+  /* Magical glow around an unbuilt site: pulsing halo, drifting sparkles, soft outline. */
+  function drawGlow(ctx, px, py, w, h, t, strong) {
+    const cx = px + w / 2, cy = py + h / 2, pulse = 0.5 + 0.5 * Math.sin(t / 600);
+    const r = Math.max(w, h) * (0.95 + 0.12 * pulse) * (strong ? 1.2 : 1);
+    const g = ctx.createRadialGradient(cx, cy, r * 0.2, cx, cy, r);
+    g.addColorStop(0, 'rgba(255,214,110,' + (0.42 + 0.16 * pulse + (strong ? 0.18 : 0)) + ')'); g.addColorStop(0.55, 'rgba(255,230,160,0.18)'); g.addColorStop(1, 'rgba(246,181,68,0)');
+    ctx.fillStyle = g; ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
+    for (let i = 0; i < 16; i++) {
+      const f = ((t / (1800 + i * 137) + jit(i, 11)) % 1);
+      const x = px + jit(i, 12) * w + Math.sin(t / 700 + i) * 6, y = py + h - f * (h + 40), s = (1 - f) * 2.4 + 0.5;
+      ctx.fillStyle = 'rgba(255,245,200,' + (1 - f) * 0.9 + ')';
+      ctx.beginPath(); ctx.moveTo(x, y - s * 2); ctx.lineTo(x + s, y); ctx.lineTo(x, y + s * 2); ctx.lineTo(x - s, y); ctx.fill();
+    }
+    ctx.strokeStyle = 'rgba(255,225,140,' + (0.45 + 0.35 * pulse) + ')'; ctx.lineWidth = 2; ctx.setLineDash([6, 6]); ctx.lineDashOffset = -t / 40;
+    rr(ctx, px + 4, py + 4, w - 8, h - 8, 8); ctx.stroke(); ctx.setLineDash([]);
+  }
+
   const decorAt = (x, y) => decor.find(d => d.x === x && d.y === y && decorBlocked(d));
-  return { TS, W, H, at, walkable, regions, regionAt, locked, siteAt, setState, structures, decor, decorAt, drawTile, drawFace, findPath, drawStructure, drawDecor, drawMission, drawPerson, rr };
+  return { TS, W, H, at, walkable, regions, regionAt, locked, siteAt, setState, structures, decor, decorAt, drawTile, drawFace, findPath, drawAction, drawItem, drawFollower, drawGlow, drawStructure, drawDecor, drawMission, drawPerson, rr };
 })();

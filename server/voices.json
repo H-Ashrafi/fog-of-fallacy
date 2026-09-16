@@ -1,0 +1,17 @@
+{
+  "_comment": "Maps a voice profile (kid, woman, man, old, narrator, you) or a character id to an ElevenLabs voice id. Only used when ELEVENLABS_API_KEY is set. Override with FOG_VOICES=path/to/voices.json.",
+  "default": "21m00Tcm4TlvDq8ikWAM",
+  "narrator": "21m00Tcm4TlvDq8ikWAM",
+  "n": "21m00Tcm4TlvDq8ikWAM",
+  "you": "MF3mGyEYCl7XYWbV9V6O",
+  "kid": "MF3mGyEYCl7XYWbV9V6O",
+  "woman": "EXAVITQu4vr4xnSDxMaL",
+  "man": "pNInz6obpgDQGcFmaJgB",
+  "old": "VR6AewLTigWG4xSOukaG",
+  "otto": "VR6AewLTigWG4xSOukaG",
+  "gus": "VR6AewLTigWG4xSOukaG",
+  "hale": "VR6AewLTigWG4xSOukaG",
+  "ace": "TxGEqnHWrfWFTfGW9XjX",
+  "vance": "TxGEqnHWrfWFTfGW9XjX",
+  "sterling": "ErXwobaYiN019PkySvjV"
+}

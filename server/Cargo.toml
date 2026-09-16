@@ -1,0 +1,22 @@
+[package]
+name = "fog-server"
+version = "0.2.0"
+edition = "2021"
+description = "Fog of Fallacy game server: static files, saves, and a cached voice endpoint."
+license = "MIT"
+
+[[bin]]
+name = "fog-server"
+path = "src/main.rs"
+
+[dependencies]
+axum = "0.7"
+tokio = { version = "1", features = ["full"] }
+tower-http = { version = "0.5", features = ["fs"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
+
+[profile.release]
+opt-level = 2
+strip = true

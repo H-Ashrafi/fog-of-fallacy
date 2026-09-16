@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <title>Fog of Fallacy</title>
-<meta name="description" content="Walk around Maple Street, talk to the kids, and spot the tricks before they trick you.">
+<meta name="description" content="Arrive in the Valley with a pouch of coins. Keep them from tricksters, earn more with honest work, clear the fog from the experts' heads, and build the Valley back up.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Andika:wght@400;700&display=swap" rel="stylesheet">
@@ -15,37 +15,47 @@
     fontFamily: { display: ['"Baloo 2"', 'system-ui', 'sans-serif'], body: ['Andika', 'Verdana', 'sans-serif'] }
   } } };
 </script>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect width=%2764%27 height=%2764%27 rx=%2714%27 fill=%27%2314262B%27/%3E%3Ccircle cx=%2732%27 cy=%2734%27 r=%2718%27 fill=%27%23F6B544%27/%3E%3Ccircle cx=%2732%27 cy=%2734%27 r=%278%27 fill=%27%2314262B%27/%3E%3C/svg%3E">
 <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
 <main id="app">
 
   <section id="title" class="screen title">
-    <p class="eyebrow">Maple Street</p>
+    <p class="eyebrow">The Valley</p>
     <h1>Fog of Fallacy</h1>
-    <p class="lede">Walk around. Talk to the kids. Spot the tricks before they trick you.</p>
+    <p class="lede">You arrive with a pouch of coins. Tricksters want them. Experts need convincing. The Valley needs building.</p>
     <label class="eyebrow" for="name-input">Your name</label>
     <input id="name-input" class="input" maxlength="16" autocomplete="off" placeholder="Your name">
     <p class="eyebrow">Pick your look</p>
     <div id="looks" class="looks"></div>
     <button id="start" class="btn btn-big btn-wide" type="button">Start</button>
     <button id="reset" class="btn btn-ghost btn-sm" type="button" hidden>Start again</button>
+    <p class="hint">Arrows or WASD to walk · Enter / Space to talk · B book · C crew · G goals · M map</p>
   </section>
 
   <section id="play" class="screen play" hidden>
     <div class="hud">
       <button id="hud-home" class="iconbtn" type="button" aria-label="Title">🏠</button>
-      <span class="pill pill-lantern">🏅 <span id="hud-badges">0 / 8</span></span>
+      <span class="pill pill-lantern">🪙 <span id="hud-money">0</span></span>
+      <span class="pill pill-mint">🧠 <span id="hud-insight">0 / 13</span></span>
       <span class="grow"></span>
+      <button id="hud-goals" class="iconbtn" type="button" aria-label="Goals">📋</button>
+      <button id="hud-crew" class="iconbtn" type="button" aria-label="Crew">👷</button>
       <button id="hud-book" class="iconbtn" type="button" aria-label="Trick book">📖</button>
-      <button id="hud-sound" class="iconbtn" type="button" aria-label="Sound">🔔</button>
+      <button id="hud-map" class="iconbtn" type="button" aria-label="Map">🗺️</button>
+      <button id="hud-sound" class="iconbtn" type="button" aria-label="Sound effects">🔔</button>
+      <button id="hud-voice" class="iconbtn" type="button" aria-label="Voice">🗣️</button>
     </div>
+    <div class="objective"><span id="hud-region" class="region">The Valley</span><span id="objective"></span></div>
 
     <div class="stage">
-      <canvas id="game" aria-label="Maple Street"></canvas>
+      <canvas id="game" aria-label="The Valley"></canvas>
+      <div id="toasts" class="toasts" aria-live="polite"></div>
+      <div id="minimap-box" class="minimap" hidden><canvas id="minimap"></canvas></div>
 
       <div id="dlg" class="dlg" hidden>
-        <canvas id="dlg-portrait" width="72" height="80"></canvas>
+        <canvas id="dlg-portrait" width="156" height="176"></canvas>
         <div class="dlg-body">
           <b id="dlg-name" class="dlg-name"></b>
           <p id="dlg-text" class="dlg-text"></p>
@@ -77,25 +87,26 @@
       <p id="card-eyebrow" class="eyebrow"></p>
       <h2 id="card-title"></h2>
       <img id="card-img" class="card-img" alt="">
+      <div id="card-icon" class="card-icon" hidden></div>
+      <div id="card-answers" class="answers"></div>
+      <p class="eyebrow">The trick</p>
       <p id="card-one" class="big"></p>
+      <p class="eyebrow">How to spot it</p>
       <p id="card-spot" class="spot"></p>
       <button id="card-btn" class="btn btn-big btn-wide" type="button">OK</button>
     </div>
   </div>
 
-  <section id="book" class="screen" hidden>
-    <div class="flex items-center justify-between gap-2">
-      <h2>Trick book</h2>
-      <button id="book-close" class="btn btn-ghost btn-sm" type="button">Back</button>
-    </div>
-    <div id="book-grid" class="book-grid"></div>
-  </section>
+  <div id="panel" class="overlay panel" hidden>
+    <div id="panel-box" class="box paper left"></div>
+  </div>
 
-  <div id="end" class="overlay" hidden>
+  <div id="end" class="overlay win" hidden>
     <div class="box paper">
-      <p class="eyebrow">Maple Street</p>
+      <p class="eyebrow">The Valley</p>
       <h2>The fog is gone!</h2>
-      <p class="big">You spotted all eight tricks. Nobody can trick you now.</p>
+      <p class="big">The lighthouse burns bright. Every trick in the Valley met a clear head.</p>
+      <div id="end-stats"></div>
       <div id="end-cards" class="end-cards"></div>
       <button id="end-close" class="btn btn-big btn-wide" type="button">Keep exploring</button>
     </div>
@@ -104,6 +115,7 @@
 </main>
 <script src="js/data.js"></script>
 <script src="js/world.js"></script>
+<script src="js/audio.js"></script>
 <script src="js/game.js"></script>
 </body>
 </html>

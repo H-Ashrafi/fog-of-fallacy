@@ -96,10 +96,22 @@ window.Audio2 = (function () {
     return serverVoice;
   }
 
-  async function say(text, who, profile) {
+  /* Pre-generated clips: voice/index.json maps "who|raw line" to a file in voice/. */
+  let index = null;
+  async function clipIndex() {
+    if (index !== null) return index;
+    try { const r = await fetch('voice/index.json', { cache: 'force-cache' }); index = r.ok ? await r.json() : {}; } catch (e) { index = {}; }
+    return index;
+  }
+  function playUrl(url) { current = new window.Audio(url); current.play().catch(() => { }); }
+
+  async function say(text, who, profile, raw) {
     if (!settings.voice || !text) return;
     stop();
     const clean = text.replace(/[*_]/g, '');
+    const idx = await clipIndex();
+    const file = idx[who + '|' + (raw || text)];
+    if (file) { playUrl('voice/' + file); return; }
     if (await serverHasVoice()) {
       const key = who + '|' + clean;
       try {
@@ -108,7 +120,7 @@ window.Audio2 = (function () {
           const r = await fetch('/api/voice?who=' + encodeURIComponent(who) + '&profile=' + encodeURIComponent(profile || 'narrator') + '&text=' + encodeURIComponent(clean));
           if (r.status === 200) { url = URL.createObjectURL(await r.blob()); clips.set(key, url); }
         }
-        if (url) { current = new window.Audio(url); current.play().catch(() => { }); return; }
+        if (url) { playUrl(url); return; }
       } catch (e) { /* fall back to the browser voice */ }
     }
     if (!window.speechSynthesis) return;

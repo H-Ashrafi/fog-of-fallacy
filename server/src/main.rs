@@ -12,7 +12,7 @@
 //!   FOG_BIND           bind address (default 0.0.0.0 so a phone on the LAN can play)
 //!   FOG_WEB_DIR        directory with index.html (default: current directory)
 //!   FOG_DATA_DIR       where saves and voice clips live (default: %LOCALAPPDATA%/FogOfFallacy)
-//!   FOG_VOICES         optional path to a voices.json overriding the built-in mapping
+//!   FOG_VOICES         optional path to a voices.json (default: <web>/voice/voices.json, then built-in)
 //!   ELEVENLABS_API_KEY optional; enables recorded voices
 
 use std::{collections::HashMap, net::SocketAddr, path::PathBuf, sync::Arc};
@@ -43,7 +43,7 @@ async fn main() {
     let web = env_path("FOG_WEB_DIR").unwrap_or_else(|| PathBuf::from("."));
     let data = env_path("FOG_DATA_DIR").unwrap_or_else(default_data_dir);
     let key = std::env::var("ELEVENLABS_API_KEY").ok().filter(|k| !k.trim().is_empty());
-    let voices = load_voices();
+    let voices = load_voices(&web);
     for sub in ["saves", "voice"] {
         if let Err(e) = std::fs::create_dir_all(data.join(sub)) {
             eprintln!("cannot create {}: {e}", data.join(sub).display());
@@ -95,8 +95,13 @@ fn default_data_dir() -> PathBuf {
     PathBuf::from("data")
 }
 
-fn load_voices() -> HashMap<String, String> {
-    let text = match env_path("FOG_VOICES") {
+/// Voice map: FOG_VOICES if set, else the game's own voice/voices.json, else the built-in copy.
+fn load_voices(web: &std::path::Path) -> HashMap<String, String> {
+    let path = env_path("FOG_VOICES").or_else(|| {
+        let p = web.join("voice").join("voices.json");
+        if p.exists() { Some(p) } else { None }
+    });
+    let text = match path {
         Some(p) => std::fs::read_to_string(&p).unwrap_or_else(|e| {
             eprintln!("cannot read {}: {e}; using built-in voices", p.display());
             BUILTIN_VOICES.to_string()
@@ -202,7 +207,7 @@ async fn voice(State(app): State<Shared>, Query(q): Query<VoiceQuery>) -> Respon
     let url = format!("https://api.elevenlabs.io/v1/text-to-speech/{voice_id}?output_format=mp3_44100_64");
     let body = serde_json::json!({
         "text": text,
-        "model_id": "eleven_flash_v2_5",
+        "model_id": "eleven_v3",
         "voice_settings": { "stability": 0.5, "similarity_boost": 0.75 }
     });
     let resp = app.http.post(&url).header("xi-api-key", key).header(header::ACCEPT, "audio/mpeg").json(&body).send().await;

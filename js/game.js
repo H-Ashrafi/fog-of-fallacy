@@ -315,9 +315,9 @@
     $('dlg-choices').innerHTML = ''; $('dlg-choices').hidden = true; $('dlg-next').hidden = false;
     if (st.money) changeMoney(st.money);
     if (st.sfx) A.play(st.sfx);
-    if (st.who) { showLine(st.who, fill(st.text)); return; }
+    if (st.who) { showLine(st.who, fill(st.text), st.text); return; }
     if (st.choice) { showChoice(st.choice, st.menu, st.prompt, st.speaker); return; }
-    if (st.scene) { showScene(st.scene, fill(st.text)); return; }
+    if (st.scene) { showScene(st.scene, fill(st.text), st.text); return; }
     if (st.end) { const c = script.ctx; script = null; $('dlg').hidden = true; $('scene').hidden = true; if (c && c.finish) c.finish(st.end); else { mode = 'world'; } return; }
     if (st.fn) { st.fn(); if (!st.stop) next(); return; }
     next();
@@ -339,7 +339,7 @@
     Wd.drawFace(c.getContext('2d'), portrait.spec, t, talking, c.width, c.height);
   }
 
-  function showLine(who, text) {
+  function showLine(who, text, raw) {
     const n = npcById(who);
     $('dlg').hidden = false; $('scene').hidden = true;
     $('dlg').classList.toggle('narrator', who === 'n');
@@ -348,7 +348,7 @@
     const el = $('dlg-text'); el.textContent = '';
     let i = 0;
     A.play('talk');
-    A.say(text, who, who === 'n' ? 'narrator' : who === 'you' ? 'you' : (n && n.v) || 'man');
+    A.say(text, who, who === 'n' ? 'narrator' : who === 'you' ? 'you' : (n && n.v) || 'man', raw || text);
     typingFull = text;
     typing = setInterval(() => { i++; el.textContent = text.slice(0, i); if (i >= text.length) finishTyping(); }, 18);
   }
@@ -375,11 +375,11 @@
     });
   }
 
-  function showScene(img, text) {
+  function showScene(img, text, raw) {
     $('dlg').hidden = true;
     $('scene-img').src = img; $('scene-text').textContent = text;
     $('scene').hidden = false;
-    A.say(text, 'n', 'narrator');
+    A.say(text, 'n', 'narrator', raw || text);
   }
 
   function endDialog() { $('dlg').hidden = true; $('scene').hidden = true; script = null; mode = 'world'; A.stop(); updateHud(); }

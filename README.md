@@ -69,12 +69,29 @@ Environment variables:
 | `FOG_BIND` | `0.0.0.0` | bind address (LAN play from a phone works out of the box) |
 | `FOG_WEB_DIR` | `.` | folder containing `index.html` |
 | `FOG_DATA_DIR` | `%LOCALAPPDATA%\FogOfFallacy` | saves and voice cache |
-| `FOG_VOICES` | built-in `server/voices.json` | character → voice id mapping |
+| `FOG_VOICES` | `voice/voices.json`, then built-in copy | character → voice id mapping for the live route |
 | `ELEVENLABS_API_KEY` | unset | when set, `/api/voice` fetches lines from ElevenLabs once and caches them |
 
-Without `ELEVENLABS_API_KEY` the voice route answers 204 and the browser speaks
-the lines with per-character pitch and rate. Sound effects are synthesised in the
-browser with WebAudio, so there are no audio files to ship.
+## Voices
+
+Every line in the script is pre-recorded with ElevenLabs (model `eleven_v3`) and
+committed under `voice/` as small MP3s, so voices work on any static host and the
+production server never needs an API key. `voice/voices.json` assigns one voice per
+character (no two speakers in the same region share a voice); `voice/index.json`
+maps each spoken line to its clip. The browser plays the clip when it has one and
+falls back to the server voice route, then to speech synthesis, for anything not
+pre-recorded (lines the engine composes at runtime).
+
+After editing dialogue in `js/data.js`, regenerate only the changed lines with:
+
+```powershell
+$env:ELEVENLABS_API_KEY = '...'
+node tools/gen-voices.js          # --dry to count, --only otto,mo to limit
+```
+
+Without `ELEVENLABS_API_KEY` the live voice route answers 204 and the browser speaks
+uncached lines with per-character pitch and rate. Sound effects are synthesised in the
+browser with WebAudio.
 
 ```powershell
 cd server

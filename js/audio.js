@@ -47,6 +47,7 @@ window.Audio2 = (function () {
     saw: t => { for (let i = 0; i < 4; i++) noise(t + i * 0.09, 0.07, { vol: 0.05, hp: 900, lp: 3000 }); },
     dice: t => { for (let i = 0; i < 5; i++) { noise(t + i * 0.07 + Math.random() * 0.02, 0.03, { vol: 0.08, hp: 2000, lp: 8000 }); tone(900 + Math.random() * 500, t + i * 0.07, 0.03, { type: 'square', vol: 0.03 }); } },
     fog: t => { noise(t, 1.6, { vol: 0.06, hp: 200, lp: 1200 }); tone(196, t, 1.6, { type: 'sine', vol: 0.05, slide: 200 }); tone(392, t + 0.3, 1.4, { type: 'sine', vol: 0.04, slide: 300 }); },
+    omen: t => { [0, 0.55, 1.1].forEach(o => { tone(146, t + o, 0.5, { type: 'triangle', vol: 0.12, slide: -20 }); tone(220, t + o, 0.5, { type: 'sine', vol: 0.06 }); }); noise(t, 1.8, { vol: 0.04, hp: 100, lp: 600 }); },
     unlock: t => { tone(659, t, 0.2, { vol: 0.09 }); tone(880, t + 0.15, 0.2, { vol: 0.09 }); tone(1318, t + 0.3, 0.5, { vol: 0.09 }); },
     open: t => tone(440, t, 0.12, { type: 'triangle', vol: 0.06, slide: 200 }),
     close: t => tone(520, t, 0.12, { type: 'triangle', vol: 0.06, slide: -200 }),
@@ -96,11 +97,20 @@ window.Audio2 = (function () {
     return serverVoice;
   }
 
-  /* Pre-generated clips: voice/index.json maps "who|raw line" to a file in voice/. */
+  /* Pre-generated clips: voice/index.json maps "who|raw line" to a file in voice/.
+     The index changes whenever lines are added, so it must revalidate with the server
+     ('no-cache' still sends a conditional request and takes a cheap 304 when unchanged).
+     Never 'force-cache': a browser that cached an older or truncated index would keep it
+     for good and every line would fall back to the robot speech synthesiser. The clips
+     themselves are named after a hash of their text, so they stay cacheable for ever. */
   let index = null;
   async function clipIndex() {
     if (index !== null) return index;
-    try { const r = await fetch('voice/index.json', { cache: 'force-cache' }); index = r.ok ? await r.json() : {}; } catch (e) { index = {}; }
+    try {
+      const r = await fetch('voice/index.json', { cache: 'no-cache' });
+      const j = r.ok ? await r.json() : null;
+      index = j && typeof j === 'object' ? j : {};
+    } catch (e) { index = {}; }
     return index;
   }
   function playUrl(url) { current = new window.Audio(url); current.play().catch(() => { }); }

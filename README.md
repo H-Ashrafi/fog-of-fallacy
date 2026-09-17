@@ -37,18 +37,49 @@ C crew, G goals, M minimap, Esc closes panels. On a phone use the on-screen pad.
   cost, the crew fees, and who from your crew fills each role. Building takes a
   little while (hammer sounds), then the fog lifts from the next region. Finished
   buildings are investments: they accumulate coins that you collect on site.
+* **Crews grow.** The well needs two experts, the bridge three, the school four, the
+  mill five and the lighthouse six, at rising skill levels, so every expert matters.
+* **The Grey Order.** Once the well is built, uniformed preachers start walking out
+  of the Grey Lodge in each region. A red banner and the minimap show where they are
+  and who they are heading for. You cannot talk to them. A preacher who reaches an
+  expert you convinced fogs their head again with a harder, sneakier fallacy (four
+  options, wrong ones that sound reasonable), and the expert leaves your crew until
+  you clear it. A preacher who reaches a task giver turns them against you: they
+  refuse work and deliveries until you answer the preacher's argument. Pressure grows
+  with each level (more preachers, more often, more heads per outing).
+* **Statues of Aristotle.** Every region has an empty plinth. With a mason in your
+  crew and enough coins you can raise a statue there; nobody inside its circle can be
+  reached by a preacher. Statues cost more in later regions.
 * **Levels.** Each early region focuses on one fallacy, later ones mix several:
 
-  | Region | Fallacies | Mission |
-  | --- | --- | --- |
-  | Riverside Village | bandwagon | Well |
-  | River Farms | false dilemma | Bridge |
-  | Market Town | appeal to emotion, post hoc | Engineering School |
-  | Hill Mine | gambler's fallacy, sunk cost, hasty generalisation | Waterwheel Mill |
-  | Harbour | authority, slippery slope, straw man, red herring, tradition, ad hominem | Lighthouse |
+  | Region | Fallacies | Mission | Crew |
+  | --- | --- | --- | --- |
+  | Riverside Village | bandwagon | Well | 2 |
+  | River Farms | false dilemma | Bridge | 3 |
+  | Market Town | appeal to emotion, post hoc | Engineering School | 4 |
+  | Hill Mine | gambler's fallacy, sunk cost, hasty generalisation | Waterwheel Mill | 5 |
+  | Harbour | authority, slippery slope, straw man, red herring, tradition, ad hominem | Lighthouse | 6 |
 
-All story content lives in `js/data.js`; the map in `js/world.js`; the engine in
-`js/game.js`; sound and voice in `js/audio.js`.
+All story content lives in `js/data.js`; the Grey Order, the statues, the harder
+fogs and the refusals in `js/data-order.js`; the map in `js/world.js`; the engine
+in `js/game.js`; sound and voice in `js/audio.js`; languages in `js/i18n.js` and
+`js/lang/`.
+
+## Languages
+
+English is the source text. Persian (`fa`) and Arabic (`ar`) are text only for now
+(no recorded voices), right-to-left, shown without vowel marks, and use local names
+(Farmer Idris is کشاورز رسول in Persian and المزارع إدريس in Arabic; the full table is
+in `i18n/NAMES.md`). Pick a language on the title screen or open `?lang=fa`.
+
+* `js/i18n.js` swaps every text field in the story data at start-up and translates
+  UI strings through `T('...')`. `js/lang/<code>.js` holds one dictionary per
+  language, keyed by the exact English string, so the English files stay the only
+  place where the story is written.
+* `node tools/i18n-extract.js` lists every English string in `i18n/en.json`.
+* `node tools/i18n-check.js fa` reports missing keys, placeholder mismatches, leftover
+  vowel marks, and translated option sets where the right answer became the longest
+  option (that would be a tell). Run it after any change to the story or a dictionary.
 
 ## Server (Rust)
 
@@ -72,6 +103,21 @@ Environment variables:
 | `FOG_VOICES` | `voice/voices.json`, then built-in copy | character → voice id mapping for the live route |
 | `ELEVENLABS_API_KEY` | unset | when set, `/api/voice` fetches lines from ElevenLabs once and caches them |
 
+## Caching (read before deploying)
+
+`index.html` and `voice/index.json` are served with `Cache-Control: no-cache`, so a
+browser always asks whether they changed (a 304 is cheap). Everything under `css/`,
+`js/`, `img/` and `voice/` is served `immutable` for a year, because those URLs change
+whenever their content does: css and js carry a `?v=` query, and a voice clip is named
+after a hash of its own text.
+
+**Run `node tools/bump-version.js` whenever you change anything in `css/` or `js/`,
+before deploying.** It rewrites every `?v=` in `index.html`. Skip it and returning
+players keep running the JavaScript their browser cached; with a stale
+`voice/index.json` they lose the recorded voices and hear the robot fallback instead.
+On a plain static host (GitHub Pages) the `?v=` bump is the only thing that protects
+them, since the headers above come from the Rust server.
+
 ## Voices
 
 Every line in the script is pre-recorded with ElevenLabs (model `eleven_v3`) and
@@ -82,7 +128,7 @@ maps each spoken line to its clip. The browser plays the clip when it has one an
 falls back to the server voice route, then to speech synthesis, for anything not
 pre-recorded (lines the engine composes at runtime).
 
-After editing dialogue in `js/data.js`, regenerate only the changed lines with:
+After editing dialogue in `js/data.js` or `js/data-order.js`, regenerate only the changed lines with:
 
 ```powershell
 $env:ELEVENLABS_API_KEY = '...'

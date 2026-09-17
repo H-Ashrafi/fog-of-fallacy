@@ -18,6 +18,7 @@ if (!KEY && !DRY) { console.error('Set ELEVENLABS_API_KEY (or use --dry).'); pro
 
 global.window = {};
 require(path.join(ROOT, 'js', 'data.js'));
+require(path.join(ROOT, 'js', 'data-order.js'));
 const D = window.FOG;
 const VOICES = JSON.parse(fs.readFileSync(path.join(OUT, 'voices.json'), 'utf8'));
 const MODEL = VOICES._model || 'eleven_v3';
@@ -42,11 +43,12 @@ D.NPCS.forEach(n => {
   if (n.expert) { n.expert.fog.forEach(f => { steps(f.intro, n.id); steps(f.right, n.id); steps(f.wrong, n.id); }); (n.expert.crew || []).forEach(x => add(n.id, x)); add(n.id, 'Right you are.'); Object.values(D.LINES.why).forEach(arr => arr.forEach(x => add(n.id, x))); }
 });
 Object.values(D.TRICKS).forEach(tr => Object.entries(tr).forEach(([k, v]) => { if (Array.isArray(v) && k !== 'options') { steps(v, tr.npc); v.forEach(s => { if (s && s.choice) { /* choices are not spoken */ } }); } }));
-// narrator lines the engine composes from fixed text
-['A goat. It looks at you. You look at it.', 'A basket of apples under the trees.', 'A scarecrow, face down in the mud.', 'A fence rail hangs loose.', 'A street lamp.', 'A wooden sign lying in the grass.',
-  'An ore cart with a missing wheel.', 'A small yellow bird, singing.', 'An oar, half buried in sand.', 'Two buckets by the river.', 'A broom leaning on a stall.', 'A heap of rock with glints of ore.',
-  'Coils of wet rope.', 'The goats need milking.', 'A boat. It bobs.', 'A market stall. Bright things, high prices.', 'Cool water splashes.', 'A card table. The cards look tired.', 'A signpost.',
-  'A bench. Nobody is sitting.', 'Freshly cut timber.', "A surveyor's tripod.", 'A crate. Heavy.', 'A flower pot.', 'The bridge toll box.', 'Nothing to do here.'].forEach(t => add('n', t));
+// narrator lines for decorations, the Grey Order and the statues
+Object.values(D.FLAVOR).forEach(t => add('n', t));
+[D.ORDER.lines.silent, D.STATUE.inspect, D.STATUE.quote, D.STATUE.start, D.STATUE.built].forEach(t => add('n', t));
+// the harder fogs preachers leave behind, and the refusals they cause
+Object.entries(D.HARD).forEach(([id, fogs]) => fogs.forEach(f => { steps(f.intro, id); steps(f.right, id); steps(f.wrong, id); }));
+Object.entries(D.REFUSE).forEach(([id, r]) => { steps(r.intro, id); steps(r.right, id); steps(r.wrong, id); });
 
 /* ---------- hashing identical to server/src/main.rs ---------- */
 function fnv1a64(s) {

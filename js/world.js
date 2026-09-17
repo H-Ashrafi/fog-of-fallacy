@@ -102,7 +102,13 @@ window.World = (function () {
     // harbour
     { x: 33, y: 60, w: 5, h: 3, kind: 'hall', roof: '#2F80ED', label: 'Harbour Office', region: 4 },
     { x: 52, y: 60, w: 7, h: 3, kind: 'barn', roof: '#5B4F47', label: 'Warehouse', region: 4 },
-    { x: 38, y: 64, w: 5, h: 3, kind: 'shop', roof: '#D95A4B', label: 'Tavern', region: 4 }
+    { x: 38, y: 64, w: 5, h: 3, kind: 'shop', roof: '#D95A4B', label: 'Tavern', region: 4 },
+    // the Grey Order's lodges: preachers walk out of the door tile below each one
+    { x: 14, y: 22, w: 3, h: 2, kind: 'lodge', roof: '#3A3633', label: 'Grey Lodge', region: 0, door: [15, 24] },
+    { x: 22, y: 32, w: 4, h: 2, kind: 'lodge', roof: '#3A3633', label: 'Grey Lodge', region: 1, door: [24, 34] },
+    { x: 33, y: 36, w: 3, h: 2, kind: 'lodge', roof: '#3A3633', label: 'Grey Lodge', region: 2, door: [34, 38] },
+    { x: 58, y: 24, w: 3, h: 2, kind: 'lodge', roof: '#3A3633', label: 'Grey Lodge', region: 3, door: [59, 26] },
+    { x: 10, y: 61, w: 4, h: 2, kind: 'lodge', roof: '#3A3633', label: 'Grey Lodge', region: 4, door: [12, 63] }
   ];
 
   /* ================= decorations (blocking). id lets tasks/jobs point at them. ================= */
@@ -125,13 +131,18 @@ window.World = (function () {
     // harbour
     { x: 35, y: 72, kind: 'boat' }, { x: 55, y: 71, kind: 'boat' }, { x: 12, y: 73, kind: 'boat' }, { x: 52, y: 69, kind: 'ropes', id: 'ropes' },
     { x: 5, y: 66, kind: 'oar', id: 'oar', hideWhen: 'task:oar' }, { x: 60, y: 68, kind: 'crate' }, { x: 34, y: 69, kind: 'crate' }, { x: 42, y: 62, kind: 'lamp' }, { x: 47, y: 62, kind: 'lamp' },
-    { x: 20, y: 63, kind: 'sign', text: 'BEACH' }
+    { x: 20, y: 63, kind: 'sign', text: 'BEACH' },
+    // statue plinths, one per region (see FOG.STATUE.sites)
+    { x: 10, y: 16, kind: 'plinth', statue: 0 }, { x: 16, y: 44, kind: 'plinth', statue: 1 }, { x: 49, y: 41, kind: 'plinth', statue: 2 }, { x: 44, y: 16, kind: 'plinth', statue: 3 }, { x: 40, y: 62, kind: 'plinth', statue: 4 }
   ];
 
   const blocked = new Set();
   structures.forEach(s => { for (let y = s.y; y < s.y + s.h; y++) for (let x = s.x; x < s.x + s.w; x++) blocked.add(x + ',' + y); });
   const decorBlocked = d => !(d.hideWhen && state.flags[d.hideWhen]) && !(d.showWhen && !state.flags[d.showWhen]);
-  let state = { flags: {}, unlocked: 1, built: {} };
+  let state = { flags: {}, unlocked: 1, built: {}, statues: {} };
+  /* Text drawn on the canvas goes through the translation layer when one is loaded. */
+  const tl = s => (window.I18N ? window.I18N.t(s) : s);
+  const FONT = () => (window.I18N && window.I18N.canvasFont) || '"Baloo 2", system-ui, sans-serif';
 
   function regionAt(x, y) {
     for (let i = 0; i < regions.length; i++) { const r = regions[i]; if (x >= r.x0 && x <= r.x1 && y >= r.y0 && y <= r.y1) return i; }
@@ -233,24 +244,29 @@ window.World = (function () {
 
   function drawStructure(ctx, s, ox, oy) {
     const px = s.x * TS - ox, py = s.y * TS - oy, w = s.w * TS, h = s.h * TS;
-    const wall = { school: '#F3E3C3', shop: '#FBF1DC', hall: '#EDE2D2', barn: '#C98B5B', mine: '#8E8A80' }[s.kind] || '#F6E6CF';
+    const wall = { school: '#F3E3C3', shop: '#FBF1DC', hall: '#EDE2D2', barn: '#C98B5B', mine: '#8E8A80', lodge: '#4A4744' }[s.kind] || '#F6E6CF';
     ctx.fillStyle = wall; ctx.fillRect(px + 2, py + 14, w - 4, h - 14);
     ctx.fillStyle = s.roof; rr(ctx, px, py, w, 22, 6); ctx.fill();
     ctx.fillStyle = 'rgba(0,0,0,.08)'; ctx.fillRect(px + 2, py + 20, w - 4, 4);
     if (s.kind === 'mine') { ctx.fillStyle = '#2A2420'; rr(ctx, px + w / 2 - 18, py + h - 30, 36, 30, 10); ctx.fill(); ctx.fillStyle = '#7A4F2A'; ctx.fillRect(px + w / 2 - 20, py + h - 32, 40, 4); }
     else {
-      ctx.fillStyle = '#BFEBD6';
-      for (let i = 0; i < s.w; i++) { if (i === Math.floor(s.w / 2)) continue; ctx.fillRect(px + i * TS + 9, py + 30, 14, 12); ctx.strokeStyle = '#8FB3B0'; ctx.lineWidth = 1; ctx.strokeRect(px + i * TS + 9, py + 30, 14, 12); }
+      ctx.fillStyle = s.kind === 'lodge' ? '#1C1A18' : '#BFEBD6';
+      for (let i = 0; i < s.w; i++) { if (i === Math.floor(s.w / 2)) continue; ctx.fillRect(px + i * TS + 9, py + 30, 14, 12); ctx.strokeStyle = s.kind === 'lodge' ? '#6B6662' : '#8FB3B0'; ctx.lineWidth = 1; ctx.strokeRect(px + i * TS + 9, py + 30, 14, 12); }
       const dx = px + Math.floor(s.w / 2) * TS + 8;
       ctx.fillStyle = '#8B5A2B'; rr(ctx, dx, py + h - 20, 16, 20, 3); ctx.fill();
       ctx.fillStyle = '#F6B544'; circ(ctx, dx + 12, py + h - 10, 1.5);
     }
     if (s.kind === 'shop') { for (let i = 0; i < s.w * 2; i++) { ctx.fillStyle = i % 2 ? '#F4E8CC' : s.roof; ctx.fillRect(px + i * 16, py + 22, 16, 8); } }
     if (s.kind === 'hall') { ctx.fillStyle = s.roof; ctx.fillRect(px + w / 2 - 2, py - 16, 3, 20); ctx.fillStyle = '#F4E8CC'; ctx.beginPath(); ctx.moveTo(px + w / 2 + 1, py - 16); ctx.lineTo(px + w / 2 + 14, py - 11); ctx.lineTo(px + w / 2 + 1, py - 6); ctx.fill(); }
-    ctx.font = 'bold 11px "Baloo 2", system-ui, sans-serif'; ctx.textAlign = 'center';
-    const tw = Math.max(56, ctx.measureText(s.label).width + 14);
-    ctx.fillStyle = 'rgba(255,255,255,.85)'; rr(ctx, px + w / 2 - tw / 2, py + 4, tw, 14, 7); ctx.fill();
-    ctx.fillStyle = '#2A2420'; ctx.fillText(s.label, px + w / 2, py + 15);
+    if (s.kind === 'lodge') {   // a grey banner on a pole, and a dark doorway
+      ctx.fillStyle = '#8E8A80'; ctx.fillRect(px + w / 2 - 1, py - 16, 2, 20); ctx.fillStyle = '#5B5652'; ctx.fillRect(px + w / 2 + 1, py - 16, 14, 9); ctx.fillStyle = '#2A2420'; ctx.fillRect(px + w / 2 + 3, py - 13, 10, 3);
+      ctx.fillStyle = '#1C1A18'; rr(ctx, px + Math.floor(s.w / 2) * TS + 8, py + h - 20, 16, 20, 3); ctx.fill();
+    }
+    const lbl = tl(s.label);
+    ctx.font = 'bold 11px ' + FONT(); ctx.textAlign = 'center';
+    const tw = Math.max(56, ctx.measureText(lbl).width + 14);
+    ctx.fillStyle = s.kind === 'lodge' ? 'rgba(60,56,52,.9)' : 'rgba(255,255,255,.85)'; rr(ctx, px + w / 2 - tw / 2, py + 4, tw, 14, 7); ctx.fill();
+    ctx.fillStyle = s.kind === 'lodge' ? '#F4E8CC' : '#2A2420'; ctx.fillText(lbl, px + w / 2, py + 15);
   }
 
   /* Built missions are drawn as their own landmark. Sites under construction show stakes and a progress bar. */
@@ -301,8 +317,8 @@ window.World = (function () {
     ctx.strokeStyle = '#F6B544'; ctx.lineWidth = 2; ctx.setLineDash([6, 6]); ctx.strokeRect(px + 6, py + 6, w - 12, h - 12); ctx.setLineDash([]);
     [[px + 6, py + 6], [px + w - 6, py + 6], [px + 6, py + h - 6], [px + w - 6, py + h - 6]].forEach(([x, y]) => { ctx.fillStyle = '#7A4F2A'; ctx.fillRect(x - 2, y - 10, 4, 14); });
     ctx.fillStyle = 'rgba(255,255,255,.9)'; rr(ctx, px + w / 2 - 34, py + h / 2 - 10, 68, 20, 6); ctx.fill();
-    ctx.fillStyle = '#2A2420'; ctx.font = 'bold 10px "Baloo 2", system-ui, sans-serif'; ctx.textAlign = 'center';
-    ctx.fillText(st === 'building' ? 'BUILDING…' : m.kind.toUpperCase() + ' SITE', px + w / 2, py + h / 2 + 4);
+    ctx.fillStyle = '#2A2420'; ctx.font = 'bold 10px ' + FONT(); ctx.textAlign = 'center';
+    ctx.fillText(st === 'building' ? tl('BUILDING…') : tl(m.kind.toUpperCase() + ' SITE'), px + w / 2, py + h / 2 + 4);
     if (st === 'building') {
       const p = Math.min(1, (Date.now() - ms.startedAt) / (m.buildSec * 1000));
       ctx.fillStyle = '#2A2420'; rr(ctx, px + 6, py - 12, w - 12, 8, 4); ctx.fill();
@@ -312,7 +328,8 @@ window.World = (function () {
     }
   }
   function label(ctx, text, x, y) {
-    ctx.font = 'bold 11px "Baloo 2", system-ui, sans-serif'; ctx.textAlign = 'center';
+    text = tl(text);
+    ctx.font = 'bold 11px ' + FONT(); ctx.textAlign = 'center';
     const tw = ctx.measureText(text).width + 14;
     ctx.fillStyle = 'rgba(255,255,255,.85)'; rr(ctx, x - tw / 2, y - 11, tw, 14, 7); ctx.fill();
     ctx.fillStyle = '#2A2420'; ctx.fillText(text, x, y);
@@ -325,7 +342,7 @@ window.World = (function () {
     const px = d.x * TS - ox, py = d.y * TS - oy;
     switch (d.kind) {
       case 'sign':
-        ctx.fillStyle = '#7A4F2A'; ctx.fillRect(px + 14, py + 12, 4, 18); ctx.fillStyle = '#F4E8CC'; rr(ctx, px + 2, py + 4, 28, 12, 3); ctx.fill(); ctx.fillStyle = '#2A2420'; ctx.font = 'bold 7px system-ui'; ctx.textAlign = 'center'; ctx.fillText(d.text || '', px + 16, py + 13); break;
+        ctx.fillStyle = '#7A4F2A'; ctx.fillRect(px + 14, py + 12, 4, 18); ctx.fillStyle = '#F4E8CC'; rr(ctx, px + 2, py + 4, 28, 12, 3); ctx.fill(); ctx.fillStyle = '#2A2420'; ctx.font = 'bold 7px ' + FONT(); ctx.textAlign = 'center'; ctx.fillText(tl(d.text || ''), px + 16, py + 13); break;
       case 'bench':
         ctx.fillStyle = '#A2703F'; ctx.fillRect(px + 2, py + 14, 28, 6); ctx.fillRect(px + 2, py + 6, 28, 5); ctx.fillRect(px + 4, py + 20, 3, 8); ctx.fillRect(px + 25, py + 20, 3, 8); break;
       case 'lamp': {
@@ -392,6 +409,38 @@ window.World = (function () {
         ctx.fillStyle = '#7A4F2A'; ctx.fillRect(px + 14, py + 14, 4, 16); ctx.fillStyle = '#F6B544'; rr(ctx, px + 6, py + 4, 20, 14, 3); ctx.fill(); ctx.fillStyle = '#2A2420'; ctx.fillRect(px + 12, py + 7, 8, 2); ctx.font = 'bold 7px system-ui'; ctx.textAlign = 'center'; ctx.fillText('TOLL', px + 16, py + 16); break;
       case 'oar':
         ctx.save(); ctx.translate(px + 16, py + 16); ctx.rotate(0.7); ctx.fillStyle = '#A2703F'; ctx.fillRect(-2, -14, 4, 22); ctx.fillStyle = '#7A4F2A'; rr(ctx, -5, 6, 10, 12, 4); ctx.fill(); ctx.restore(); break;
+      case 'plinth':
+        if (state.statues && state.statues[d.statue]) drawStatue(ctx, px, py, t);
+        else { ctx.fillStyle = '#A9A39A'; rr(ctx, px + 5, py + 18, 22, 11, 3); ctx.fill(); ctx.fillStyle = '#C9C4BA'; rr(ctx, px + 8, py + 12, 16, 8, 2); ctx.fill(); ctx.fillStyle = '#8E8A80'; ctx.fillRect(px + 10, py + 22, 12, 2); }
+        break;
+    }
+  }
+
+  /* A stone Aristotle on a plinth: a robed figure holding a scroll, laurel on his head. */
+  const STONE = { size: 'm', skin: '#D3CEC4', hair: '#B5B0A6', hairStyle: 'short', shirt: '#C9C4BA', pants: '#B5B0A6', robe: '#C9C4BA', beard: true };
+  function drawStatue(ctx, px, py, t) {
+    ctx.fillStyle = '#A9A39A'; rr(ctx, px + 3, py + 20, 26, 12, 3); ctx.fill(); ctx.fillStyle = '#C9C4BA'; rr(ctx, px + 6, py + 14, 20, 8, 2); ctx.fill();
+    drawPerson(ctx, px + 16, py + 14, STONE, 'down', 0, 0.95);
+    ctx.fillStyle = '#F4E8CC'; rr(ctx, px + 20, py - 12, 4, 10, 1); ctx.fill();                       // the scroll
+    ctx.strokeStyle = '#8FA36B'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(px + 16, py - 22, 7, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke();   // laurel
+    const g = ctx.createRadialGradient(px + 16, py + 4, 4, px + 16, py + 4, 30); g.addColorStop(0, 'rgba(246,181,68,' + (0.18 + 0.1 * Math.sin(t / 500)) + ')'); g.addColorStop(1, 'rgba(246,181,68,0)');
+    ctx.fillStyle = g; circ(ctx, px + 16, py + 4, 30);
+  }
+  /* The statue's circle of effect: a soft golden ring that breathes. */
+  function drawRing(ctx, cx, cy, r, t) {
+    const pulse = 0.5 + 0.5 * Math.sin(t / 900);
+    const g = ctx.createRadialGradient(cx, cy, r * 0.75, cx, cy, r);
+    g.addColorStop(0, 'rgba(246,181,68,0)'); g.addColorStop(1, 'rgba(246,181,68,' + (0.10 + 0.08 * pulse) + ')');
+    ctx.fillStyle = g; circ(ctx, cx, cy, r);
+    ctx.strokeStyle = 'rgba(246,181,68,' + (0.35 + 0.3 * pulse) + ')'; ctx.lineWidth = 2; ctx.setLineDash([8, 8]); ctx.lineDashOffset = -t / 60;
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+  }
+  /* Grey fog puffs circling somebody's head while a preacher works on them. */
+  function drawSermon(ctx, cx, feetY, t) {
+    for (let i = 0; i < 6; i++) {
+      const a = t / 700 + i * Math.PI / 3, r = 14 + 3 * Math.sin(t / 300 + i);
+      ctx.fillStyle = 'rgba(120,120,125,' + (0.35 + 0.25 * Math.sin(t / 200 + i)) + ')';
+      circ(ctx, cx + Math.cos(a) * r, feetY - 36 + Math.sin(a) * r * 0.5, 4 + (i % 2));
     }
   }
 
@@ -405,9 +454,14 @@ window.World = (function () {
     ctx.fillStyle = spec.pants || '#3E5C8A';
     ctx.fillRect(cx - 5.5 * S, feetY - legH + swing, 4.5 * S, legH); ctx.fillRect(cx + 1 * S, feetY - legH - swing, 4.5 * S, legH);
     ctx.fillStyle = spec.shirt; rr(ctx, cx - hw, feetY - legH - bodyH, hw * 2, bodyH + 1, 3 * S); ctx.fill();
+    if (spec.robe) {   // a long robe from the shoulders to the ground, with a faint seam and a sash
+      ctx.fillStyle = spec.robe; ctx.beginPath(); ctx.moveTo(cx - hw, feetY - legH - bodyH + 1 * S); ctx.lineTo(cx + hw, feetY - legH - bodyH + 1 * S); ctx.lineTo(cx + hw + 3 * S, feetY + swing * 0.3); ctx.lineTo(cx - hw - 3 * S, feetY - swing * 0.3); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = spec.sash || '#6B6662'; ctx.fillRect(cx - hw - 1 * S, feetY - legH - 2 * S, hw * 2 + 2 * S, 2.5 * S);
+      ctx.fillStyle = 'rgba(255,255,255,.08)'; ctx.fillRect(cx - hw + 1 * S, feetY - legH - bodyH + 2 * S, 2 * S, bodyH - 3 * S); ctx.fillRect(cx + hw - 3 * S, feetY - legH - bodyH + 2 * S, 2 * S, bodyH - 3 * S);
+    }
     if (spec.apron) { ctx.fillStyle = spec.apron === true ? '#F4E8CC' : spec.apron; ctx.fillRect(cx - hw + 2 * S, feetY - legH - bodyH + 3 * S, hw * 2 - 4 * S, bodyH - 3 * S); }
     if (spec.vest) { ctx.fillStyle = spec.vest; ctx.fillRect(cx - hw, feetY - legH - bodyH, 3 * S, bodyH); ctx.fillRect(cx + hw - 3 * S, feetY - legH - bodyH, 3 * S, bodyH); }
-    ctx.fillStyle = spec.skin;
+    ctx.fillStyle = spec.robe || spec.skin;
     ctx.fillRect(cx - hw - 3 * S, feetY - legH - bodyH + 2 * S - swing * 0.6, 3 * S, 8 * S);
     ctx.fillRect(cx + hw, feetY - legH - bodyH + 2 * S + swing * 0.6, 3 * S, 8 * S);
     const hy = feetY - legH - bodyH - headR + 2 * S;
@@ -426,6 +480,11 @@ window.World = (function () {
     if (spec.hat) { ctx.fillStyle = spec.hat; ctx.fillRect(cx - headR - 3 * S, hy - headR + 1 * S, headR * 2 + 6 * S, 2.5 * S); rr(ctx, cx - headR + 1 * S, hy - headR - 7 * S, headR * 2 - 2 * S, 9 * S, 2 * S); ctx.fill(); }
     if (spec.bandana) { ctx.fillStyle = spec.bandana; ctx.beginPath(); ctx.arc(cx, hy - 1 * S, headR + 0.5 * S, Math.PI, 0); ctx.fill(); ctx.fillRect(cx - headR - 0.5 * S, hy - 2 * S, headR * 2 + 1 * S, 2.5 * S); }
     if (spec.partyhat) { ctx.fillStyle = '#F6B544'; ctx.beginPath(); ctx.moveTo(cx - 5 * S, hy - headR + 2 * S); ctx.lineTo(cx, hy - headR - 9 * S); ctx.lineTo(cx + 5 * S, hy - headR + 2 * S); ctx.fill(); }
+    if (spec.turban) {   // a wrapped turban: wide band low on the brow, a dome above, a fold line
+      ctx.fillStyle = spec.turban; ctx.beginPath(); ctx.ellipse(cx, hy - headR * 0.5, headR + 2.2 * S, headR * 0.8, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(cx, hy - headR * 0.95, headR * 0.7, headR * 0.55, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = 'rgba(0,0,0,.18)'; ctx.lineWidth = 1 * S; ctx.beginPath(); ctx.moveTo(cx - headR - 1 * S, hy - headR * 0.35); ctx.quadraticCurveTo(cx, hy - headR * 0.8, cx + headR + 1 * S, hy - headR * 0.25); ctx.stroke();
+    }
     if (dir !== 'up') {
       ctx.fillStyle = '#2A2420';
       const ey = hy + 1.5 * S;
@@ -654,5 +713,6 @@ window.World = (function () {
   }
 
   const decorAt = (x, y) => decor.find(d => d.x === x && d.y === y && decorBlocked(d));
-  return { TS, W, H, at, walkable, regions, regionAt, locked, siteAt, setState, structures, decor, decorAt, drawTile, drawFace, findPath, drawAction, drawItem, drawFollower, drawGlow, drawStructure, drawDecor, drawMission, drawPerson, rr };
+  const lodges = () => structures.filter(s => s.kind === 'lodge');
+  return { TS, W, H, at, walkable, regions, regionAt, locked, siteAt, setState, structures, decor, decorAt, lodges, drawTile, drawFace, findPath, drawAction, drawItem, drawFollower, drawGlow, drawStructure, drawDecor, drawMission, drawPerson, drawRing, drawSermon, rr };
 })();

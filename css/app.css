@@ -78,7 +78,7 @@ small { display: block; font-size: .82rem; color: var(--ink-soft); line-height: 
 .toast.out { opacity: 0; transform: translateY(-14px); }
 @keyframes toastIn { from { opacity: 0; transform: translateY(10px) scale(.9); } to { opacity: 1; transform: none; } }
 
-.tracker { position: absolute; top: 8px; left: 8px; max-width: 62%; display: flex; gap: 8px; align-items: center; text-align: left; background: rgba(20, 38, 43, .92); color: var(--paper); border-radius: 12px; padding: 6px 10px 6px 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, .35); animation: dlgIn .25s ease-out both; }
+.tracker { position: absolute; top: 8px; inset-inline-start: 8px; max-width: 62%; display: flex; gap: 8px; align-items: center; text-align: start; background: rgba(20, 38, 43, .92); color: var(--paper); border-radius: 12px; padding: 6px 10px 6px 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, .35); animation: dlgIn .25s ease-out both; }
 .tracker .bulb { width: 12px; height: 12px; border-radius: 50%; background: var(--lantern); box-shadow: 0 0 0 0 rgba(246, 181, 68, .7); animation: bulb 1.6s ease-out infinite; flex: none; }
 @keyframes bulb { 0% { box-shadow: 0 0 0 0 rgba(246, 181, 68, .7); } 70% { box-shadow: 0 0 0 9px rgba(246, 181, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(246, 181, 68, 0); } }
 .tracker .tbody { display: flex; flex-direction: column; min-width: 0; }
@@ -89,7 +89,7 @@ small { display: block; font-size: .82rem; color: var(--ink-soft); line-height: 
 .preview b { display: block; font-family: "Baloo 2", system-ui, sans-serif; margin-top: 6px; line-height: 1.1; }
 .preview small { display: block; color: var(--ink-soft); font-size: .78rem; line-height: 1.25; }
 .mprev { width: 100%; aspect-ratio: 3 / 2; object-fit: cover; border-radius: 14px; display: block; margin: 4px 0; }
-.minimap { position: absolute; top: 8px; right: 8px; background: rgba(20, 38, 43, .9); border-radius: 10px; padding: 4px; box-shadow: 0 4px 12px rgba(0, 0, 0, .35); }
+.minimap { position: absolute; top: 8px; inset-inline-end: 8px; background: rgba(20, 38, 43, .9); border-radius: 10px; padding: 4px; box-shadow: 0 4px 12px rgba(0, 0, 0, .35); }
 .minimap canvas { display: block; width: 96px; height: auto; image-rendering: pixelated; border-radius: 6px; }
 
 .dlg { position: absolute; left: 8px; right: 8px; bottom: 8px; display: flex; gap: 10px; align-items: flex-start; background: var(--paper); color: var(--ink); border-radius: 16px; padding: 10px 12px; box-shadow: 0 6px 18px rgba(0, 0, 0, .35); animation: dlgIn .2s ease-out both; max-height: 78%; overflow-y: auto; }
@@ -104,7 +104,7 @@ small { display: block; font-size: .82rem; color: var(--ink-soft); line-height: 
 .dlg.narrator .dlg-next { color: var(--mist); }
 @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
 .choices { display: flex; flex-direction: column; gap: 6px; }
-.choice { text-align: left; background: #fff; border: 2px solid var(--paper-2); border-radius: 12px; padding: 8px 10px; font-size: .98rem; line-height: 1.3; color: var(--ink); display: flex; gap: 8px; align-items: center; justify-content: flex-start; }
+.choice { text-align: start; background: #fff; border: 2px solid var(--paper-2); border-radius: 12px; padding: 8px 10px; font-size: .98rem; line-height: 1.3; color: var(--ink); display: flex; gap: 8px; align-items: center; justify-content: flex-start; }
 .choice:hover, .choice:active { border-color: var(--lantern); }
 
 .scene { position: absolute; inset: 0; background: rgba(8, 18, 20, .92); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 12px; animation: dlgIn .25s ease-out both; }
@@ -125,10 +125,10 @@ small { display: block; font-size: .82rem; color: var(--ink-soft); line-height: 
 /* ---------- overlays ---------- */
 .overlay { position: fixed; inset: 0; z-index: 50; background: rgba(8, 18, 20, .86); display: grid; place-items: center; padding: 16px; animation: screenIn .25s ease-out both; }
 .overlay .box { width: min(440px, 100%); display: flex; flex-direction: column; gap: 10px; text-align: center; max-height: 100%; overflow-y: auto; }
-.overlay .box.left { text-align: left; width: min(520px, 100%); }
+.overlay .box.left { text-align: start; width: min(520px, 100%); }
 .overlay.win .box { box-shadow: 0 0 0 4px var(--fair); }
 .overlay.fail .box { box-shadow: 0 0 0 4px var(--fogred); }
-.answers { display: flex; flex-direction: column; gap: 6px; text-align: left; }
+.answers { display: flex; flex-direction: column; gap: 6px; text-align: start; }
 .ans { display: flex; gap: 8px; align-items: flex-start; border-radius: 12px; padding: 8px 10px; font-size: .95rem; line-height: 1.3; border: 2px solid; }
 .ans .mark { font-weight: 800; font-size: 1.1rem; flex: none; width: 1.3em; text-align: center; }
 .ans small { display: block; font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 2px; }
@@ -153,7 +153,7 @@ small { display: block; font-size: .82rem; color: var(--ink-soft); line-height: 
 .bar { height: 10px; background: var(--paper-2); border-radius: 999px; overflow: hidden; margin: 4px 0; }
 .bar span { display: block; height: 100%; background: var(--fair); border-radius: 999px; transition: width .3s; }
 .trainlist { display: flex; flex-direction: column; gap: 6px; }
-.trainlist .choice small { margin-left: auto; }
+.trainlist .choice small { margin-inline-start: auto; }
 
 /* ---------- book ---------- */
 .book-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
@@ -164,6 +164,24 @@ small { display: block; font-size: .82rem; color: var(--ink-soft); line-height: 
 .bcard p { font-size: .9rem; }
 .bcard.locked { background: var(--paper-2); color: var(--ink-soft); }
 .bcard.locked img { filter: grayscale(1) brightness(.6) blur(3px); }
+
+/* ---------- the Grey Order's warning ---------- */
+.alert { display: flex; align-items: center; gap: 8px; font-family: "Baloo 2", system-ui, sans-serif; font-weight: 700; font-size: .9rem; line-height: 1.2; text-align: start; color: #fff; background: linear-gradient(90deg, #B3463A, #E4574F); border-radius: 12px; padding: 7px 12px; cursor: pointer; animation: alertPulse 1.2s ease-in-out infinite; }
+@keyframes alertPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(228, 87, 79, .55); } 50% { box-shadow: 0 0 0 6px rgba(228, 87, 79, 0); } }
+
+/* ---------- languages ---------- */
+.langs { display: flex; gap: 8px; }
+.langbtn { flex: 1; background: var(--pine-2); color: var(--paper); border: 2px solid transparent; border-radius: 12px; padding: 8px; font-weight: 700; font-size: 1rem; min-height: 42px; }
+.langbtn.on { border-color: var(--lantern); background: var(--pine-3); color: var(--lantern); }
+.langbtn[lang="fa"], .langbtn[lang="ar"] { font-family: Vazirmatn, Tahoma, sans-serif; }
+
+/* ---------- right-to-left languages (Persian, Arabic) ---------- */
+html[dir="rtl"] body { font-family: Vazirmatn, Tahoma, sans-serif; }
+html[dir="rtl"] :is(h1, h2, h3, .font-display, .btn, .toast, .tracker b, .preview b, .dlg-name, .dlg-next, .objective .region, .bcard b, .alert, .langbtn) { font-family: "Baloo Bhaijaan 2", Vazirmatn, system-ui, sans-serif; }
+html[dir="rtl"] :is(.eyebrow, .dlg-name, .ans small) { letter-spacing: 0; }
+html[dir="rtl"] .dlg.narrator { font-style: normal; }
+html[dir="rtl"] .objective { flex-direction: row; }
+.controls, .dpad, .hud .pill { direction: ltr; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }

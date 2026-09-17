@@ -19,8 +19,9 @@ use std::{collections::HashMap, net::SocketAddr, path::PathBuf, sync::Arc};
 
 use axum::{
     body::Bytes,
-    extract::{DefaultBodyLimit, Path, Query, State},
-    http::{header, StatusCode},
+    extract::{DefaultBodyLimit, Path, Query, Request, State},
+    http::{header, HeaderValue, StatusCode},
+    middleware::{self, Next},
     response::{IntoResponse, Response},
     routing::get,
     Json, Router,
@@ -67,6 +68,7 @@ async fn main() {
         .route("/api/saves/:slug", get(get_save).put(put_save))
         .route("/api/voice", get(voice))
         .fallback_service(ServeDir::new(&web).not_found_service(ServeFile::new(index)))
+        .layer(middleware::from_fn(cache_headers))
         .layer(DefaultBodyLimit::max(2 * 1024 * 1024))
         .with_state(app.clone());
 
@@ -79,6 +81,40 @@ async fn main() {
     println!("  data dir: {}", app.data.display());
     println!("  voices  : {}", if app.key.is_some() { "ElevenLabs (cached on disk)" } else { "browser speech synthesis (set ELEVENLABS_API_KEY for recorded voices)" });
     axum::serve(listener, router).await.expect("server");
+}
+
+/// Caching rules for the static game.
+///
+/// The page and the clip index must REVALIDATE on every load. Otherwise a browser that
+/// cached them keeps serving the old `index.html` after a deploy: the player never sees
+/// the new `?v=` asset links, keeps running yesterday's JavaScript against a stale
+/// `voice/index.json`, and every spoken line silently falls back to the robot voice.
+/// `no-cache` still allows a cheap 304; it only forbids using the copy without asking.
+///
+/// Everything else is safe to keep: `css/` and `js/` are requested with a `?v=` that
+/// changes when they do, and a voice clip is named after a hash of its own text, so its
+/// URL changes whenever its content does.
+async fn cache_headers(req: Request, next: Next) -> Response {
+    let path = req.uri().path().to_owned();
+    let mut res = next.run(req).await;
+
+    if path.starts_with("/api/") {
+        return res;
+    }
+    let value = if path == "/" || path.ends_with(".html") || path == "/voice/index.json" {
+        "no-cache"
+    } else if path.starts_with("/voice/")
+        || path.starts_with("/img/")
+        || path.starts_with("/css/")
+        || path.starts_with("/js/")
+    {
+        "public, max-age=31536000, immutable"
+    } else {
+        "public, max-age=3600"
+    };
+    res.headers_mut()
+        .insert(header::CACHE_CONTROL, HeaderValue::from_static(value));
+    res
 }
 
 fn env_path(name: &str) -> Option<PathBuf> {

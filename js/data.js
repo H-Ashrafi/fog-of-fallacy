@@ -59,7 +59,7 @@ window.FOG = (function () {
       intro: ['You arrive in Riverside Village. You have 40 coins in your pouch.', 'A grey fog hangs over the valley. The fog grows every time a bad argument wins.',
         'Use the arrows to walk. Press A to talk. People with a ! above their head want something from you.', 'Earn coins by doing jobs. Keep your coins away from tricksters. Then build something that helps everyone.'] },
     { region: 1, focus: ['falseDilemma'], mission: 'bridge',
-      intro: ['The gate swings open. You walk into River Farms.', 'People here love to say there are only two choices. There are almost always more.', 'The farmers need a way across the river. Find a carpenter and a surveyor to help you.'] },
+      intro: ['The gate swings open. You walk into River Farms.', 'People here love to say there are only two choices. There are almost always more.', 'The farmers need a way across the river. Find a carpenter and a surveyor, and bring your mason.'] },
     { region: 2, focus: ['emotion', 'postHoc'], mission: 'school',
       intro: ['You cross your new bridge and walk into Market Town.', 'Two tricks live here. Some people push on your feelings. Others say "this came first, so it caused that."', 'The town wants an Engineering School. Experts learn faster when they train there.'] },
     { region: 3, focus: ['gambler', 'sunkCost', 'hastyGen'], mission: 'mill',
@@ -77,22 +77,22 @@ window.FOG = (function () {
       done: ['Clean water bubbles up from the ground. The whole village cheers.', 'Elder Otto opens the south gate. He says, "River Farms could use a builder like you."'] },
     { id: 'bridge', kind: 'bridge', name: 'The River Bridge', region: 1, site: { x: 27, y: 42, w: 4, h: 2 }, camp: [[25, 41], [24, 41], [26, 44], [23, 44]], cost: 100, buildSec: 18, xp: 120, unlocks: 2, walkWhenBuilt: true,
       start: 'Your crew rolls up their sleeves. Work on the bridge begins!', lift: 'The fog lifts from Market Town.',
-      needs: [{ role: 'carpenter', level: 1 }, { role: 'surveyor', level: 1 }], income: { rate: 4, cap: 40 },
+      needs: [{ role: 'carpenter', level: 1 }, { role: 'surveyor', level: 1 }, { role: 'mason', level: 1 }], income: { rate: 4, cap: 40 },
       blurb: 'The ferry is the only way across, and the ferryman charges what he likes. A bridge would carry carts, and a small toll would pay you back.',
       done: ['The last plank drops into place. Carts roll across the river for the first time.', 'Ferryman Gus grumbles. Everyone else is delighted. Market Town lies ahead.'] },
     { id: 'school', kind: 'school', name: 'Engineering School', region: 2, site: { x: 50, y: 33, w: 4, h: 4 }, camp: [[49, 34], [49, 35], [54, 34], [54, 35]], cost: 150, buildSec: 20, xp: 150, unlocks: 3,
       start: 'Your crew rolls up their sleeves. Work on the school begins!', lift: 'The fog lifts from the Hill Mine.',
-      needs: [{ role: 'mason', level: 2 }, { role: 'carpenter', level: 2 }, { role: 'scholar', level: 1 }], income: { rate: 8, cap: 80 },
+      needs: [{ role: 'mason', level: 2 }, { role: 'carpenter', level: 2 }, { role: 'scholar', level: 1 }, { role: 'water', level: 1 }], income: { rate: 8, cap: 80 },
       blurb: 'Market Town has clever young people and nobody to teach them. A school earns fees, and your crew can train there to learn faster.',
       done: ['The school bell rings. Students run in with their notebooks.', 'The first class measures the rockfall north of town and clears a path to the Hill Mine.'] },
-    { id: 'mill', kind: 'mill', name: 'The Waterwheel Mill', region: 3, site: { x: 31, y: 18, w: 3, h: 4 }, camp: [[34, 20], [34, 17], [32, 22], [33, 22]], cost: 220, buildSec: 22, xp: 180, unlocks: 4,
+    { id: 'mill', kind: 'mill', name: 'The Waterwheel Mill', region: 3, site: { x: 31, y: 18, w: 3, h: 4 }, camp: [[34, 20], [34, 17], [32, 22], [33, 22], [34, 18], [31, 22]], cost: 220, buildSec: 22, xp: 180, unlocks: 4,
       start: 'Your crew rolls up their sleeves. Work on the mill begins!', lift: 'The fog lifts from the Harbour.',
-      needs: [{ role: 'millwright', level: 1 }, { role: 'mason', level: 3 }, { role: 'carpenter', level: 3 }], income: { rate: 12, cap: 120 },
+      needs: [{ role: 'millwright', level: 1 }, { role: 'mason', level: 3 }, { role: 'carpenter', level: 3 }, { role: 'surveyor', level: 2 }, { role: 'water', level: 2 }], income: { rate: 12, cap: 120 },
       blurb: 'The miners crush ore by hand, and it takes forever. A waterwheel would do it a hundred times faster. The mine will pay well for it.',
       done: ['The wheel turns. The ore crunches. The miners whoop and throw their hats.', 'The foreman unlocks the harbour wall. She says, "Go on. The coast needs you more than we do."'] },
-    { id: 'lighthouse', kind: 'lighthouse', name: 'The Lighthouse', region: 4, site: { x: 44, y: 77, w: 2, h: 3 }, camp: [[43, 69], [42, 69], [47, 68], [48, 68]], cost: 320, buildSec: 25, xp: 200, unlocks: 5,
+    { id: 'lighthouse', kind: 'lighthouse', name: 'The Lighthouse', region: 4, site: { x: 44, y: 77, w: 2, h: 3 }, camp: [[43, 69], [42, 69], [47, 68], [48, 68], [43, 68], [49, 68]], cost: 320, buildSec: 25, xp: 200, unlocks: 5,
       start: 'Your crew rolls up their sleeves. Work on the lighthouse begins!', lift: null,
-      needs: [{ role: 'smith', level: 1 }, { role: 'mason', level: 4 }, { role: 'surveyor', level: 2 }, { role: 'millwright', level: 2 }], income: { rate: 0, cap: 0 },
+      needs: [{ role: 'smith', level: 1 }, { role: 'mason', level: 4 }, { role: 'surveyor', level: 2 }, { role: 'millwright', level: 2 }, { role: 'carpenter', level: 3 }, { role: 'scholar', level: 2 }], income: { rate: 0, cap: 0 },
       blurb: 'Ships crash on the rocks every winter. A lighthouse at the end of the pier would guide them home. It would also lift the fog from the whole Valley.',
       done: ['The great lamp flares. Its beam sweeps across the sea.', 'All over the Valley, the fog thins and then vanishes. Clear heads make clear skies.'] }
   ];
@@ -166,18 +166,18 @@ window.FOG = (function () {
       deliver: ['You brought my ledger! I would have lost a whole day. Here are 90 coins.'], done: ['Lin keeps the ledger on a string now.'] }
   };
 
-  /* Repeatable jobs. `anim` plays on the player at the spot. With `deliverTo` the player then
+  /* Repeatable jobs. `place` is the decoration id where the job happens; `anim` plays on the player there. With `deliverTo` the player then
      carries `item` to that person, who says `thanks` and pays. Without it the pay comes at the spot. */
   const JOBS = {
-    water: { spot: 'bucket', region: 0, pay: 4, cooldown: 25, title: 'Carry water', anim: 'pick', item: 'buckets', deliverTo: 'hana',
+    water: { place: 'bucket', region: 0, pay: 4, cooldown: 25, title: 'Carry water', anim: 'pick', item: 'buckets', deliverTo: 'hana',
       steps: ['Fill the two buckets at the river.', 'Carry the water to Baker Hana at the bakery.'], thanks: 'Thank you for the water! Here are 4 coins.' },
-    milk: { spot: 'milk', region: 1, pay: 5, cooldown: 25, title: 'Milk the goats', anim: 'milk', item: 'pail', deliverTo: 'rin',
+    milk: { place: 'milk', region: 1, pay: 5, cooldown: 25, title: 'Milk the goats', anim: 'milk', item: 'pail', deliverTo: 'rin',
       steps: ['Milk the goats in the pen.', 'Carry the pail of milk to Rin.'], thanks: 'Fresh milk! Here are 5 coins.' },
-    sweep: { spot: 'broom', region: 2, pay: 6, cooldown: 25, title: 'Sweep the square', anim: 'sweep',
+    sweep: { place: 'broom', region: 2, pay: 6, cooldown: 25, title: 'Sweep the square', anim: 'sweep',
       steps: ['Sweep the square with the broom.'] },
-    ore: { spot: 'orepile', region: 3, pay: 8, cooldown: 25, title: 'Sort ore', anim: 'sort', item: 'orebasket', deliverTo: 'mab',
+    ore: { place: 'orepile', region: 3, pay: 8, cooldown: 25, title: 'Sort ore', anim: 'sort', item: 'orebasket', deliverTo: 'mab',
       steps: ['Sort the shiny ore out of the rock pile.', 'Carry the basket of ore to Cook Mab.'], thanks: 'Good ore! Here are 8 coins.' },
-    ropes: { spot: 'ropes', region: 4, pay: 10, cooldown: 25, title: 'Coil ropes', anim: 'coil',
+    ropes: { place: 'ropes', region: 4, pay: 10, cooldown: 25, title: 'Coil ropes', anim: 'coil',
       steps: ['Coil the wet ropes on the quay.'] }
   };
 
@@ -196,6 +196,13 @@ window.FOG = (function () {
       ready: ['Everything is ready! Go to the site and press A. I will be right behind you.']
     }
   };
+
+  /* What the narrator says when you press A on a thing with nothing to do. Keyed by decoration kind. */
+  const FLAVOR = { goat: 'A goat. It looks at you. You look at it.', apples: 'A basket of apples under the trees.', scarecrow: 'A scarecrow, face down in the mud.', brokenfence: 'A fence rail hangs loose.',
+    lamp: 'A street lamp.', lostsign: 'A wooden sign lying in the grass.', cart: 'An ore cart with a missing wheel.', canary: 'A small yellow bird, singing.', oar: 'An oar, half buried in sand.',
+    bucket: 'Two buckets by the river.', broom: 'A broom leaning on a stall.', orepile: 'A heap of rock with glints of ore.', ropes: 'Coils of wet rope.', milk: 'The goats need milking.',
+    boat: 'A boat. It bobs.', stall: 'A market stall. Bright things, high prices.', fountain: 'Cool water splashes.', cards: 'A card table. The cards look tired.', sign: 'A signpost.', bench: 'A bench. Nobody is sitting.',
+    logs: 'Freshly cut timber.', tripod: 'A surveyor\'s tripod.', crate: 'A crate. Heavy.', pot2: 'A flower pot.', tollbox: 'The bridge toll box.', nothing: 'Nothing to do here.' };
 
   /* ---------------- people ---------------- */
   const NPCS = [
@@ -670,5 +677,5 @@ window.FOG = (function () {
       oops: [{ who: 'orla', text: 'A thief?! After all I have done for this quay?' }, { who: 'n', text: 'Now you are arguing about her character. Your question is still unanswered.' }, { end: 'oops' }] }
   };
 
-  return { FALLACIES, LOOKS, ROLES, XP_LEVELS, START_MONEY, LEVELS, MISSIONS, TASKS, JOBS, LINES, NPCS, TRICKS };
+  return { FALLACIES, LOOKS, ROLES, XP_LEVELS, START_MONEY, LEVELS, MISSIONS, TASKS, JOBS, LINES, FLAVOR, NPCS, TRICKS };
 })();

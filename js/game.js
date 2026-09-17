@@ -1,22 +1,28 @@
-/* Fog of Fallacy - engine: movement, camera, talking, tricks, tasks, jobs, experts, missions, saving. */
+/* Fog of Fallacy - engine: movement, camera, talking, tricks, tasks, jobs, experts, missions,
+   the Grey Order's preachers, statues of Aristotle, languages, saving. */
 
 (function () {
   'use strict';
 
-  const D = window.FOG, Wd = window.World, A = window.Audio2, TS = Wd.TS;
+  const D = window.FOG, Wd = window.World, A = window.Audio2, TS = Wd.TS, I = window.I18N;
+  /* UI strings go through T(key, vars); the English key is looked up in js/lang/<code>.js. */
+  const T = (k, v) => I ? I.t(k, v) : (v ? k.replace(/\{(\w+)\}/g, (m, n) => (n in v ? v[n] : m)) : k);
+  if (I) I.apply(D, Wd);
   const VIEW_W = 13, VIEW_H = 11;
   const KEY = 'fog-of-fallacy-v4';
   const $ = id => document.getElementById(id);
   const canvas = $('game'), ctx = canvas.getContext('2d');
   canvas.width = VIEW_W * TS; canvas.height = VIEW_H * TS;
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const FONT = (I && I.canvasFont) || '"Baloo 2", system-ui, sans-serif';
 
   /* ================= state ================= */
   const START = D.LEVELS[0].start;
   const DEFAULT = () => ({
     name: '', look: 0, money: D.START_MONEY, x: START.x, y: START.y, unlocked: 1, seen: {},
     spotted: {}, fails: {}, tricks: {}, tasks: {}, jobs: {}, experts: {}, missions: {}, flags: {},
-    sound: true, voice: true, savedAt: 0, ended: false, stats: { earned: 0, lost: 0 }, npcPos: {}, carry: null
+    sound: true, voice: true, savedAt: 0, ended: false, stats: { earned: 0, lost: 0 }, npcPos: {}, carry: null,
+    preachers: [], refog: {}, refuse: {}, statues: {}, lastPreach: 0, orderSince: 0, orderStats: { fogged: 0, cleared: 0 }
   });
   let S = load();
   function load() {
@@ -30,14 +36,20 @@
     clearTimeout(saveTimer);
     saveTimer = setTimeout(pushSave, 1500);
   }
-  const slug = () => (S.name || 'player').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'player';
+  /* Save-file name: ascii letters and digits, or a short hash when the name is in another script (the server only takes [a-z0-9-]). */
+  const slug = () => {
+    const name = S.name || 'player', ascii = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    if (ascii) return ascii;
+    let h = 2166136261; for (const ch of name) { h ^= ch.codePointAt(0); h = Math.imul(h, 16777619) >>> 0; }
+    return 'p' + h.toString(36);
+  };
   async function pushSave() {
     if (!S.name) return;
-    try { await fetch('/api/saves/' + slug(), { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(S) }); } catch (e) { }
+    try { await fetch('/api/saves/' + encodeURIComponent(slug()), { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(S) }); } catch (e) { }
   }
   async function pullSave() {
     try {
-      const r = await fetch('/api/saves/' + slug(), { cache: 'no-store' });
+      const r = await fetch('/api/saves/' + encodeURIComponent(slug()), { cache: 'no-store' });
       if (r.status !== 200) return false;
       const remote = await r.json();
       if (remote && remote.savedAt > (S.savedAt || 0)) { S = Object.assign(DEFAULT(), remote); return true; }
@@ -67,6 +79,8 @@
   const allTasks = () => Object.keys(D.TASKS).map(id => Object.assign({ id }, D.TASKS[id]));
   const allJobs = () => Object.keys(D.JOBS).map(id => Object.assign({ id }, D.JOBS[id]));
   const nar = lines => (Array.isArray(lines) ? lines : [lines]).map(text => ({ who: 'n', text }));
+  const regionName = i => Wd.regions[i] ? Wd.regions[i].name : T('The Valley');
+  const dist = (ax, ay, bx, by) => Math.hypot(ax - bx, ay - by);
 
   function ex(id) {
     const n = npcById(id), base = n.expert;
@@ -77,12 +91,18 @@
   const xpMult = id => (1 + 0.5 * ex(id).cleared) * (built('school') ? 1.5 : 1);
   const crew = () => npcs.filter(n => n.expert && S.experts[n.id] && S.experts[n.id].crew);
   const stars = l => '★'.repeat(l) + '☆'.repeat(5 - l);
+  const roleName = r => D.ROLES[r].name;
 
-  function worldState() { const b = {}; D.MISSIONS.forEach(m => { if (built(m.id)) b[m.id] = true; }); return { flags: S.flags, unlocked: S.unlocked, built: b }; }
+  function worldState() {
+    const b = {}; D.MISSIONS.forEach(m => { if (built(m.id)) b[m.id] = true; });
+    const st = {}; Object.keys(S.statues).forEach(i => { if (S.statues[i].status === 'built') st[i] = true; });
+    return { flags: S.flags, unlocked: S.unlocked, built: b, statues: st };
+  }
   function syncWorld() { Wd.setState(worldState()); }
 
   /* what follows the player: a found goat or canary until it is handed back */
   const follower = () => { const t = allTasks().find(t => t.follow && S.tasks[t.id] === 'found'); return t ? t.follow : null; };
+  const petName = kind => kind === 'goat' ? T('Pickle') : T('Goldie');
 
   /* ================= money & toasts ================= */
   function changeMoney(d, quiet) {
@@ -94,11 +114,12 @@
     save(); updateHud();
     if (!quiet) toast((real > 0 ? '+' : '') + real + ' 🪙', real > 0 ? 'good' : 'bad');
   }
-  function toast(text, kind) {
+  function toast(text, kind, ms) {
     const box = $('toasts'), el = document.createElement('div');
     el.className = 'toast ' + (kind || ''); el.textContent = text;
     box.appendChild(el);
-    setTimeout(() => el.classList.add('out'), 1600); setTimeout(() => el.remove(), 2100);
+    const hold = ms || 1600;
+    setTimeout(() => el.classList.add('out'), hold); setTimeout(() => el.remove(), hold + 500);
   }
 
   /* ================= title ================= */
@@ -108,49 +129,61 @@
     $('title').hidden = false; $('play').hidden = true; $('end').hidden = true; $('panel').hidden = true;
     const looks = $('looks'); looks.innerHTML = '';
     D.LOOKS.forEach((spec, i) => {
-      const b = document.createElement('button'); b.className = 'look' + (i === S.look ? ' on' : ''); b.type = 'button'; b.setAttribute('aria-label', 'Look ' + (i + 1));
+      const b = document.createElement('button'); b.className = 'look' + (i === S.look ? ' on' : ''); b.type = 'button'; b.setAttribute('aria-label', T('Look {n}', { n: i + 1 }));
       const c = document.createElement('canvas'); c.width = 64; c.height = 64; b.appendChild(c);
       Wd.drawPerson(c.getContext('2d'), 32, 58, spec, 'down', 0, 1.9);
       b.addEventListener('click', () => { S.look = i; looks.querySelectorAll('.look').forEach(x => x.classList.remove('on')); b.classList.add('on'); A.play('talk'); });
       looks.appendChild(b);
     });
+    const langs = $('langs');
+    if (langs && I) {
+      langs.innerHTML = '';
+      Object.keys(I.langs).forEach(code => {
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'langbtn' + (code === I.lang ? ' on' : ''); b.textContent = I.langs[code].name; b.lang = code;
+        b.addEventListener('click', () => { if (code !== I.lang) I.set(code); });
+        langs.appendChild(b);
+      });
+    }
     $('name-input').value = S.name || '';
     const started = !!S.name;
-    $('start').textContent = started ? 'Keep playing' : 'Start';
+    $('start').textContent = started ? T('Keep playing') : T('Start');
     $('reset').hidden = !started;
   }
 
   async function startGame() {
     A.unlock();
-    S.name = ($('name-input').value.trim() || 'You').slice(0, 16);
+    S.name = ($('name-input').value.trim() || T('You')).slice(0, 16);
     $('start').disabled = true;
     await pullSave();
     $('start').disabled = false;
-    S.name = S.name || 'You';
+    S.name = S.name || T('You');
     save();
-    A.settings.sfx = S.sound; A.settings.voice = S.voice;
+    A.settings.sfx = S.sound; A.settings.voice = S.voice && voiceAvailable();
     player.x = player.fx = player.tx = S.x; player.y = player.fy = player.ty = S.y; player.moving = false; trail.length = 0;
-    syncWorld(); applyNpcPos(); placeCrew(false);
+    syncWorld(); applyNpcPos(); placeCrew(false); restorePreachers();
     $('title').hidden = true; $('play').hidden = false;
     mode = 'world';
-    updateHud();
+    updateHud(); updateAlert();
     checkRegionIntro();
   }
+  /* Recorded voices exist for English only; other languages are text for now. */
+  const voiceAvailable = () => !I || I.lang === 'en';
 
   function updateHud() {
     $('hud-money').textContent = S.money;
     $('hud-insight').textContent = spottedCount() + ' / ' + D.FALLACIES.length;
     $('hud-sound').textContent = S.sound ? '🔔' : '🔕';
     $('hud-voice').textContent = S.voice ? '🗣️' : '🤐';
+    $('hud-voice').hidden = !voiceAvailable();
     const r = Wd.regionAt(player.x, player.y);
-    $('hud-region').textContent = r >= 0 ? Wd.regions[r].name : 'The Valley';
+    $('hud-region').textContent = r >= 0 ? regionName(r) : T('The Valley');
     $('objective').textContent = objectiveText();
     updateTracker();
   }
   function objectiveText() {
     const lv = currentLevel(), m = mission(lv.mission), ms = S.missions[m.id] || {};
-    if (S.ended) return 'The Valley is clear. Keep exploring, or start again from the title.';
-    if (ms.status === 'building') return `Building ${m.name}…`;
+    if (S.ended) return T('The Valley is clear. Keep exploring, or start again from the title.');
+    if (ms.status === 'building') return T('Building {name}…', { name: m.name });
     const need = totalCost(m);
     const roles = m.needs.map(n => { const who = assign(m)[m.needs.indexOf(n)]; return D.ROLES[n.role].icon + (who ? '✓' : '✗'); }).join(' ');
     return `${m.name}: ${S.money}/${need} 🪙 · ${roles}`;
@@ -159,17 +192,26 @@
   /* ---- the small-task tracker: a pulsing bulb with the next step ---- */
   function trackerInfo() {
     if (S.carry && S.carry.kind === 'job') { const j = D.JOBS[S.carry.id]; return { title: j.title, step: j.steps[1] }; }
-    if (S.carry && S.carry.kind === 'task') { const t = D.TASKS[S.carry.id]; const st = S.tasks[S.carry.id]; return { title: t.title, step: st === 'found' ? `Take it back to ${npcById(t.giver).name} for ${t.pay} coins.` : t.active[0] }; }
+    if (S.carry && S.carry.kind === 'task') { const t = D.TASKS[S.carry.id]; const st = S.tasks[S.carry.id]; return { title: t.title, step: st === 'found' ? T('Take it back to {name} for {n} coins.', { name: npcById(t.giver).name, n: t.pay }) : t.active[0] }; }
     const f = allTasks().find(t => t.follow && S.tasks[t.id] === 'found');
-    if (f) return { title: f.title, step: `Lead ${f.follow === 'goat' ? 'Pickle' : 'Goldie'} back to ${npcById(f.giver).name} for ${f.pay} coins.` };
+    if (f) return { title: f.title, step: T('Lead {pet} back to {name} for {n} coins.', { pet: petName(f.follow), name: npcById(f.giver).name, n: f.pay }) };
     const t = allTasks().find(t => (S.tasks[t.id] === 'active' || S.tasks[t.id] === 'found') && npcById(t.giver).region < S.unlocked);
-    if (t) return { title: t.title, step: S.tasks[t.id] === 'found' ? `Go back to ${npcById(t.giver).name} for ${t.pay} coins.` : t.active[0] };
+    if (t) return { title: t.title, step: S.tasks[t.id] === 'found' ? T('Go back to {name} for {n} coins.', { name: npcById(t.giver).name, n: t.pay }) : t.active[0] };
     return null;
   }
   function updateTracker() {
     const info = trackerInfo(), el = $('tracker');
     if (!info) { el.hidden = true; return; }
     el.hidden = false; $('tracker-title').textContent = info.title; $('tracker-step').textContent = info.step;
+  }
+
+  /* ---- the red warning about preachers on the move ---- */
+  function updateAlert() {
+    const el = $('alert'); if (!el) return;
+    const live = preachers.filter(p => p.phase !== 'gone');
+    if (!live.length) { el.hidden = true; return; }
+    el.hidden = false;
+    el.textContent = '⚠ ' + live.map(p => { const n = p.target ? npcById(p.target) : null; return n ? T('Preacher in {region}, heading for {name}', { region: regionName(p.region), name: n.name }) : T('Preacher in {region}', { region: regionName(p.region) }); }).join(' · ');
   }
 
   /* ================= movement ================= */
@@ -183,14 +225,14 @@
     player.dir = dir;
     const [dx, dy] = DIRS[dir];
     const nx = player.x + dx, ny = player.y + dy;
-    if (!Wd.walkable(nx, ny) || npcAt(nx, ny)) return;
+    if (!Wd.walkable(nx, ny) || npcAt(nx, ny) || preacherAt(nx, ny)) return;
     trail.unshift([player.x, player.y]); if (trail.length > 3) trail.pop();
     player.moving = true; player.t = 0; player.tx = nx; player.ty = ny;
     hidePreview();
   }
 
   function update(dt, t) {
-    tickMissions(t); moveNpcs(dt); tickAction(t);
+    tickMissions(t); tickStatues(); moveNpcs(dt); tickPreachers(dt); tickAction(t);
     if (mode !== 'world') return;
     if (player.moving) {
       player.t += dt / 140;
@@ -223,6 +265,8 @@
     if (mode !== 'world' || player.moving) return;
     hidePreview();
     const [fx, fy] = front();
+    const p = preacherAt(fx, fy);
+    if (p) { runSteps(nar(D.ORDER.lines.silent), null); return; }
     const n = npcAt(fx, fy);
     if (n) { n.dir = { up: 'down', down: 'up', left: 'right', right: 'left' }[player.dir]; talkTo(n); return; }
     const site = Wd.siteAt(fx, fy);
@@ -261,6 +305,12 @@
       Wd.drawTile(ctx, Wd.at(x, y), x, y, x * TS - camX, y * TS - camY, t);
     }
     const inView = (x, y, w, h) => x + w >= x0 && x <= x0 + VIEW_W + 1 && y + h >= y0 && y <= y0 + VIEW_H + 1;
+    // statue circles sit on the ground, under everything that stands
+    D.STATUE.sites.forEach((s, i) => {
+      const st = S.statues[i]; if (!st || st.status !== 'built') return;
+      const r = D.STATUE.radius;
+      if (inView(s.x - r, s.y - r, r * 2 + 1, r * 2 + 1)) Wd.drawRing(ctx, s.x * TS - camX + TS / 2, s.y * TS - camY + TS / 2, r * TS, t);
+    });
     Wd.structures.forEach(s => { if (inView(s.x, s.y, s.w, s.h)) Wd.drawStructure(ctx, s, camX, camY); });
     D.MISSIONS.forEach(m => {
       if (!inView(m.site.x, m.site.y, m.site.w, m.site.h)) return;
@@ -268,9 +318,15 @@
       if (m.region < S.unlocked && ms.status !== 'built' && ms.status !== 'building') Wd.drawGlow(ctx, m.site.x * TS - camX, m.site.y * TS - camY, m.site.w * TS, m.site.h * TS, t, hover && hover.id === m.id);
       if (!(built(m.id) && m.kind === 'bridge')) Wd.drawMission(ctx, m, camX, camY, ms, t);
     });
-    Wd.decor.forEach(d => { if (inView(d.x, d.y, 1, 1)) Wd.drawDecor(ctx, d, camX, camY, t); });
+    Wd.decor.forEach(d => {
+      if (!inView(d.x, d.y, 1, 1)) return;
+      if (d.kind === 'plinth') { const st = S.statues[d.statue]; if (D.STATUE.sites[d.statue].region < S.unlocked && !st) Wd.drawGlow(ctx, d.x * TS - camX, d.y * TS - camY, TS, TS, t, false); if (st && st.status === 'building') drawStatueProgress(d, st, camX, camY, t); }
+      Wd.drawDecor(ctx, d, camX, camY, t);
+    });
 
+    const targeted = new Set(preachers.filter(p => p.phase !== 'gone' && p.target).map(p => p.target));
     const people = npcs.filter(n => n.region < S.unlocked && inView(Math.floor(n.fx), Math.floor(n.fy), 2, 2)).map(n => ({ x: n.fx, y: n.fy, spec: n.spec, dir: n.dir, walk: n.walk || 0, npc: n }));
+    preachers.filter(p => p.phase !== 'gone' && inView(Math.floor(p.fx), Math.floor(p.fy), 2, 2)).forEach(p => people.push({ x: p.fx, y: p.fy, spec: p.spec, dir: p.dir, walk: p.walk || 0, preacher: p }));
     people.push({ x: player.fx, y: player.fy, spec: D.LOOKS[S.look], dir: player.dir, walk: player.walk, me: true });
     const fol = follower();
     if (fol === 'goat' && trail.length) people.push({ x: trail[0][0], y: trail[0][1], goat: true });
@@ -278,6 +334,7 @@
     people.forEach(p => {
       const px = p.x * TS - camX + TS / 2, py = p.y * TS - camY + TS - 2;
       if (p.goat) { Wd.drawFollower(ctx, 'goat', px, py, t, player.dir); return; }
+      if (p.npc && targeted.has(p.npc.id)) { ctx.strokeStyle = 'rgba(228,87,79,' + (0.5 + 0.4 * Math.sin(t / 200)) + ')'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.ellipse(px, py + 1, 14, 6, 0, 0, Math.PI * 2); ctx.stroke(); }
       Wd.drawPerson(ctx, px, py, p.spec, p.dir, p.walk, 1);
       if (p.me) {
         if (S.carry) Wd.drawItem(ctx, S.carry.item, px, py - 44, t);
@@ -286,9 +343,13 @@
       }
       if (p.npc) {
         if (npcAnim && npcAnim.id === p.npc.id && mode === 'dialog') Wd.drawAction(ctx, npcAnim.kind, px, py, t, 0.5, p.npc.dir === 'left' ? 'left' : 'right');
+        const sermon = preachers.find(q => q.phase === 'preach' && q.target === p.npc.id);
+        if (sermon) Wd.drawSermon(ctx, px, py, t);
         drawMarker(p.npc, px, py, t);
       }
+      if (p.preacher) drawPreacherMarker(px, py, t);
     });
+    drawOffscreenPreachers(camX, camY, t);
 
     // fog over locked regions
     Wd.regions.forEach((r, i) => {
@@ -303,7 +364,9 @@
   function drawMarker(n, px, py, t) {
     const bob = Math.sin(t / 250) * 3;
     let mark = null, color = '#F6B544';
-    if (n.trick && !S.tricks[n.trick] && (!n.talk || S.flags['talked:' + n.id])) { mark = '!'; color = '#FF7B6B'; }
+    if (S.refuse[n.id]) { mark = '✗'; color = '#E4574F'; }
+    else if (n.expert && S.refog[n.id]) { mark = '?'; color = '#E4574F'; }
+    else if (n.trick && !S.tricks[n.trick] && (!n.talk || S.flags['talked:' + n.id])) { mark = '!'; color = '#FF7B6B'; }
     else if (n.expert && !ex(n.id).crew) { mark = '?'; color = '#5FB3D9'; }
     else if (n.expert && ex(n.id).cleared < n.expert.fog.length) { mark = '?'; color = '#BFEBD6'; }
     else if (deliverFor(n) || jobDeliverFor(n)) { mark = '📦'; color = '#63C48F'; }
@@ -311,7 +374,30 @@
     else if (n.trick && !S.tricks[n.trick]) { mark = '!'; color = '#F6B544'; }
     if (!mark) return;
     ctx.fillStyle = color; Wd.rr(ctx, px - 7, py - 52 + bob, 14, 17, 5); ctx.fill();
-    ctx.fillStyle = '#2A2420'; ctx.font = 'bold 12px "Baloo 2", system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.fillText(mark, px, py - 39 + bob);
+    ctx.fillStyle = '#2A2420'; ctx.font = 'bold 12px ' + FONT; ctx.textAlign = 'center'; ctx.fillText(mark, px, py - 39 + bob);
+  }
+  function drawPreacherMarker(px, py, t) {
+    const bob = Math.sin(t / 250) * 3, pulse = 0.6 + 0.4 * Math.sin(t / 150);
+    ctx.fillStyle = 'rgba(228,87,79,' + pulse + ')'; Wd.rr(ctx, px - 8, py - 56 + bob, 16, 19, 6); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 13px ' + FONT; ctx.textAlign = 'center'; ctx.fillText('!', px, py - 41 + bob);
+  }
+  /* A red arrow at the edge of the screen for every preacher that is out of view. */
+  function drawOffscreenPreachers(camX, camY, t) {
+    preachers.filter(p => p.phase !== 'gone').forEach(p => {
+      const sx = p.fx * TS - camX + TS / 2, sy = p.fy * TS - camY + TS / 2;
+      if (sx >= 0 && sx <= canvas.width && sy >= 0 && sy <= canvas.height) return;
+      const cx = canvas.width / 2, cy = canvas.height / 2, dx = sx - cx, dy = sy - cy;
+      const k = Math.min((canvas.width / 2 - 18) / Math.abs(dx || 1e-6), (canvas.height / 2 - 18) / Math.abs(dy || 1e-6));
+      const ex = cx + dx * k, ey = cy + dy * k, a = Math.atan2(dy, dx);
+      ctx.save(); ctx.translate(ex, ey); ctx.rotate(a);
+      ctx.fillStyle = 'rgba(228,87,79,' + (0.7 + 0.3 * Math.sin(t / 150)) + ')'; ctx.beginPath(); ctx.moveTo(12, 0); ctx.lineTo(-8, -9); ctx.lineTo(-4, 0); ctx.lineTo(-8, 9); ctx.closePath(); ctx.fill();
+      ctx.restore();
+    });
+  }
+  function drawStatueProgress(d, st, camX, camY, t) {
+    const px = d.x * TS - camX, py = d.y * TS - camY, p = Math.min(1, (Date.now() - st.startedAt) / (D.STATUE.buildSec * 1000));
+    ctx.fillStyle = '#2A2420'; Wd.rr(ctx, px + 2, py - 10, TS - 4, 6, 3); ctx.fill();
+    ctx.fillStyle = '#63C48F'; Wd.rr(ctx, px + 2, py - 10, Math.max(6, (TS - 4) * p), 6, 3); ctx.fill();
   }
 
   function drawFog(r, camX, camY, t, alpha) {
@@ -325,9 +411,9 @@
       g.addColorStop(0, 'rgba(235,242,242,.55)'); g.addColorStop(1, 'rgba(235,242,242,0)');
       ctx.fillStyle = g; ctx.fillRect(cx - 110, cy - 110, 220, 220);
     }
-    ctx.fillStyle = 'rgba(20,38,43,.75)'; ctx.font = 'bold 14px "Baloo 2", system-ui, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(20,38,43,.75)'; ctx.font = 'bold 14px ' + FONT; ctx.textAlign = 'center';
     const cx = Math.max(60, Math.min(canvas.width - 60, px + w / 2)), cy = Math.max(20, Math.min(canvas.height - 10, py + h / 2));
-    if (px < canvas.width && px + w > 0 && py < canvas.height && py + h > 0) ctx.fillText('Fog of Fallacy', cx, cy);
+    if (px < canvas.width && px + w > 0 && py < canvas.height && py + h > 0) ctx.fillText(T('Fog of Fallacy'), cx, cy);
     ctx.restore();
   }
 
@@ -341,11 +427,12 @@
     if (!m || m.region >= S.unlocked || built(m.id)) return null;
     return m;
   }
+  function needsText(m) { return m.needs.map(n => (n.level > 1 ? stars(n.level) + ' ' : '') + T('a {role}', { role: roleName(n.role).toLowerCase() })).join(', '); }
   function showPreview(m) {
     hover = m;
     const box = $('preview'), stage = canvas.getBoundingClientRect();
     $('preview-img').src = 'img/preview-' + m.id + '.jpg'; $('preview-title').textContent = m.name;
-    $('preview-text').textContent = `Costs ${m.cost} coins. Needs ${m.needs.map(n => (n.level > 1 ? stars(n.level) + ' ' : 'a ') + D.ROLES[n.role].name.toLowerCase()).join(', ')}.` + (m.income.rate ? ` Pays ${m.income.rate} coins a minute once built.` : ' Lifts the fog from the whole Valley.');
+    $('preview-text').textContent = T('Costs {n} coins. Needs {list}.', { n: m.cost, list: needsText(m) }) + ' ' + (m.income.rate ? T('Pays {n} coins a minute once built.', { n: m.income.rate }) : T('Lifts the fog from the whole Valley.'));
     box.hidden = false;
     const scale = stage.width / canvas.width;
     const sx = (m.site.x * TS - cam.x) * scale, sy = (m.site.y * TS - cam.y) * scale, sw = m.site.w * TS * scale, sh = m.site.h * TS * scale;
@@ -367,8 +454,20 @@
   function renderMini() {
     for (let y = 0; y < Wd.H; y++) for (let x = 0; x < Wd.W; x++) { mctx.fillStyle = MINI_COL[Wd.at(x, y)] || '#000'; mctx.fillRect(x * 2, y * 2, 2, 2); }
     Wd.structures.forEach(s => { mctx.fillStyle = s.roof; mctx.fillRect(s.x * 2, s.y * 2, s.w * 2, s.h * 2); });
+    D.STATUE.sites.forEach((s, i) => {
+      const st = S.statues[i]; if (!st || st.status !== 'built') return;
+      mctx.fillStyle = 'rgba(246,181,68,.22)'; mctx.beginPath(); mctx.arc(s.x * 2 + 1, s.y * 2 + 1, D.STATUE.radius * 2, 0, Math.PI * 2); mctx.fill();
+      mctx.fillStyle = '#F6B544'; mctx.fillRect(s.x * 2 - 1, s.y * 2 - 1, 4, 4);
+    });
     Wd.regions.forEach((r, i) => { if (i >= S.unlocked) { mctx.fillStyle = 'rgba(190,205,205,.9)'; mctx.fillRect(r.x0 * 2, r.y0 * 2, (r.x1 - r.x0 + 1) * 2, (r.y1 - r.y0 + 1) * 2); } });
     D.MISSIONS.forEach(m => { if (m.region < S.unlocked) { mctx.fillStyle = built(m.id) ? '#63C48F' : '#F6B544'; mctx.fillRect(m.site.x * 2 - 1, m.site.y * 2 - 1, m.site.w * 2 + 2, m.site.h * 2 + 2); } });
+    const blink = Math.floor(Date.now() / 300) % 2 === 0;
+    preachers.filter(p => p.phase !== 'gone').forEach(p => {
+      const n = p.target ? npcById(p.target) : null;
+      if (n) { mctx.strokeStyle = '#E4574F'; mctx.lineWidth = 1.5; mctx.beginPath(); mctx.arc(n.x * 2 + 1, n.y * 2 + 1, 4, 0, Math.PI * 2); mctx.stroke(); }
+      mctx.fillStyle = blink ? '#E4574F' : '#FF9A90'; mctx.beginPath(); mctx.arc(p.x * 2 + 1, p.y * 2 + 1, 3.5, 0, Math.PI * 2); mctx.fill();
+      mctx.strokeStyle = '#2A2420'; mctx.lineWidth = 1; mctx.stroke();
+    });
     mctx.fillStyle = '#FF7B6B'; mctx.beginPath(); mctx.arc(player.x * 2 + 1, player.y * 2 + 1, 3, 0, Math.PI * 2); mctx.fill();
     mctx.strokeStyle = '#fff'; mctx.lineWidth = 1; mctx.stroke();
   }
@@ -451,7 +550,7 @@
     $('dlg').classList.remove('narrator');
     if (who && npcById(who)) { $('dlg-name').textContent = npcById(who).name; portraitFor(who); } else { $('dlg-name').textContent = S.name; portraitFor('you'); }
     if (portrait) portrait.mute = true;
-    $('dlg-text').textContent = prompt || 'What do you say?';
+    $('dlg-text').textContent = prompt || T('What do you say?');
     $('dlg-next').hidden = true;
     const box = $('dlg-choices'); box.hidden = false; box.innerHTML = '';
     (menu ? options : shuffle(options)).forEach(o => {
@@ -484,7 +583,7 @@
     if (opts.img) { img.src = opts.img; img.hidden = false; big.hidden = true; } else { img.hidden = true; big.hidden = false; big.textContent = opts.icon || '✨'; }
     $('card-one').textContent = opts.one || ''; $('card-spot').textContent = opts.spot || '';
     $('card-answers').innerHTML = opts.answers || '';
-    $('card-btn').textContent = opts.btn || 'OK';
+    $('card-btn').textContent = opts.btn || T('OK');
     c.className = 'overlay ' + (opts.kind || '');
     c.hidden = false; mode = 'panel'; updateHud();
     cardAfter = opts.after || null;
@@ -498,31 +597,32 @@
 
   function answersHtml(chosen, correct, ok) {
     let h = '';
-    if (chosen) h += `<div class="ans ${ok ? 'right' : 'wrong'}"><span class="mark">${ok ? '✓' : '✗'}</span><div><small>You said</small>${esc(chosen)}</div></div>`;
-    if (!ok && correct) h += `<div class="ans right"><span class="mark">✓</span><div><small>Better answer</small>${esc(correct)}</div></div>`;
+    if (chosen) h += `<div class="ans ${ok ? 'right' : 'wrong'}"><span class="mark">${ok ? '✓' : '✗'}</span><div><small>${esc(T('You said'))}</small>${esc(chosen)}</div></div>`;
+    if (!ok && correct) h += `<div class="ans right"><span class="mark">✓</span><div><small>${esc(T('Better answer'))}</small>${esc(correct)}</div></div>`;
     return h;
   }
   function lessonWin(fid, eyebrow, after, chosen) {
     const f = fallacy(fid);
     S.spotted[fid] = (S.spotted[fid] || 0) + 1; save();
     A.play('badge');
-    card({ eyebrow: eyebrow || 'You spotted it!', title: f.icon + ' ' + f.nick, img: f.img, icon: f.icon, one: f.one, spot: f.spot, btn: 'Nice', kind: 'win', after, answers: answersHtml(chosen, null, true) });
+    card({ eyebrow: eyebrow || T('You spotted it!'), title: f.icon + ' ' + f.nick, img: f.img, icon: f.icon, one: f.one, spot: f.spot, btn: T('Nice'), kind: 'win', after, answers: answersHtml(chosen, null, true) });
   }
   function lessonFail(fid, eyebrow, after, chosen, correct) {
     const f = fallacy(fid);
     S.fails[fid] = (S.fails[fid] || 0) + 1; save();
     A.play('bad');
-    card({ eyebrow: eyebrow || 'That was a trick', title: f.icon + ' ' + f.nick, img: f.img, icon: f.icon, one: f.one, spot: f.spot, btn: 'Try again', kind: 'fail', after, answers: answersHtml(chosen, correct, false) });
+    card({ eyebrow: eyebrow || T('That was a trick'), title: f.icon + ' ' + f.nick, img: f.img, icon: f.icon, one: f.one, spot: f.spot, btn: T('Try again'), kind: 'fail', after, answers: answersHtml(chosen, correct, false) });
   }
   function lessonOops(after, chosen, correct) {
     const f = fallacy('adHominem');
     A.play('bad');
-    card({ eyebrow: 'Hmm', title: f.icon + ' ' + f.nick, img: f.img, one: 'Name-calling is not an answer.', spot: 'Say why the argument is wrong instead. Insults give the other person a reason to stop listening.', btn: 'Try again', kind: 'fail', after, answers: answersHtml(chosen, correct, false) });
+    card({ eyebrow: T('Hmm'), title: f.icon + ' ' + f.nick, img: f.img, one: T('Name-calling is not an answer.'), spot: T('Say why the argument is wrong instead. Insults give the other person a reason to stop listening.'), btn: T('Try again'), kind: 'fail', after, answers: answersHtml(chosen, correct, false) });
   }
 
   /* ================= talking ================= */
   function talkTo(n) {
     if (n.path) { n.path = null; n.fx = n.x; n.fy = n.y; n.walk = 0; }
+    if (S.refuse[n.id] && D.REFUSE[n.id]) { runRefuse(n); return; }
     const jd = jobDeliverFor(n);
     if (jd) { deliverJob(jd, n); return; }
     const del = deliverFor(n);
@@ -564,19 +664,20 @@
   /* ---- experts ---- */
   function talkExpert(n) {
     const e = ex(n.id), fogs = n.expert.fog;
+    if (S.refog[n.id]) { runHardFog(n); return; }
     if (!e.crew) { runFog(n, 0); return; }
     const opts = [];
-    if (e.cleared < fogs.length) opts.push({ key: 'fog', text: `Ask about: ${fogs[e.cleared].topic || 'what is on your mind'}` });
-    opts.push({ key: 'why', text: "Why aren't you working yet?" });
-    opts.push({ key: 'work', text: 'Tell me about your craft.' });
-    opts.push({ key: 'bye', text: 'Never mind.' });
-    const lvl = exLevel(n.id), role = D.ROLES[n.expert.role].name;
-    runSteps([{ choice: opts, menu: true, speaker: n.id, prompt: 'What do you want to talk about?' }], {
+    if (e.cleared < fogs.length) opts.push({ key: 'fog', text: T('Ask about: {topic}', { topic: fogs[e.cleared].topic || T('what is on your mind') }) });
+    opts.push({ key: 'why', text: T("Why aren't you working yet?") });
+    opts.push({ key: 'work', text: T('Tell me about your craft.') });
+    opts.push({ key: 'bye', text: T('Never mind.') });
+    const lvl = exLevel(n.id), role = roleName(n.expert.role);
+    runSteps([{ choice: opts, menu: true, speaker: n.id, prompt: T('What do you want to talk about?') }], {
       branch: o => {
         if (o.key === 'fog') return [{ fn: () => runFog(n, e.cleared), stop: true }];
         if (o.key === 'why') return whyNotWorking(n).map(text => ({ who: n.id, text }));
-        if (o.key === 'work') return [{ who: n.id, text: (n.expert.crew || ['Ready to work.'])[0] }, { fn: () => toast(`${D.ROLES[n.expert.role].icon} ${role} ${stars(lvl)} · fee ${n.expert.fee} · fog cleared ${e.cleared}/${fogs.length}`, 'good') }];
-        return [{ who: n.id, text: 'Right you are.' }];
+        if (o.key === 'work') return [{ who: n.id, text: (n.expert.crew || [T('Ready to work.')])[0] }, { fn: () => toast(`${D.ROLES[n.expert.role].icon} ${role} ${stars(lvl)} · ${T('fee {n}', { n: n.expert.fee })} · ${T('fog cleared {a}/{b}', { a: e.cleared, b: fogs.length })}`, 'good') }];
+        return [{ who: n.id, text: T('Right you are.') }];
       }
     });
   }
@@ -609,9 +710,45 @@
     if (result === 'win') {
       e.cleared = idx + 1;
       const joined = !e.crew; e.crew = true; save();
-      const eyebrow = joined ? `${n.name} joins your crew!` : `${n.name} thinks clearer (+50% learning)`;
-      lessonWin(fog.fallacy, eyebrow, () => { if (joined) toast(`👷 ${n.name} joined`, 'good'); updateHud(); placeCrew(true); }, chosen);
-    } else lessonFail(fog.fallacy, n.name + ' is still foggy', null, chosen, correct);
+      const eyebrow = joined ? T('{name} joins your crew!', { name: n.name }) : T('{name} thinks clearer (+50% learning)', { name: n.name });
+      lessonWin(fog.fallacy, eyebrow, () => { if (joined) toast(T('👷 {name} joined', { name: n.name }), 'good'); updateHud(); placeCrew(true); }, chosen);
+    } else lessonFail(fog.fallacy, T('{name} is still foggy', { name: n.name }), null, chosen, correct);
+  }
+
+  /* ---- the harder fog a preacher leaves behind: clear it and the expert rejoins the crew ---- */
+  function runHardFog(n) {
+    const list = D.HARD[n.id] || [], r = S.refog[n.id];
+    const fog = list[r.idx % list.length];
+    if (!fog) { delete S.refog[n.id]; ex(n.id).crew = true; save(); talkExpert(n); return; }
+    let result = 'fail';
+    const c = {
+      branch: o => { result = o.right ? 'win' : 'fail'; return normalize(o.right ? fog.right : fog.wrong, n.id).concat([{ end: 'x' }]); },
+      finish: () => {
+        const { chosen, correct } = answerTexts(c, o => !!o.right);
+        mode = 'world';
+        if (result === 'win') {
+          delete S.refog[n.id]; const e = ex(n.id); e.crew = true; e.xp += 30; S.orderStats.cleared++; save();
+          lessonWin(fog.fallacy, T('{name} is back on your crew!', { name: n.name }), () => { toast(T('👷 {name} is back', { name: n.name }), 'good'); updateHud(); placeCrew(true); }, chosen);
+        } else lessonFail(fog.fallacy, T('{name} is still foggy', { name: n.name }), null, chosen, correct);
+      }
+    };
+    runSteps(normalize(fog.intro, n.id).concat([{ choice: fog.options }]), c);
+  }
+
+  /* ---- somebody the preacher turned against you: answer the argument and they work with you again ---- */
+  function runRefuse(n) {
+    const r = D.REFUSE[n.id];
+    let result = 'fail';
+    const c = {
+      branch: o => { result = o.right ? 'win' : 'fail'; return normalize(o.right ? r.right : r.wrong, n.id).concat([{ end: 'x' }]); },
+      finish: () => {
+        const { chosen, correct } = answerTexts(c, o => !!o.right);
+        mode = 'world';
+        if (result === 'win') { delete S.refuse[n.id]; S.orderStats.cleared++; save(); lessonWin(r.fallacy, T('{name} will work with you again', { name: n.name }), () => updateHud(), chosen); }
+        else lessonFail(r.fallacy, T('{name} still refuses', { name: n.name }), null, chosen, correct);
+      }
+    };
+    runSteps(normalize(r.intro, n.id).concat([{ choice: r.options }]), c);
   }
 
   /* ---- tasks ---- */
@@ -626,11 +763,11 @@
     const st = S.tasks[t.id];
     if (!st) {
       if (t.item && S.carry) { runSteps(nar(D.LINES.handsFull), null); return; }
-      const steps = t.offer.map(text => ({ who: n.id, text })).concat([{ choice: [{ text: "Yes, I'll do it.", key: 'yes' }, { text: 'Not right now.', key: 'no' }] }]);
+      const steps = t.offer.map(text => ({ who: n.id, text })).concat([{ choice: [{ text: T("Yes, I'll do it."), key: 'yes' }, { text: T('Not right now.'), key: 'no' }] }]);
       runSteps(steps, {
         branch: o => o.key === 'yes'
           ? [{ who: n.id, text: t.accept }, { fn: () => { S.tasks[t.id] = 'active'; if (t.kind === 'deliver' && t.item) S.carry = { kind: 'task', id: t.id, item: t.item }; save(); toast('📋 ' + t.title, 'good'); A.play('open'); updateHud(); } }]
-          : [{ who: n.id, text: 'Come back when you have time.' }],
+          : [{ who: n.id, text: T('Come back when you have time.') }],
         finish: () => { mode = 'world'; }
       });
       return;
@@ -649,17 +786,13 @@
     runSteps(t.deliver.map(text => ({ who: n.id, text })).concat([{ fn: () => finishTask(t) }]), null);
   }
 
-  /* ---- decorations: task spots and repeatable jobs ---- */
-  const FLAVOR = { goat: 'A goat. It looks at you. You look at it.', apples: 'A basket of apples under the trees.', scarecrow: 'A scarecrow, face down in the mud.', brokenfence: 'A fence rail hangs loose.',
-    lamp: 'A street lamp.', lostsign: 'A wooden sign lying in the grass.', cart: 'An ore cart with a missing wheel.', canary: 'A small yellow bird, singing.', oar: 'An oar, half buried in sand.',
-    bucket: 'Two buckets by the river.', broom: 'A broom leaning on a stall.', orepile: 'A heap of rock with glints of ore.', ropes: 'Coils of wet rope.', milk: 'The goats need milking.',
-    boat: 'A boat. It bobs.', stall: 'A market stall. Bright things, high prices.', fountain: 'Cool water splashes.', cards: 'A card table. The cards look tired.', sign: 'A signpost.', bench: 'A bench. Nobody is sitting.',
-    logs: 'Freshly cut timber.', tripod: 'A surveyor\'s tripod.', crate: 'A crate. Heavy.', pot2: 'A flower pot.', tollbox: 'The bridge toll box.' };
+  /* ---- decorations: task spots, repeatable jobs, statue plinths ---- */
   const ACTION_MS = { hammer: 2600, dig: 2600, sweep: 2800, pick: 2200, sort: 2600, milk: 2400, coil: 2400, lift: 1800, light: 2200, call: 2200 };
 
   function useDecor(d) {
     if (d.mission) { openBuilding(mission(d.mission)); return; }
-    const job = allJobs().find(j => j.spot === d.id);
+    if (d.kind === 'plinth') { openStatue(d.statue); return; }
+    const job = allJobs().find(j => j.place === d.id);
     if (job) { doJob(job); return; }
     const task = allTasks().find(t => t.kind === 'spot' && t.target === d.id);
     if (task && S.tasks[task.id] === 'active') {
@@ -669,11 +802,11 @@
         if (task.item) S.carry = { kind: 'task', id: task.id, item: task.item };
         save(); syncWorld(); updateHud();
         A.play(task.follow ? (task.follow === 'goat' ? 'goat' : 'bird') : 'good');
-        toast(task.follow ? `${task.follow === 'goat' ? 'Pickle' : 'Goldie'} follows you!` : task.item ? 'Got it! Carry it back.' : 'Fixed!', 'good');
+        toast(task.follow ? T('{pet} follows you!', { pet: petName(task.follow) }) : task.item ? T('Got it! Carry it back.') : T('Fixed!'), 'good');
       });
       return;
     }
-    runSteps(nar(FLAVOR[d.kind] || 'Nothing to do here.'), null);
+    runSteps(nar(D.FLAVOR[d.kind] || D.FLAVOR.nothing), null);
   }
 
   /* ---- jobs: an animation at the spot, then pay, or carry something to a person who pays ---- */
@@ -682,7 +815,7 @@
     if (last + job.cooldown * 1000 > Date.now()) { runSteps(nar(D.LINES.cooldown), null); return; }
     if (S.carry) { runSteps(nar(D.LINES.handsFull), null); return; }
     startAction(job.anim, ACTION_MS[job.anim] || 2400, () => {
-      if (job.deliverTo) { S.carry = { kind: 'job', id: job.id, item: job.item }; save(); updateHud(); toast('Now ' + job.steps[1].charAt(0).toLowerCase() + job.steps[1].slice(1), 'good'); }
+      if (job.deliverTo) { S.carry = { kind: 'job', id: job.id, item: job.item }; save(); updateHud(); toast(job.steps[1], 'good'); }
       else { S.jobs[job.id] = Date.now(); changeMoney(job.pay); A.play('coins'); }
     });
   }
@@ -734,6 +867,168 @@
     crew().filter(n => !wanted.includes(n)).forEach(n => sendNpc(n, n.home.x, n.home.y, n.home.dir, false));
   }
 
+  /* ================= the Grey Order: preachers who fog cleared heads =================
+     A preacher walks out of the lodge in a region, goes to somebody you convinced, preaches
+     for a few seconds, and leaves a fog behind: experts leave your crew until you clear a
+     harder fog; task givers refuse you until you answer the preacher's argument. Nobody
+     inside a statue's circle can be reached. You cannot talk to a preacher. */
+  const preachers = [];
+  const preacherAt = (x, y) => preachers.find(p => p.phase !== 'gone' && ((p.x === x && p.y === y) || (p.path && p.path.length && p.path[0][0] === x && p.path[0][1] === y)));
+  const orderCfg = () => D.ORDER.byLevel[Math.min(S.unlocked, 5)] || null;
+  const isDeliverTarget = n => Object.values(D.JOBS).some(j => j.deliverTo === n.id) || Object.values(D.TASKS).some(t => t.kind === 'deliver' && t.target === n.id);
+  const protectedAt = (x, y) => D.STATUE.sites.some((s, i) => S.statues[i] && S.statues[i].status === 'built' && dist(s.x, s.y, x, y) <= D.STATUE.radius);
+  function canTarget(n) {
+    if (n.region >= S.unlocked || protectedAt(n.x, n.y)) return false;
+    if (preachers.some(p => p.phase !== 'gone' && p.target === n.id)) return false;
+    if (n.expert) return !!(ex(n.id).crew && !S.refog[n.id] && D.HARD[n.id] && D.HARD[n.id].length);
+    return !!(D.REFUSE[n.id] && !S.refuse[n.id] && (n.task || isDeliverTarget(n)));
+  }
+  /* Is this person still worth walking to? (Same as canTarget, minus the "already targeted" rule.) */
+  const stillValid = n => n.region < S.unlocked && !protectedAt(n.x, n.y) && (n.expert ? !!(ex(n.id).crew && !S.refog[n.id]) : !S.refuse[n.id]);
+  function pickTarget(region) {
+    const cands = npcs.filter(n => canTarget(n) && (region === undefined || n.region === region));
+    if (!cands.length) return null;
+    const weight = n => n.expert ? 3 : 1;
+    let r = Math.random() * cands.reduce((s, n) => s + weight(n), 0);
+    for (const n of cands) { r -= weight(n); if (r <= 0) return n; }
+    return cands[cands.length - 1];
+  }
+  function makePreacher(x, y, region, target, skin) {
+    const spec = Object.assign({}, D.ORDER.spec, { skin: skin || D.ORDER.skins[Math.floor(Math.random() * D.ORDER.skins.length)] });
+    return { id: 'p' + Date.now().toString(36) + Math.floor(Math.random() * 1000), x, y, fx: x, fy: y, dir: 'down', walk: 0, path: null, t: 0, spec, region, target, phase: 'walk', converts: 0, until: 0 };
+  }
+  function persistPreachers() { S.preachers = preachers.filter(p => p.phase !== 'gone').map(p => ({ x: p.x, y: p.y, region: p.region, target: p.target, phase: p.phase === 'preach' ? 'walk' : p.phase, converts: p.converts, skin: p.spec.skin })); save(); }
+  function restorePreachers() {
+    preachers.length = 0;
+    (S.preachers || []).forEach(s => { const p = makePreacher(s.x, s.y, s.region, s.target, s.skin); p.phase = s.phase || 'walk'; p.converts = s.converts || 0; preachers.push(p); });
+  }
+  function spawnPreacher() {
+    const target = pickTarget();
+    S.lastPreach = Date.now();
+    if (!target) { save(); return; }
+    const lodge = Wd.lodges().find(l => l.region === target.region) || Wd.lodges()[0];
+    const p = makePreacher(lodge.door[0], lodge.door[1], target.region, target.id);
+    preachers.push(p); persistPreachers();
+    A.play('omen');
+    toast(T('⚠ A preacher is out in {region}!', { region: regionName(target.region) }), 'bad', 3200);
+    updateAlert();
+    if ($('minimap-box').hidden) { $('minimap-box').hidden = false; renderMini(); }
+  }
+  function tickPreachers(dt) {
+    if (S.ended || S.unlocked < 2) return;
+    const cfg = orderCfg(); if (!cfg) return;
+    const now = Date.now();
+    if (!S.orderSince) { S.orderSince = now; S.lastPreach = now - cfg.every * 1000 + D.ORDER.firstAfterSec * 1000; save(); }
+    const live = preachers.filter(p => p.phase !== 'gone');
+    if (live.length < cfg.max && now - S.lastPreach > cfg.every * 1000 && mode === 'world') spawnPreacher();
+    live.forEach(p => stepPreacher(p, dt, now, cfg));
+    if (preachers.some(p => p.phase === 'gone')) { for (let i = preachers.length - 1; i >= 0; i--) if (preachers[i].phase === 'gone') preachers.splice(i, 1); persistPreachers(); updateAlert(); }
+  }
+  function walkAlong(p, dt, speed) {
+    if (!p.path || !p.path.length) return true;
+    const [tx, ty] = p.path[0];
+    p.dir = tx > p.x ? 'right' : tx < p.x ? 'left' : ty > p.y ? 'down' : 'up';
+    p.t += dt / speed;
+    if (p.t >= 1) { p.x = tx; p.y = ty; p.fx = tx; p.fy = ty; p.t = 0; p.walk = 0; p.path.shift(); if (!p.path.length) { p.path = null; return true; } }
+    else { p.fx = p.x + (tx - p.x) * p.t; p.fy = p.y + (ty - p.y) * p.t; p.walk = p.t; }
+    return false;
+  }
+  function pathTo(p, x, y) {
+    const avoid = new Set(npcs.map(o => o.x + ',' + o.y)); preachers.forEach(o => { if (o !== p && o.phase !== 'gone') avoid.add(o.x + ',' + o.y); });
+    return Wd.findPath(p.x, p.y, x, y, avoid);
+  }
+  function pathNextTo(p, n) {
+    const spots = [[n.x, n.y + 1], [n.x - 1, n.y], [n.x + 1, n.y], [n.x, n.y - 1]].filter(([x, y]) => Wd.walkable(x, y) && !npcAt(x, y) && !(player.x === x && player.y === y));
+    spots.sort((a, b) => dist(p.x, p.y, a[0], a[1]) - dist(p.x, p.y, b[0], b[1]));
+    for (const [x, y] of spots) { if (p.x === x && p.y === y) return []; const path = pathTo(p, x, y); if (path) return path; }
+    return null;
+  }
+  function stepPreacher(p, dt, now, cfg) {
+    if (p.phase === 'walk') {
+      const n = p.target ? npcById(p.target) : null;
+      if (!n || !stillValid(n)) { retarget(p); return; }
+      if (!p.path) { const path = pathNextTo(p, n); if (!path) { retarget(p); return; } if (!path.length) { beginSermon(p, n, now, cfg); return; } p.path = path; p.t = 0; }
+      if (walkAlong(p, dt, 190)) { if (dist(p.x, p.y, n.x, n.y) <= 1.5) beginSermon(p, n, now, cfg); else p.path = null; }
+      if (Math.floor(now / 400) !== Math.floor((now - dt) / 400)) persistPreachers();
+    } else if (p.phase === 'preach') {
+      const n = npcById(p.target);
+      if (!n) { retarget(p); return; }
+      if (protectedAt(n.x, n.y)) { toast(D.ORDER.lines.protectedStop, 'good', 2600); retarget(p); return; }
+      if (now >= p.until && mode === 'world') { convert(n); p.converts++; if (p.converts >= cfg.converts) leave(p); else retarget(p); }
+    } else if (p.phase === 'leave') {
+      if (!p.path) { const lodge = Wd.lodges().find(l => l.region === p.region) || Wd.lodges()[0]; const path = pathTo(p, lodge.door[0], lodge.door[1]); if (!path || !path.length) { p.phase = 'gone'; return; } p.path = path; p.t = 0; }
+      if (walkAlong(p, dt, 170)) p.phase = 'gone';
+    }
+  }
+  function beginSermon(p, n, now, cfg) {
+    if (protectedAt(n.x, n.y)) { toast(D.ORDER.lines.protectedStop, 'good', 2600); retarget(p); return; }
+    p.phase = 'preach'; p.until = now + D.ORDER.preachSec * 1000; p.path = null; p.walk = 0;
+    p.dir = n.x > p.x ? 'right' : n.x < p.x ? 'left' : n.y > p.y ? 'down' : 'up';
+    n.dir = { up: 'down', down: 'up', left: 'right', right: 'left' }[p.dir];
+  }
+  function retarget(p) {
+    const t = pickTarget(p.region);
+    p.path = null; p.t = 0;
+    if (t) { p.target = t.id; p.phase = 'walk'; } else leave(p);
+    persistPreachers(); updateAlert();
+  }
+  function leave(p) { p.phase = 'leave'; p.target = null; p.path = null; p.t = 0; S.lastPreach = Date.now(); persistPreachers(); updateAlert(); }
+  /* The sermon worked. */
+  function convert(n) {
+    S.orderStats.fogged++;
+    A.play('fog');
+    if (n.expert) {
+      const e = ex(n.id), list = D.HARD[n.id] || [];
+      e.crew = false; S.refog[n.id] = { idx: (e.hardIdx || 0) % Math.max(1, list.length) }; e.hardIdx = (e.hardIdx || 0) + 1;
+      save(); sendNpc(n, n.home.x, n.home.y, n.home.dir, true);
+      toast(T('{name} is foggy again', { name: n.name }), 'bad', 3000);
+    } else {
+      S.refuse[n.id] = true; save();
+      toast(T('{name} refuses to work with you', { name: n.name }), 'bad', 3000);
+    }
+    updateHud(); renderMini();
+  }
+
+  /* ================= statues of Aristotle ================= */
+  const hasMason = () => crew().some(n => n.expert.role === 'mason');
+  function openStatue(i) {
+    const site = D.STATUE.sites[i], st = S.statues[i], cost = D.STATUE.costs[i];
+    if (site.region >= S.unlocked) return;
+    if (st && st.status === 'built') { runSteps(nar([D.STATUE.inspect, D.STATUE.quote]), null); return; }
+    if (st && st.status === 'building') {
+      const p = Math.min(100, Math.round((Date.now() - st.startedAt) / (D.STATUE.buildSec * 10)));
+      panel(`<p class="eyebrow">${esc(T('Under construction'))}</p><h2>${esc(D.STATUE.name)}</h2><div class="bar"><span style="width:${p}%"></span></div><p>${esc(T('{p}% done.', { p }))}</p><div class="row"><button class="btn btn-ghost grow" id="p-close">${esc(T('Close'))}</button></div>`);
+      $('p-close').onclick = closePanel; return;
+    }
+    const ready = hasMason() && S.money >= cost;
+    let why = '';
+    if (!hasMason()) why = T('You need a mason in your crew.'); else if (S.money < cost) why = T('You need {n} more coins.', { n: cost - S.money });
+    panel(`
+      <p class="eyebrow">${esc(regionName(site.region))}</p>
+      <h2>🗿 ${esc(D.STATUE.name)}</h2>
+      <p>${esc(D.STATUE.blurb)}</p>
+      <p class="spot">${esc(D.STATUE.quote)}</p>
+      <div class="costrow"><span>${esc(T('Cost'))} <b>${cost} 🪙</b></span><span>${esc(T('You have'))} <b>${S.money} 🪙</b></span><span>${esc(T('Circle'))} <b>${D.STATUE.radius}</b></span><span>${esc(T('Builder'))} <b>${esc(roleName('mason'))}</b></span></div>
+      <p class="why">${esc(why)}</p>
+      <div class="row"><button class="btn btn-big grow" id="p-build" ${ready ? '' : 'disabled'}>${esc(T('Build the statue'))}</button><button class="btn btn-ghost" id="p-close">${esc(T('Close'))}</button></div>`);
+    $('p-close').onclick = closePanel;
+    $('p-build').onclick = () => {
+      if (!ready) return;
+      changeMoney(-cost, true); toast(`-${cost} 🪙`, 'bad');
+      S.statues[i] = { status: 'building', startedAt: Date.now() }; save(); closePanel(); A.play('hammer');
+      runSteps(nar(D.STATUE.start), null);
+    };
+  }
+  function tickStatues() {
+    Object.keys(S.statues).forEach(i => {
+      const st = S.statues[i];
+      if (st.status === 'building' && Date.now() - st.startedAt >= D.STATUE.buildSec * 1000 && mode === 'world') {
+        st.status = 'built'; save(); syncWorld(); A.play('unlock');
+        runSteps(nar(D.STATUE.built), null);
+      }
+    });
+  }
+
   /* ================= missions ================= */
   function assign(m) {
     const used = new Set();
@@ -752,28 +1047,30 @@
     const rows = m.needs.map((need, i) => {
       const who = team[i], r = D.ROLES[need.role];
       const have = crew().filter(n => n.expert.role === need.role);
-      let note = who ? `${esc(who.name)} ${stars(exLevel(who.id))} · fee ${who.expert.fee}` : have.length ? `${esc(have[0].name)} is only ${stars(exLevel(have[0].id))}. Train up or find another.` : `Nobody in your crew. Find a ${r.name.toLowerCase()} and clear their fog.`;
-      return `<li class="${who ? 'ok' : 'missing'}"><span class="ri">${r.icon}</span><div><b>${r.name} ${stars(need.level)}</b><small>${note}</small></div><span>${who ? '✓' : '✗'}</span></li>`;
+      let note = who ? T('{name} {stars} · fee {fee}', { name: who.name, stars: stars(exLevel(who.id)), fee: who.expert.fee })
+        : have.length ? T('{name} is only {stars}. Train up or find another.', { name: have[0].name, stars: stars(exLevel(have[0].id)) })
+          : T('Nobody in your crew. Find a {role} and clear their fog.', { role: r.name.toLowerCase() });
+      return `<li class="${who ? 'ok' : 'missing'}"><span class="ri">${r.icon}</span><div><b>${esc(r.name)} ${stars(need.level)}</b><small>${esc(note)}</small></div><span>${who ? '✓' : '✗'}</span></li>`;
     }).join('');
     const ready = team.every(Boolean) && S.money >= cost;
     let why = '';
-    if (!team.every(Boolean)) why = 'Your crew is missing someone.'; else if (S.money < cost) why = `You need ${cost - S.money} more coins.`;
+    if (!team.every(Boolean)) why = T('Your crew is missing someone.'); else if (S.money < cost) why = T('You need {n} more coins.', { n: cost - S.money });
     panel(`
-      <p class="eyebrow">Mission · ${esc(Wd.regions[m.region].name)}</p>
+      <p class="eyebrow">${esc(T('Mission · {region}', { region: regionName(m.region) }))}</p>
       <h2>${esc(m.name)}</h2>
-      <img class="mprev" src="img/preview-${m.id}.jpg" alt="How the finished ${esc(m.name)} will look">
+      <img class="mprev" src="img/preview-${m.id}.jpg" alt="${esc(T('How the finished {name} will look', { name: m.name }))}">
       <p>${esc(m.blurb)}</p>
       <ul class="needs">${rows}</ul>
-      <div class="costrow"><span>Materials <b>${m.cost}</b></span><span>Crew fees <b>${cost - m.cost}</b></span><span>Total <b>${cost} 🪙</b></span><span>You have <b>${S.money} 🪙</b></span></div>
-      ${m.income.rate ? `<p class="spot">Once built it pays about ${m.income.rate} coins a minute (holds up to ${m.income.cap}). Collect them at the building.</p>` : '<p class="spot">Once built, the fog lifts from the whole Valley.</p>'}
+      <div class="costrow"><span>${esc(T('Materials'))} <b>${m.cost}</b></span><span>${esc(T('Crew fees'))} <b>${cost - m.cost}</b></span><span>${esc(T('Total'))} <b>${cost} 🪙</b></span><span>${esc(T('You have'))} <b>${S.money} 🪙</b></span></div>
+      ${m.income.rate ? `<p class="spot">${esc(T('Once built it pays about {rate} coins a minute (holds up to {cap}). Collect them at the building.', { rate: m.income.rate, cap: m.income.cap }))}</p>` : `<p class="spot">${esc(T('Once built, the fog lifts from the whole Valley.'))}</p>`}
       <p class="why">${esc(why)}</p>
-      <div class="row"><button class="btn btn-big grow" id="p-build" ${ready ? '' : 'disabled'}>Start building</button><button class="btn btn-ghost" id="p-close">Close</button></div>`);
+      <div class="row"><button class="btn btn-big grow" id="p-build" ${ready ? '' : 'disabled'}>${esc(T('Start building'))}</button><button class="btn btn-ghost" id="p-close">${esc(T('Close'))}</button></div>`);
     $('p-close').onclick = closePanel;
     $('p-build').onclick = () => { if (ready) startBuild(m, team, cost); };
   }
 
   function startBuild(m, team, cost) {
-    changeMoney(-cost, true); toast(`-${cost} 🪙 building started`, 'bad');
+    changeMoney(-cost, true); toast(T('-{n} 🪙 building started', { n: cost }), 'bad');
     const ms = mstate(m.id);
     ms.status = 'building'; ms.startedAt = Date.now(); ms.crew = team.map(n => n.id);
     save(); closePanel(); syncWorld(); A.play('hammer');
@@ -796,7 +1093,7 @@
     (ms.crew || []).forEach(id => {
       const e = ex(id), before = exLevel(id), got = Math.round(m.xp * xpMult(id));
       e.xp += got;
-      gains.push(`${npcById(id).name} +${got} XP${exLevel(id) > before ? ' · level up!' : ''}`);
+      gains.push(T('{name} +{n} XP', { name: npcById(id).name, n: got }) + (exLevel(id) > before ? ' · ' + T('level up!') : ''));
     });
     const newRegion = m.unlocks < Wd.regions.length && m.unlocks >= S.unlocked ? m.unlocks : null;
     if (newRegion !== null) S.unlocked = newRegion + 1;
@@ -818,18 +1115,18 @@
     const ms = mstate(m.id);
     if (ms.status === 'building') {
       const p = Math.min(100, Math.round((Date.now() - ms.startedAt) / (m.buildSec * 10)));
-      panel(`<p class="eyebrow">Under construction</p><h2>${esc(m.name)}</h2><img class="mprev" src="img/preview-${m.id}.jpg" alt=""><div class="bar"><span style="width:${p}%"></span></div><p>${p}% done. ${(ms.crew || []).map(id => esc(npcById(id).name)).join(' and ')} are hard at work.</p><div class="row"><button class="btn btn-ghost grow" id="p-close">Close</button></div>`);
+      panel(`<p class="eyebrow">${esc(T('Under construction'))}</p><h2>${esc(m.name)}</h2><img class="mprev" src="img/preview-${m.id}.jpg" alt=""><div class="bar"><span style="width:${p}%"></span></div><p>${esc(T('{p}% done. {names} are hard at work.', { p, names: (ms.crew || []).map(id => npcById(id).name).join(T(' and ')) }))}</p><div class="row"><button class="btn btn-ghost grow" id="p-close">${esc(T('Close'))}</button></div>`);
       $('p-close').onclick = closePanel; return;
     }
     const p = pending(m);
-    const train = m.id === 'school' ? `<h3>Train an expert · 30 🪙</h3><p class="spot">A lesson gives +60 XP, times their clarity bonus.</p><div class="trainlist">${crew().map(n => `<button class="choice" data-train="${n.id}" ${S.money < 30 ? 'disabled' : ''}>${D.ROLES[n.expert.role].icon} ${esc(n.name)} ${stars(exLevel(n.id))} <small>+${Math.round(60 * xpMult(n.id))} XP</small></button>`).join('') || '<p class="spot">Nobody in your crew yet.</p>'}</div>` : '';
+    const train = m.id === 'school' ? `<h3>${esc(T('Train an expert · 30 🪙'))}</h3><p class="spot">${esc(T('A lesson gives +60 XP, times their clarity bonus.'))}</p><div class="trainlist">${crew().map(n => `<button class="choice" data-train="${n.id}" ${S.money < 30 ? 'disabled' : ''}>${D.ROLES[n.expert.role].icon} ${esc(n.name)} ${stars(exLevel(n.id))} <small>+${Math.round(60 * xpMult(n.id))} XP</small></button>`).join('') || `<p class="spot">${esc(T('Nobody in your crew yet.'))}</p>`}</div>` : '';
     panel(`
-      <p class="eyebrow">Your investment</p>
+      <p class="eyebrow">${esc(T('Your investment'))}</p>
       <h2>${esc(m.name)}</h2>
       <img class="mprev" src="img/preview-${m.id}.jpg" alt="">
-      <p>Pays ${m.income.rate} coins a minute, holds up to ${m.income.cap}.</p>
-      <p class="big">Stored: ${p} 🪙</p>
-      <div class="row"><button class="btn btn-big grow" id="p-collect" ${p ? '' : 'disabled'}>Collect ${p} 🪙</button><button class="btn btn-ghost" id="p-close">Close</button></div>
+      <p>${esc(T('Pays {rate} coins a minute, holds up to {cap}.', { rate: m.income.rate, cap: m.income.cap }))}</p>
+      <p class="big">${esc(T('Stored: {n} 🪙', { n: p }))}</p>
+      <div class="row"><button class="btn btn-big grow" id="p-collect" ${p ? '' : 'disabled'}>${esc(T('Collect {n} 🪙', { n: p }))}</button><button class="btn btn-ghost" id="p-close">${esc(T('Close'))}</button></div>
       ${train}`);
     $('p-close').onclick = closePanel;
     $('p-collect').onclick = () => { const got = pending(m); ms.lastCollect = Date.now(); changeMoney(got); A.play('coins'); openBuilding(m); };
@@ -837,7 +1134,7 @@
       if (S.money < 30) return;
       const id = b.dataset.train, before = exLevel(id);
       changeMoney(-30); ex(id).xp += Math.round(60 * xpMult(id)); save();
-      A.play('good'); toast(`${npcById(id).name} +${Math.round(60 * xpMult(id))} XP` + (exLevel(id) > before ? ' · level up!' : ''), 'good');
+      A.play('good'); toast(T('{name} +{n} XP', { name: npcById(id).name, n: Math.round(60 * xpMult(id)) }) + (exLevel(id) > before ? ' · ' + T('level up!') : ''), 'good');
       openBuilding(m);
     });
   }
@@ -852,10 +1149,10 @@
   function showBook() {
     const items = D.FALLACIES.map(f => {
       const n = S.spotted[f.id] || 0, fails = S.fails[f.id] || 0;
-      return n ? `<div class="bcard">${f.img ? `<img src="${f.img}" alt="">` : `<div class="bicon">${f.icon}</div>`}<b>${f.icon} ${esc(f.nick)}</b><p>${esc(f.one)}</p><p class="spot">${esc(f.spot)}</p><small>Spotted ${n}×${fails ? ` · fooled ${fails}×` : ''}</small></div>`
-        : `<div class="bcard locked">${f.img ? `<img src="${f.img}" alt="">` : `<div class="bicon">❔</div>`}<b>❔ Not yet</b><p>${fails ? 'This one fooled you. Try again.' : 'Find this trick somewhere in the Valley.'}</p></div>`;
+      return n ? `<div class="bcard">${f.img ? `<img src="${f.img}" alt="">` : `<div class="bicon">${f.icon}</div>`}<b>${f.icon} ${esc(f.nick)}</b><p>${esc(f.one)}</p><p class="spot">${esc(f.spot)}</p><small>${esc(T('Spotted {n}×', { n }))}${fails ? ' · ' + esc(T('fooled {n}×', { n: fails })) : ''}</small></div>`
+        : `<div class="bcard locked">${f.img ? `<img src="${f.img}" alt="">` : `<div class="bicon">❔</div>`}<b>❔ ${esc(T('Not yet'))}</b><p>${esc(fails ? T('This one fooled you. Try again.') : T('Find this trick somewhere in the Valley.'))}</p></div>`;
     }).join('');
-    panel(`<div class="row between"><h2>Trick book</h2><button class="btn btn-ghost btn-sm" id="p-close">Back</button></div><div class="book-grid">${items}</div>`);
+    panel(`<div class="row between"><h2>${esc(T('Trick book'))}</h2><button class="btn btn-ghost btn-sm" id="p-close">${esc(T('Back'))}</button></div><div class="book-grid">${items}</div>`);
     $('p-close').onclick = closePanel;
   }
 
@@ -863,13 +1160,15 @@
     const rows = crew().map(n => {
       const e = ex(n.id), lvl = exLevel(n.id), nextNeed = D.XP_LEVELS[lvl] || null;
       const pct = nextNeed ? Math.round((e.xp - D.XP_LEVELS[lvl - 1]) / (nextNeed - D.XP_LEVELS[lvl - 1]) * 100) : 100;
-      return `<li><span class="ri">${D.ROLES[n.expert.role].icon}</span><div><b>${esc(n.name)}</b> · ${D.ROLES[n.expert.role].name} ${stars(lvl)}<div class="bar"><span style="width:${pct}%"></span></div><small>${e.xp} XP · fee ${n.expert.fee} · fog cleared ${e.cleared}/${n.expert.fog.length} · learns ×${xpMult(n.id).toFixed(1)}</small></div></li>`;
+      return `<li><span class="ri">${D.ROLES[n.expert.role].icon}</span><div><b>${esc(n.name)}</b> · ${esc(roleName(n.expert.role))} ${stars(lvl)}<div class="bar"><span style="width:${pct}%"></span></div><small>${esc(T('{xp} XP · fee {fee} · fog cleared {a}/{b} · learns ×{m}', { xp: e.xp, fee: n.expert.fee, a: e.cleared, b: n.expert.fog.length, m: xpMult(n.id).toFixed(1) }))}</small></div></li>`;
     }).join('');
-    const known = npcs.filter(n => n.expert && n.region < S.unlocked && !(S.experts[n.id] && S.experts[n.id].crew)).map(n => `<li class="missing"><span class="ri">${D.ROLES[n.expert.role].icon}</span><div><b>${esc(n.name)}</b> · ${D.ROLES[n.expert.role].name} <small>Not yet convinced. Find them in ${esc(Wd.regions[n.region].name)}.</small></div></li>`).join('');
-    panel(`<div class="row between"><h2>Your crew</h2><button class="btn btn-ghost btn-sm" id="p-close">Back</button></div>
-      <ul class="needs">${rows || '<li><div>Nobody yet. Experts join when you clear the first fog from their head.</div></li>'}</ul>
-      ${known ? `<p class="eyebrow">Experts you have heard of</p><ul class="needs">${known}</ul>` : ''}
-      <p class="spot">Each cleared fog makes an expert learn 50% faster from building. The Engineering School adds another 50%.</p>`);
+    const foggy = npcs.filter(n => n.expert && S.refog[n.id]).map(n => `<li class="missing"><span class="ri">${D.ROLES[n.expert.role].icon}</span><div><b>${esc(n.name)}</b> · ${esc(roleName(n.expert.role))} <small>${esc(T('A preacher fogged their head again. Find them in {region} and clear it.', { region: regionName(n.region) }))}</small></div></li>`).join('');
+    const known = npcs.filter(n => n.expert && n.region < S.unlocked && !S.refog[n.id] && !(S.experts[n.id] && S.experts[n.id].crew)).map(n => `<li class="missing"><span class="ri">${D.ROLES[n.expert.role].icon}</span><div><b>${esc(n.name)}</b> · ${esc(roleName(n.expert.role))} <small>${esc(T('Not yet convinced. Find them in {region}.', { region: regionName(n.region) }))}</small></div></li>`).join('');
+    panel(`<div class="row between"><h2>${esc(T('Your crew'))}</h2><button class="btn btn-ghost btn-sm" id="p-close">${esc(T('Back'))}</button></div>
+      <ul class="needs">${rows || `<li><div>${esc(T('Nobody yet. Experts join when you clear the first fog from their head.'))}</div></li>`}</ul>
+      ${foggy ? `<p class="eyebrow">${esc(T('Fogged by the Grey Order'))}</p><ul class="needs">${foggy}</ul>` : ''}
+      ${known ? `<p class="eyebrow">${esc(T('Experts you have heard of'))}</p><ul class="needs">${known}</ul>` : ''}
+      <p class="spot">${esc(T('Each cleared fog makes an expert learn 50% faster from building. The Engineering School adds another 50%.'))}</p>`);
     $('p-close').onclick = closePanel;
   }
 
@@ -878,23 +1177,27 @@
     const focus = lv.focus.map(id => fallacy(id)).map(f => `${f.icon} ${esc(f.nick)}`).join(', ');
     const info = trackerInfo();
     const tasks = allTasks().filter(t => npcById(t.giver).region < S.unlocked && S.tasks[t.id] && S.tasks[t.id] !== 'done')
-      .map(t => `<li><span class="ri">${S.tasks[t.id] === 'found' ? '🪙' : '📋'}</span><div><b>${esc(t.title)}</b><small>${S.tasks[t.id] === 'found' ? 'Done! Go back to ' + esc(npcById(t.giver).name) + ' for ' + t.pay + ' coins.' : esc(t.active[0])}</small></div></li>`).join('');
+      .map(t => `<li><span class="ri">${S.tasks[t.id] === 'found' ? '🪙' : '📋'}</span><div><b>${esc(t.title)}</b><small>${esc(S.tasks[t.id] === 'found' ? T('Done! Go back to {name} for {n} coins.', { name: npcById(t.giver).name, n: t.pay }) : t.active[0])}</small></div></li>`).join('');
     const carry = S.carry && S.carry.kind === 'job' ? `<li><span class="ri">📦</span><div><b>${esc(D.JOBS[S.carry.id].title)}</b><small>${esc(D.JOBS[S.carry.id].steps[1])}</small></div></li>` : '';
-    const inv = D.MISSIONS.filter(x => built(x.id) && x.income.rate).map(x => `<li><span class="ri">🏛️</span><div><b>${esc(x.name)}</b><small>${x.income.rate}/min · ${pending(x)} stored</small></div></li>`).join('');
-    panel(`<div class="row between"><h2>Goals</h2><button class="btn btn-ghost btn-sm" id="p-close">Back</button></div>
-      <p class="eyebrow">Level ${S.unlocked} · ${esc(Wd.regions[lv.region].name)}</p>
-      <p><b>Mission:</b> ${esc(m.name)} — ${objectiveText()}</p>
-      <p class="spot">Tricks in this area: ${focus}</p>
-      ${info ? `<p class="eyebrow">Right now</p><p><b>${esc(info.title)}</b>: ${esc(info.step)}</p>` : ''}
-      <p class="eyebrow">Jobs you accepted</p><ul class="needs">${carry + tasks || '<li><div>None yet. People with a ! have work for you, and job spots like the buckets pay every time.</div></li>'}</ul>
-      <p class="eyebrow">Investments</p><ul class="needs">${inv || '<li><div>Nothing built yet.</div></li>'}</ul>`);
+    const inv = D.MISSIONS.filter(x => built(x.id) && x.income.rate).map(x => `<li><span class="ri">🏛️</span><div><b>${esc(x.name)}</b><small>${esc(T('{rate}/min · {n} stored', { rate: x.income.rate, n: pending(x) }))}</small></div></li>`).join('');
+    const refusing = npcs.filter(n => S.refuse[n.id]).map(n => `<li class="missing"><span class="ri">✗</span><div><b>${esc(n.name)}</b><small>${esc(T('Refuses to work with you. Answer the preacher\'s argument.'))}</small></div></li>`).join('');
+    const live = preachers.filter(p => p.phase !== 'gone');
+    const order = S.unlocked >= 2 ? `<p class="eyebrow">${esc(T('The Grey Order'))}</p><p class="spot">${esc(live.length ? T('{n} preacher(s) on the move. Open the map to see them.', { n: live.length }) : T('No preacher is out right now. Statues of Aristotle keep them away.'))}</p>${refusing ? `<ul class="needs">${refusing}</ul>` : ''}` : '';
+    panel(`<div class="row between"><h2>${esc(T('Goals'))}</h2><button class="btn btn-ghost btn-sm" id="p-close">${esc(T('Back'))}</button></div>
+      <p class="eyebrow">${esc(T('Level {n} · {region}', { n: S.unlocked, region: regionName(lv.region) }))}</p>
+      <p><b>${esc(T('Mission:'))}</b> ${esc(m.name)} — ${esc(objectiveText())}</p>
+      <p class="spot">${esc(T('Tricks in this area:'))} ${focus}</p>
+      ${info ? `<p class="eyebrow">${esc(T('Right now'))}</p><p><b>${esc(info.title)}</b>: ${esc(info.step)}</p>` : ''}
+      ${order}
+      <p class="eyebrow">${esc(T('Jobs you accepted'))}</p><ul class="needs">${carry + tasks || `<li><div>${esc(T('None yet. People with a ! have work for you, and job spots like the buckets pay every time.'))}</div></li>`}</ul>
+      <p class="eyebrow">${esc(T('Investments'))}</p><ul class="needs">${inv || `<li><div>${esc(T('Nothing built yet.'))}</div></li>`}</ul>`);
     $('p-close').onclick = closePanel;
   }
 
   function showEnd() {
     if (!S.ended) { mode = 'world'; return; }
     mode = 'end'; $('end').hidden = false;
-    $('end-stats').innerHTML = `<p class="big">Coins earned: ${S.stats.earned} · lost to tricks: ${S.stats.lost}</p><p>Fallacies spotted: ${spottedCount()} of ${D.FALLACIES.length}. Crew: ${crew().map(n => esc(n.name)).join(', ')}.</p>`;
+    $('end-stats').innerHTML = `<p class="big">${esc(T('Coins earned: {a} · lost to tricks: {b}', { a: S.stats.earned, b: S.stats.lost }))}</p><p>${esc(T('Fallacies spotted: {a} of {b}. Crew: {list}.', { a: spottedCount(), b: D.FALLACIES.length, list: crew().map(n => n.name).join(', ') }))}</p><p>${esc(T('Heads fogged by the Grey Order: {a} · cleared again: {b}', { a: S.orderStats.fogged, b: S.orderStats.cleared }))}</p>`;
     $('end-cards').innerHTML = D.FALLACIES.filter(f => S.spotted[f.id]).map(f => `<div class="mini">${f.img ? `<img src="${f.img}" alt="">` : `<div class="bicon">${f.icon}</div>`}<span>${f.icon} ${esc(f.nick)}</span></div>`).join('');
   }
 
@@ -919,8 +1222,9 @@
   $('start').addEventListener('click', startGame);
   $('name-input').addEventListener('keydown', e => { if (e.key === 'Enter') startGame(); });
   $('reset').addEventListener('click', () => {
-    if (!window.confirm('Start again from the beginning? Your coins, crew and buildings will be lost.')) return;
+    if (!window.confirm(T('Start again from the beginning? Your coins, crew and buildings will be lost.'))) return;
     const name = S.name; S = DEFAULT(); S.name = ''; save(); pushSave();
+    preachers.length = 0;
     player.x = player.fx = player.tx = S.x; player.y = player.fy = player.ty = S.y; syncWorld(); renderTitle();
     $('name-input').value = name;
   });
@@ -928,9 +1232,10 @@
   $('hud-crew').addEventListener('click', () => { if (mode === 'world') showCrew(); else if (mode === 'panel') closePanel(); });
   $('hud-goals').addEventListener('click', () => { if (mode === 'world') showGoals(); else if (mode === 'panel') closePanel(); });
   $('tracker').addEventListener('click', () => { if (mode === 'world') showGoals(); });
+  $('alert').addEventListener('click', () => { const b = $('minimap-box'); b.hidden = false; renderMini(); });
   $('hud-map').addEventListener('click', () => { const b = $('minimap-box'); b.hidden = !b.hidden; if (!b.hidden) renderMini(); A.play('open'); });
   $('hud-sound').addEventListener('click', () => { S.sound = !S.sound; A.settings.sfx = S.sound; save(); updateHud(); A.play('good'); });
-  $('hud-voice').addEventListener('click', () => { S.voice = !S.voice; A.settings.voice = S.voice; if (!S.voice) A.stop(); save(); updateHud(); });
+  $('hud-voice').addEventListener('click', () => { S.voice = !S.voice; A.settings.voice = S.voice && voiceAvailable(); if (!S.voice) A.stop(); save(); updateHud(); });
   $('hud-home').addEventListener('click', () => { if (mode === 'world') renderTitle(); });
   $('end-close').addEventListener('click', () => { $('end').hidden = true; mode = 'world'; });
   $('panel').addEventListener('click', e => { if (e.target === $('panel')) closePanel(); });
@@ -950,9 +1255,13 @@
   window.FogDebug = {
     go(x, y, dir) { player.x = player.fx = player.tx = x; player.y = player.fy = player.ty = y; player.moving = false; if (dir) player.dir = dir; S.x = x; S.y = y; updateHud(); },
     money(n) { changeMoney(n); }, unlock(n) { S.unlocked = n; save(); syncWorld(); renderMini(); },
-    state: () => ({ mode, x: player.x, y: player.y, money: S.money, unlocked: S.unlocked, crew: crew().map(n => n.id), missions: S.missions, tasks: S.tasks, tricks: S.tricks, carry: S.carry, follower: follower(), tracker: trackerInfo() }),
+    state: () => ({ mode, x: player.x, y: player.y, money: S.money, unlocked: S.unlocked, crew: crew().map(n => n.id), missions: S.missions, tasks: S.tasks, tricks: S.tricks, carry: S.carry, follower: follower(), tracker: trackerInfo(), refog: S.refog, refuse: S.refuse, statues: S.statues, preachers: preachers.map(p => ({ id: p.id, x: p.x, y: p.y, phase: p.phase, target: p.target, converts: p.converts })), lang: I ? I.lang : 'en', missing: I ? I.missing() : [] }),
     save: () => S, press: pressA, next, interact, place: () => placeCrew(true), npc: id => { const n = npcById(id); return { x: n.x, y: n.y, path: n.path && n.path.length }; },
-    choose: i => { const b = $('dlg-choices').querySelectorAll('button')[i]; if (b) b.click(); }, finishBuild: id => finishBuild(mission(id)), finishAction: () => { if (action) action.t0 -= 60000; }, preview: id => showPreview(mission(id))
+    choose: i => { const b = $('dlg-choices').querySelectorAll('button')[i]; if (b) b.click(); }, finishBuild: id => finishBuild(mission(id)), finishAction: () => { if (action) action.t0 -= 60000; }, preview: id => showPreview(mission(id)),
+    joinCrew: id => { const e = ex(id); e.crew = true; e.cleared = Math.max(e.cleared, 1); save(); placeCrew(false); updateHud(); },
+    spawnPreacher: () => { S.orderSince = S.orderSince || Date.now(); spawnPreacher(); }, preach: () => { preachers.forEach(p => { p.until = 0; }); },
+    fastPreachers: () => preachers.forEach(p => { if (p.path) { while (p.path.length > 1) { const [x, y] = p.path.shift(); p.x = p.fx = x; p.y = p.fy = y; } } }),
+    convert: id => convert(npcById(id)), protectedNpc: id => { const n = npcById(id); return protectedAt(n.x, n.y); }, canTarget: id => canTarget(npcById(id)), statue: i => { S.statues[i] = { status: 'built', startedAt: 0 }; save(); syncWorld(); }, openStatue
   };
   renderTitle();
   requestAnimationFrame(loop);

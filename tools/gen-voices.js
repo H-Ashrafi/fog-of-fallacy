@@ -19,6 +19,8 @@ if (!KEY && !DRY) { console.error('Set ELEVENLABS_API_KEY (or use --dry).'); pro
 global.window = {};
 require(path.join(ROOT, 'js', 'data.js'));
 require(path.join(ROOT, 'js', 'data-order.js'));
+require(path.join(ROOT, 'js', 'data-story.js'));
+require(path.join(ROOT, 'js', 'data-games.js'));
 const D = window.FOG;
 const VOICES = JSON.parse(fs.readFileSync(path.join(OUT, 'voices.json'), 'utf8'));
 const MODEL = VOICES._model || 'eleven_v3';
@@ -39,16 +41,22 @@ Object.values(D.TASKS).forEach(t => {
 });
 Object.values(D.JOBS).forEach(j => (j.lines || []).forEach(x => add('n', x)));
 D.NPCS.forEach(n => {
-  (n.talk || []).forEach(x => add(n.id, x)); (n.after || []).forEach(x => add(n.id, x));
+  steps(n.talk, n.id); steps(n.after, n.id);
   if (n.expert) { n.expert.fog.forEach(f => { steps(f.intro, n.id); steps(f.right, n.id); steps(f.wrong, n.id); }); (n.expert.crew || []).forEach(x => add(n.id, x)); add(n.id, 'Right you are.'); Object.values(D.LINES.why).forEach(arr => arr.forEach(x => add(n.id, x))); }
 });
 Object.values(D.TRICKS).forEach(tr => Object.entries(tr).forEach(([k, v]) => { if (Array.isArray(v) && k !== 'options') { steps(v, tr.npc); v.forEach(s => { if (s && s.choice) { /* choices are not spoken */ } }); } }));
-// narrator lines for decorations, the Grey Order and the statues
+// narrator lines for decorations, the mini-games, the Grey Order and the statues
 Object.values(D.FLAVOR).forEach(t => add('n', t));
+Object.values(D.GAMES).forEach(g => Object.values(g.lines).forEach(v => { if (typeof v === 'string') add('n', v); }));
 [D.ORDER.lines.silent, D.STATUE.inspect, D.STATUE.quote, D.STATUE.start, D.STATUE.built].forEach(t => add('n', t));
 // the harder fogs preachers leave behind, and the refusals they cause
 Object.entries(D.HARD).forEach(([id, fogs]) => fogs.forEach(f => { steps(f.intro, id); steps(f.right, id); steps(f.wrong, id); }));
 Object.entries(D.REFUSE).forEach(([id, r]) => { steps(r.intro, id); steps(r.right, id); steps(r.wrong, id); });
+// the Simurgh, the Grey City and its people
+Object.values(D.SIMURGH.levels).forEach(l => { steps(l.say, 'simurgh'); l.steps.forEach(s => { steps(s.say, 'simurgh'); steps(s.praise, 'simurgh'); }); });
+Object.values(D.SIMURGH.events).forEach(e => steps(e, 'simurgh')); steps(D.SIMURGH.ending, 'simurgh');
+steps(D.CITY.lift, 'n'); steps(D.CITY.sit, 'n'); add('n', D.STATUE.flavor);
+D.NPCS.filter(n => n.city).forEach(n => { const c = n.city; steps(c.intro, n.id); steps(c.convinced, n.id); steps(c.after, n.id); (c.gauntlet || []).forEach(q => { steps(q.intro, n.id); steps(q.right, n.id); steps(q.wrong, n.id); }); });
 
 /* ---------- hashing identical to server/src/main.rs ---------- */
 function fnv1a64(s) {

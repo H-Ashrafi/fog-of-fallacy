@@ -17,7 +17,42 @@ any static host). Saves then live only in the browser and voices use the browser
 own speech synthesis.
 
 Controls: arrows or WASD to walk, Enter / Space / A to talk, B trick book,
-C crew, G goals, M minimap, Esc closes panels. On a phone use the on-screen pad.
+C crew, G goals, M minimap, Z zoom, Esc closes panels. On a phone use the on-screen pad.
+
+The camera shows the whole level the player is standing in and glides to the next
+level when she walks into it. 🔍 (or Z) switches to a close camera that follows her.
+
+## The story
+
+A magic bird, the **Simurgh**, appears out of nowhere at the start. She says a monster
+at the end of the valley feeds the fog, and that the player can build a beautiful land
+and rule it once the monster falls. She teaches the rules one level at a time: each level
+opens with her lesson, the tracker shows her current goal, and she comes back when the
+goal is done (`D.SIMURGH` in `js/data-story.js`). Each level adds one new thing:
+
+| Level | New thing |
+| --- | --- |
+| 1 Riverside Village | talking, jobs, coins, clearing an expert's fog, building. No threats at all. |
+| 2 River Farms | tricksters who want your coins (`fromLevel` on a trick); buildings pay income |
+| 3 Market Town | halfway: the Grey Order's preachers appear, statues of Aristotle, the school |
+| 4 Hill Mine | preachers also turn task givers against you; true allies |
+| 5 Harbour | every trick at once; the lighthouse shows the road to the Grey City |
+| 6 The Grey City | everyone is fogged; convince one person and the monster falls |
+
+**True allies.** An expert with every fog cleared becomes a true ally (⭐ in the crew
+panel). Preachers cannot fog a true ally. Allies walk to your buildings on their own,
+collect the stored coins and keep 20% (`D.ALLY`); a toast says who collected, how much
+you got and how much they kept, and the Goals panel lists the last collections.
+
+**The Grey City.** Each of four citizens needs three right answers in a row (four options
+each); one wrong answer and they laugh and you start again. Convincing any one of them
+breaks the monster's shadow over the palace. The Simurgh reveals that the monster was
+stupidity, the city turns green, and the player sits on the throne.
+
+`node tools/dump-dialogue.js` writes every line of dialogue, with a key per line, to
+`dialogue.txt` (for rewriting the text elsewhere and matching it back). Put an edited copy
+back with `node tools/apply-dialogue.js <edited.txt>` (add `--dry` to preview): it matches each
+[key], finds the old text in the story files and swaps it in, keeping the quotes.
 
 ## How the game works
 
@@ -39,7 +74,7 @@ C crew, G goals, M minimap, Esc closes panels. On a phone use the on-screen pad.
   buildings are investments: they accumulate coins that you collect on site.
 * **Crews grow.** The well needs two experts, the bridge three, the school four, the
   mill five and the lighthouse six, at rising skill levels, so every expert matters.
-* **The Grey Order.** Once the well is built, uniformed preachers start walking out
+* **The Grey Order.** From Market Town (level 3) on, uniformed preachers start walking out
   of the Grey Lodge in each region. A red banner and the minimap show where they are
   and who they are heading for. You cannot talk to them. A preacher who reaches an
   expert you convinced fogs their head again with a harder, sneakier fallacy (four
@@ -59,10 +94,23 @@ C crew, G goals, M minimap, Esc closes panels. On a phone use the on-screen pad.
   | Market Town | appeal to emotion, post hoc | Engineering School | 4 |
   | Hill Mine | gambler's fallacy, sunk cost, hasty generalisation | Waterwheel Mill | 5 |
   | Harbour | authority, slippery slope, straw man, red herring, tradition, ad hominem | Lighthouse | 6 |
+  | The Grey City | all of them | the throne (convince one person) | - |
+
+* **Scenes and mini-games.** Pressing A on most things (the goat, the fountain, a boat,
+  the canary, the card table) opens a small animated picture instead of a line of text; the
+  narrator's line is its caption. A few things hide a short mini-game, playable with keys,
+  mouse or touch: Dodge's cup game inside his trick (the pea is always palmed; he shows you
+  how after you beat him, and plays a fair round for fun afterwards), *red or black* at the
+  card table in the Hill Mine (six fair flips, then the question that teaches the gambler's
+  fallacy, 10 coins), skipping stones on the village beach and the harbour beach, shooing
+  crows at the scarecrow once it stands again, and fishing at the end of the pier (a red
+  herring pays nothing). Games pay once a minute; captions live in `js/data-games.js`, the
+  drawing in `js/scenes.js`.
 
 All story content lives in `js/data.js`; the Grey Order, the statues, the harder
-fogs and the refusals in `js/data-order.js`; the map in `js/world.js`; the engine
-in `js/game.js`; sound and voice in `js/audio.js`; languages in `js/i18n.js` and
+fogs and the refusals in `js/data-order.js`; the scenes' captions and the mini-games in
+`js/data-games.js`; the map in `js/world.js`; the scenes themselves in `js/scenes.js`; the
+engine in `js/game.js`; sound and voice in `js/audio.js`; languages in `js/i18n.js` and
 `js/lang/`.
 
 ## Languages

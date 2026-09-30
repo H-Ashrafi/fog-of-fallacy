@@ -1,18 +1,17 @@
 /* Fog of Fallacy - engine: movement, camera, talking, tricks, tasks, jobs, experts, missions,
-   the Grey Order's preachers, statues of Aristotle, languages, saving. */
+   the Grey Order's preachers, statues of Aristotle, the Simurgh's lessons, true allies,
+   the Grey City and the throne, languages, saving. */
 
 (function () {
   'use strict';
 
-  const D = window.FOG, Wd = window.World, A = window.Audio2, TS = Wd.TS, I = window.I18N;
+  const D = window.FOG, Wd = window.World, A = window.Audio2, TS = Wd.TS, I = window.I18N, Sc = window.Scenes;
   /* UI strings go through T(key, vars); the English key is looked up in js/lang/<code>.js. */
   const T = (k, v) => I ? I.t(k, v) : (v ? k.replace(/\{(\w+)\}/g, (m, n) => (n in v ? v[n] : m)) : k);
   if (I) I.apply(D, Wd);
-  const VIEW_W = 13, VIEW_H = 11;
   const KEY = 'fog-of-fallacy-v4';
   const $ = id => document.getElementById(id);
   const canvas = $('game'), ctx = canvas.getContext('2d');
-  canvas.width = VIEW_W * TS; canvas.height = VIEW_H * TS;
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const FONT = (I && I.canvasFont) || '"Baloo 2", system-ui, sans-serif';
 
@@ -22,12 +21,20 @@
     name: '', look: 0, money: D.START_MONEY, x: START.x, y: START.y, unlocked: 1, seen: {},
     spotted: {}, fails: {}, tricks: {}, tasks: {}, jobs: {}, experts: {}, missions: {}, flags: {},
     sound: true, voice: true, savedAt: 0, ended: false, stats: { earned: 0, lost: 0 }, npcPos: {}, carry: null,
-    preachers: [], refog: {}, refuse: {}, statues: {}, lastPreach: 0, orderSince: 0, orderStats: { fogged: 0, cleared: 0 }
+    preachers: [], refog: {}, refuse: {}, statues: {}, lastPreach: 0, orderSince: 0, orderStats: { fogged: 0, cleared: 0 },
+    lesson: null, simSeen: {}, zoom: false, errands: {}, allyShares: {}, allyLog: [], lastErrand: 0, city: {}, throne: false, games: {}
   });
+  /* Older saves: the lighthouse used to end the game, now it opens the Grey City. Saves from before
+     the Simurgh start her lessons at the level they reached. */
+  function migrate(s) {
+    if (s.ended && !s.throne && (s.missions.lighthouse || {}).status === 'built') { s.ended = false; s.unlocked = Math.max(s.unlocked, 6); }
+    if (!s.lesson) s.lesson = { level: Math.min(s.unlocked, D.LEVELS.length) - 1, step: 0, intro: false };
+    return s;
+  }
   let S = load();
   function load() {
-    try { const r = localStorage.getItem(KEY); if (r) return Object.assign(DEFAULT(), JSON.parse(r)); } catch (e) { }
-    return DEFAULT();
+    try { const r = localStorage.getItem(KEY); if (r) return migrate(Object.assign(DEFAULT(), JSON.parse(r))); } catch (e) { }
+    return migrate(DEFAULT());
   }
   let saveTimer = null;
   function save() {
@@ -52,7 +59,7 @@
       const r = await fetch('/api/saves/' + encodeURIComponent(slug()), { cache: 'no-store' });
       if (r.status !== 200) return false;
       const remote = await r.json();
-      if (remote && remote.savedAt > (S.savedAt || 0)) { S = Object.assign(DEFAULT(), remote); return true; }
+      if (remote && remote.savedAt > (S.savedAt || 0)) { S = migrate(Object.assign(DEFAULT(), remote)); return true; }
     } catch (e) { }
     return false;
   }
@@ -81,6 +88,12 @@
   const nar = lines => (Array.isArray(lines) ? lines : [lines]).map(text => ({ who: 'n', text }));
   const regionName = i => Wd.regions[i] ? Wd.regions[i].name : T('The Valley');
   const dist = (ax, ay, bx, by) => Math.hypot(ax - bx, ay - by);
+  /* A trick waits until its level is open: level 1 has no threats at all. */
+  const trickLive = id => { const tr = D.TRICKS[id]; return !!tr && S.unlocked >= (tr.fromLevel || 1); };
+  /* A true ally: in the crew with every fog cleared. Preachers cannot fog them, and they collect coins for you. */
+  const isAlly = n => !!(n && n.expert && S.experts[n.id] && S.experts[n.id].crew && S.experts[n.id].cleared >= n.expert.fog.length && !S.refog[n.id]);
+  const speakerName = who => who === 'you' ? S.name : who === 'simurgh' ? D.SIMURGH.name : (npcById(who) || {}).name || who;
+  const mySpec = () => S.throne ? Object.assign({}, D.LOOKS[S.look], { crown: true }) : D.LOOKS[S.look];
 
   function ex(id) {
     const n = npcById(id), base = n.expert;
@@ -96,7 +109,7 @@
   function worldState() {
     const b = {}; D.MISSIONS.forEach(m => { if (built(m.id)) b[m.id] = true; });
     const st = {}; Object.keys(S.statues).forEach(i => { if (S.statues[i].status === 'built') st[i] = true; });
-    return { flags: S.flags, unlocked: S.unlocked, built: b, statues: st };
+    return { flags: S.flags, unlocked: S.unlocked, built: b, statues: st, throne: !!S.throne };
   }
   function syncWorld() { Wd.setState(worldState()); }
 
@@ -123,9 +136,10 @@
   }
 
   /* ================= title ================= */
-  let mode = 'title';   // title | world | dialog | panel | action | end
+  let mode = 'title';   // title | world | dialog | panel | action | modal | end
   function renderTitle() {
     mode = 'title'; A.stop();
+    document.body.classList.remove('playing');
     $('title').hidden = false; $('play').hidden = true; $('end').hidden = true; $('panel').hidden = true;
     const looks = $('looks'); looks.innerHTML = '';
     D.LOOKS.forEach((spec, i) => {
@@ -162,6 +176,7 @@
     player.x = player.fx = player.tx = S.x; player.y = player.fy = player.ty = S.y; player.moving = false; trail.length = 0;
     syncWorld(); applyNpcPos(); placeCrew(false); restorePreachers();
     $('title').hidden = true; $('play').hidden = false;
+    document.body.classList.add('playing'); resizeCanvas(); camNow = null;
     mode = 'world';
     updateHud(); updateAlert();
     checkRegionIntro();
@@ -175,14 +190,17 @@
     $('hud-sound').textContent = S.sound ? '🔔' : '🔕';
     $('hud-voice').textContent = S.voice ? '🗣️' : '🤐';
     $('hud-voice').hidden = !voiceAvailable();
+    $('hud-zoom').classList.toggle('on', !!S.zoom);
     const r = Wd.regionAt(player.x, player.y);
     $('hud-region').textContent = r >= 0 ? regionName(r) : T('The Valley');
     $('objective').textContent = objectiveText();
     updateTracker();
   }
   function objectiveText() {
-    const lv = currentLevel(), m = mission(lv.mission), ms = S.missions[m.id] || {};
-    if (S.ended) return T('The Valley is clear. Keep exploring, or start again from the title.');
+    const lv = currentLevel();
+    if (S.ended) return T('You rule the Valley now. Keep exploring, or start again from the title.');
+    if (!lv.mission) return T('The Grey City: convince one person, and the monster falls.');
+    const m = mission(lv.mission), ms = S.missions[m.id] || {};
     if (ms.status === 'building') return T('Building {name}…', { name: m.name });
     const need = totalCost(m);
     const roles = m.needs.map(n => { const who = assign(m)[m.needs.indexOf(n)]; return D.ROLES[n.role].icon + (who ? '✓' : '✗'); }).join(' ');
@@ -197,6 +215,8 @@
     if (f) return { title: f.title, step: T('Lead {pet} back to {name} for {n} coins.', { pet: petName(f.follow), name: npcById(f.giver).name, n: f.pay }) };
     const t = allTasks().find(t => (S.tasks[t.id] === 'active' || S.tasks[t.id] === 'found') && npcById(t.giver).region < S.unlocked);
     if (t) return { title: t.title, step: S.tasks[t.id] === 'found' ? T('Go back to {name} for {n} coins.', { name: npcById(t.giver).name, n: t.pay }) : t.active[0] };
+    const goal = lessonGoal();
+    if (goal) return { title: T('🪶 The Simurgh says'), step: fill(goal) };
     return null;
   }
   function updateTracker() {
@@ -232,7 +252,7 @@
   }
 
   function update(dt, t) {
-    tickMissions(t); tickStatues(); moveNpcs(dt); tickPreachers(dt); tickAction(t);
+    tickMissions(t); tickStatues(); moveNpcs(dt); tickPreachers(dt); tickAction(t); tickAllies(t); tickLesson(t);
     if (mode !== 'world') return;
     if (player.moving) {
       player.t += dt / 140;
@@ -290,28 +310,63 @@
     if (p >= 1) { const cb = action.cb; action = null; mode = 'world'; cb(); }
   }
 
+  /* ================= camera =================
+     The camera frames the whole level the player stands in, with one tile of margin, and glides
+     to the next level when she walks into it. Zoom (🔍 or Z) follows the player up close instead.
+     cam: top-left (x, y) and size (w, h) of the view in world pixels; z is canvas pixels per world pixel. */
+  const stageEl = document.querySelector('.stage');
+  let dpr = 1, cam = { x: 0, y: 0, w: 1, h: 1, z: 1 }, camNow = null, lastRegion = 0;
+  function resizeCanvas() {
+    dpr = Math.min(2, window.devicePixelRatio || 1);
+    const r = stageEl.getBoundingClientRect();
+    canvas.width = Math.max(64, Math.round(r.width * dpr)); canvas.height = Math.max(64, Math.round(r.height * dpr));
+  }
+  if (window.ResizeObserver) new ResizeObserver(resizeCanvas).observe(stageEl); else window.addEventListener('resize', resizeCanvas);
+  const mid = (v, lo, hi) => lo > hi ? (lo + hi) / 2 : Math.max(lo, Math.min(hi, v));
+  function aimCamera(dt) {
+    const r = Wd.regionAt(player.x, player.y); if (r >= 0) lastRegion = r;
+    const R = Wd.regions[lastRegion];
+    const x0 = (R.x0 - 1) * TS, y0 = (R.y0 - 1) * TS, rw = (R.x1 - R.x0 + 3) * TS, rh = (R.y1 - R.y0 + 3) * TS;
+    const fit = Math.min(canvas.width / rw, canvas.height / rh);
+    let z = fit, cx = x0 + rw / 2, cy = y0 + rh / 2;
+    if (S.zoom) {
+      z = Math.max(fit, dpr * 1.2);
+      const zw = canvas.width / z / 2, zh = canvas.height / z / 2;
+      cx = mid(player.fx * TS + TS / 2, x0 + zw, x0 + rw - zw); cy = mid(player.fy * TS + TS / 2, y0 + zh, y0 + rh - zh);
+    }
+    const hw = canvas.width / z / 2, hh = canvas.height / z / 2;   // never show the void past the map edge
+    cx = mid(cx, hw, Wd.W * TS - hw); cy = mid(cy, hh, Wd.H * TS - hh);
+    if (!camNow) camNow = { z, cx, cy };
+    const k = Math.min(1, dt / 220);
+    camNow.z += (z - camNow.z) * k; camNow.cx += (cx - camNow.cx) * k; camNow.cy += (cy - camNow.cy) * k;
+    const w = canvas.width / camNow.z, h = canvas.height / camNow.z;
+    cam = { x: camNow.cx - w / 2, y: camNow.cy - h / 2, w, h, z: camNow.z };
+  }
+  function toggleZoom() { S.zoom = !S.zoom; save(); updateHud(); A.play('open'); }
+
   /* ================= render ================= */
   let fogAnim = null;  // { region, t0 }
   let npcAnim = null;  // { id, kind } while an expert acts out a line
-  let cam = { x: 0, y: 0 };
-  function render(t) {
-    const camX = Math.max(0, Math.min(Wd.W * TS - canvas.width, player.fx * TS + TS / 2 - canvas.width / 2));
-    const camY = Math.max(0, Math.min(Wd.H * TS - canvas.height, player.fy * TS + TS / 2 - canvas.height / 2));
-    cam = { x: camX, y: camY };
-    const x0 = Math.floor(camX / TS), y0 = Math.floor(camY / TS);
+  let throneAnim = 0;  // when the monster's shadow started to fade
+  function render(t, dt) {
+    aimCamera(dt || 16);
+    const camX = cam.x, camY = cam.y;
+    /* Markers, arrows and labels keep a readable size on screen however far the camera zooms out. */
+    const ui = Math.max(1, 0.9 * dpr / cam.z);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.fillStyle = '#14262B'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-    for (let y = y0; y <= y0 + VIEW_H; y++) for (let x = x0; x <= x0 + VIEW_W; x++) {
-      if (x >= Wd.W || y >= Wd.H) continue;
-      Wd.drawTile(ctx, Wd.at(x, y), x, y, x * TS - camX, y * TS - camY, t);
-    }
-    const inView = (x, y, w, h) => x + w >= x0 && x <= x0 + VIEW_W + 1 && y + h >= y0 && y <= y0 + VIEW_H + 1;
+    ctx.setTransform(cam.z, 0, 0, cam.z, 0, 0);
+    const x0 = Math.max(0, Math.floor(camX / TS)), y0 = Math.max(0, Math.floor(camY / TS));
+    const x1 = Math.min(Wd.W - 1, Math.floor((camX + cam.w) / TS)), y1 = Math.min(Wd.H - 1, Math.floor((camY + cam.h) / TS));
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) Wd.drawTile(ctx, Wd.at(x, y), x, y, x * TS - camX, y * TS - camY, t);
+    const inView = (x, y, w, h) => x + w >= x0 - 1 && x <= x1 + 1 && y + h >= y0 - 1 && y <= y1 + 1;
     // statue circles sit on the ground, under everything that stands
     D.STATUE.sites.forEach((s, i) => {
       const st = S.statues[i]; if (!st || st.status !== 'built') return;
       const r = D.STATUE.radius;
       if (inView(s.x - r, s.y - r, r * 2 + 1, r * 2 + 1)) Wd.drawRing(ctx, s.x * TS - camX + TS / 2, s.y * TS - camY + TS / 2, r * TS, t);
     });
-    Wd.structures.forEach(s => { if (inView(s.x, s.y, s.w, s.h)) Wd.drawStructure(ctx, s, camX, camY); });
+    Wd.structures.forEach(s => { if (inView(s.x, s.y, s.w, s.h)) Wd.drawStructure(ctx, s, camX, camY, t); });
     D.MISSIONS.forEach(m => {
       if (!inView(m.site.x, m.site.y, m.site.w, m.site.h)) return;
       const ms = S.missions[m.id] || {};
@@ -320,14 +375,14 @@
     });
     Wd.decor.forEach(d => {
       if (!inView(d.x, d.y, 1, 1)) return;
-      if (d.kind === 'plinth') { const st = S.statues[d.statue]; if (D.STATUE.sites[d.statue].region < S.unlocked && !st) Wd.drawGlow(ctx, d.x * TS - camX, d.y * TS - camY, TS, TS, t, false); if (st && st.status === 'building') drawStatueProgress(d, st, camX, camY, t); }
+      if (d.kind === 'plinth') { const st = S.statues[d.statue]; if (D.STATUE.sites[d.statue].region < S.unlocked && S.unlocked >= D.STATUE.fromLevel && !st) Wd.drawGlow(ctx, d.x * TS - camX, d.y * TS - camY, TS, TS, t, false); if (st && st.status === 'building') drawStatueProgress(d, st, camX, camY, t); }
       Wd.drawDecor(ctx, d, camX, camY, t);
     });
 
     const targeted = new Set(preachers.filter(p => p.phase !== 'gone' && p.target).map(p => p.target));
     const people = npcs.filter(n => n.region < S.unlocked && inView(Math.floor(n.fx), Math.floor(n.fy), 2, 2)).map(n => ({ x: n.fx, y: n.fy, spec: n.spec, dir: n.dir, walk: n.walk || 0, npc: n }));
     preachers.filter(p => p.phase !== 'gone' && inView(Math.floor(p.fx), Math.floor(p.fy), 2, 2)).forEach(p => people.push({ x: p.fx, y: p.fy, spec: p.spec, dir: p.dir, walk: p.walk || 0, preacher: p }));
-    people.push({ x: player.fx, y: player.fy, spec: D.LOOKS[S.look], dir: player.dir, walk: player.walk, me: true });
+    people.push({ x: player.fx, y: player.fy, spec: mySpec(), dir: player.dir, walk: player.walk, me: true });
     const fol = follower();
     if (fol === 'goat' && trail.length) people.push({ x: trail[0][0], y: trail[0][1], goat: true });
     people.sort((a, b) => a.y - b.y);
@@ -345,51 +400,81 @@
         if (npcAnim && npcAnim.id === p.npc.id && mode === 'dialog') Wd.drawAction(ctx, npcAnim.kind, px, py, t, 0.5, p.npc.dir === 'left' ? 'left' : 'right');
         const sermon = preachers.find(q => q.phase === 'preach' && q.target === p.npc.id);
         if (sermon) Wd.drawSermon(ctx, px, py, t);
-        drawMarker(p.npc, px, py, t);
+        drawMarker(p.npc, px, py, t, ui);
       }
-      if (p.preacher) drawPreacherMarker(px, py, t);
+      if (p.preacher) drawPreacherMarker(px, py, t, ui);
     });
-    drawOffscreenPreachers(camX, camY, t);
+    drawCityShadow(t, camX, camY, inView);
+    drawBird(t, camX, camY, ui);
+    drawOffscreenPreachers(camX, camY, t, ui);
 
     // fog over locked regions
     Wd.regions.forEach((r, i) => {
       const anim = fogAnim && fogAnim.region === i ? Math.min(1, (t - fogAnim.t0) / 2500) : null;
       if (i < S.unlocked && anim === null) return;
       if (!inView(r.x0, r.y0, r.x1 - r.x0 + 1, r.y1 - r.y0 + 1)) return;
-      drawFog(r, camX, camY, t, anim === null ? 1 : 1 - anim);
+      drawFog(r, camX, camY, t, anim === null ? 1 : 1 - anim, ui);
     });
     if (fogAnim && t - fogAnim.t0 > 2600) fogAnim = null;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
   }
 
-  function drawMarker(n, px, py, t) {
+  /* While the monster lives, a grey haze hangs over the Grey City and its shadow sits on the palace. */
+  function drawCityShadow(t, camX, camY, inView) {
+    const r = Wd.regions[5];
+    if (!r || S.unlocked <= 5) return;
+    const a = S.throne ? (throneAnim ? Math.max(0, 1 - (t - throneAnim) / 3500) : 0) : 1;
+    if (a <= 0 || !inView(r.x0, r.y0, r.x1 - r.x0 + 1, r.y1 - r.y0 + 1)) return;
+    ctx.fillStyle = 'rgba(96,94,104,' + (0.22 * a) + ')'; ctx.fillRect(r.x0 * TS - camX, r.y0 * TS - camY, (r.x1 - r.x0 + 1) * TS, (r.y1 - r.y0 + 1) * TS);
+    Wd.drawMonster(ctx, D.CITY.palace.x * TS - camX, D.CITY.palace.y * TS - camY, t, a);
+  }
+  /* The Simurgh hovers beside the player while she talks: she bursts out of sparkles and flies off upwards. */
+  function drawBird(t, camX, camY, ui) {
+    if (!bird) return;
+    const now = performance.now(), inP = Math.min(1, (now - bird.t0) / 500), outP = bird.out ? Math.min(1, (now - bird.out) / 900) : 0;
+    if (outP >= 1) { bird = null; return; }
+    const cx = bird.x * TS + TS / 2 - camX, cy = bird.y * TS - camY - outP * 90 + Math.sin(t / 400) * 4;
+    ctx.save(); ctx.globalAlpha = 1 - outP;
+    Wd.drawSimurgh(ctx, cx, cy, t, (0.35 + 0.65 * inP) * Math.min(ui, 1.8), bird.x > player.x ? 'left' : 'right');
+    ctx.restore();
+    if (inP < 1 || outP > 0) Wd.drawSparkles(ctx, cx, cy, inP < 1 ? inP : outP, t);
+  }
+
+  function drawMarker(n, px, py, t, ui) {
     const bob = Math.sin(t / 250) * 3;
     let mark = null, color = '#F6B544';
-    if (S.refuse[n.id]) { mark = '✗'; color = '#E4574F'; }
+    if (n.city) { if (!S.throne && n.city.gauntlet) { mark = '?'; color = '#C9C4BA'; } }
+    else if (S.refuse[n.id]) { mark = '✗'; color = '#E4574F'; }
     else if (n.expert && S.refog[n.id]) { mark = '?'; color = '#E4574F'; }
-    else if (n.trick && !S.tricks[n.trick] && (!n.talk || S.flags['talked:' + n.id])) { mark = '!'; color = '#FF7B6B'; }
+    else if (n.trick && trickLive(n.trick) && !S.tricks[n.trick] && (!n.talk || S.flags['talked:' + n.id])) { mark = '!'; color = '#FF7B6B'; }
     else if (n.expert && !ex(n.id).crew) { mark = '?'; color = '#5FB3D9'; }
     else if (n.expert && ex(n.id).cleared < n.expert.fog.length) { mark = '?'; color = '#BFEBD6'; }
     else if (deliverFor(n) || jobDeliverFor(n)) { mark = '📦'; color = '#63C48F'; }
     else if (nextTask(n)) { mark = S.tasks[nextTask(n).id] === 'found' ? '🪙' : '!'; color = S.tasks[nextTask(n).id] ? '#63C48F' : '#F6B544'; }
-    else if (n.trick && !S.tricks[n.trick]) { mark = '!'; color = '#F6B544'; }
+    else if (n.trick && trickLive(n.trick) && !S.tricks[n.trick]) { mark = '!'; color = '#F6B544'; }
     if (!mark) return;
-    ctx.fillStyle = color; Wd.rr(ctx, px - 7, py - 52 + bob, 14, 17, 5); ctx.fill();
-    ctx.fillStyle = '#2A2420'; ctx.font = 'bold 12px ' + FONT; ctx.textAlign = 'center'; ctx.fillText(mark, px, py - 39 + bob);
+    ctx.save(); ctx.translate(px, py - 36); ctx.scale(ui, ui);
+    ctx.fillStyle = color; Wd.rr(ctx, -7, -16 + bob, 14, 17, 5); ctx.fill();
+    ctx.fillStyle = '#2A2420'; ctx.font = 'bold 12px ' + FONT; ctx.textAlign = 'center'; ctx.fillText(mark, 0, -3 + bob);
+    ctx.restore();
   }
-  function drawPreacherMarker(px, py, t) {
+  function drawPreacherMarker(px, py, t, ui) {
     const bob = Math.sin(t / 250) * 3, pulse = 0.6 + 0.4 * Math.sin(t / 150);
-    ctx.fillStyle = 'rgba(228,87,79,' + pulse + ')'; Wd.rr(ctx, px - 8, py - 56 + bob, 16, 19, 6); ctx.fill();
-    ctx.fillStyle = '#fff'; ctx.font = 'bold 13px ' + FONT; ctx.textAlign = 'center'; ctx.fillText('!', px, py - 41 + bob);
+    ctx.save(); ctx.translate(px, py - 38); ctx.scale(ui, ui);
+    ctx.fillStyle = 'rgba(228,87,79,' + pulse + ')'; Wd.rr(ctx, -8, -18 + bob, 16, 19, 6); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 13px ' + FONT; ctx.textAlign = 'center'; ctx.fillText('!', 0, -3 + bob);
+    ctx.restore();
   }
   /* A red arrow at the edge of the screen for every preacher that is out of view. */
-  function drawOffscreenPreachers(camX, camY, t) {
+  function drawOffscreenPreachers(camX, camY, t, ui) {
+    const vw = cam.w, vh = cam.h, edge = 18 * ui;
     preachers.filter(p => p.phase !== 'gone').forEach(p => {
       const sx = p.fx * TS - camX + TS / 2, sy = p.fy * TS - camY + TS / 2;
-      if (sx >= 0 && sx <= canvas.width && sy >= 0 && sy <= canvas.height) return;
-      const cx = canvas.width / 2, cy = canvas.height / 2, dx = sx - cx, dy = sy - cy;
-      const k = Math.min((canvas.width / 2 - 18) / Math.abs(dx || 1e-6), (canvas.height / 2 - 18) / Math.abs(dy || 1e-6));
+      if (sx >= 0 && sx <= vw && sy >= 0 && sy <= vh) return;
+      const cx = vw / 2, cy = vh / 2, dx = sx - cx, dy = sy - cy;
+      const k = Math.min((vw / 2 - edge) / Math.abs(dx || 1e-6), (vh / 2 - edge) / Math.abs(dy || 1e-6));
       const ex = cx + dx * k, ey = cy + dy * k, a = Math.atan2(dy, dx);
-      ctx.save(); ctx.translate(ex, ey); ctx.rotate(a);
+      ctx.save(); ctx.translate(ex, ey); ctx.rotate(a); ctx.scale(ui, ui);
       ctx.fillStyle = 'rgba(228,87,79,' + (0.7 + 0.3 * Math.sin(t / 150)) + ')'; ctx.beginPath(); ctx.moveTo(12, 0); ctx.lineTo(-8, -9); ctx.lineTo(-4, 0); ctx.lineTo(-8, 9); ctx.closePath(); ctx.fill();
       ctx.restore();
     });
@@ -400,7 +485,7 @@
     ctx.fillStyle = '#63C48F'; Wd.rr(ctx, px + 2, py - 10, Math.max(6, (TS - 4) * p), 6, 3); ctx.fill();
   }
 
-  function drawFog(r, camX, camY, t, alpha) {
+  function drawFog(r, camX, camY, t, alpha, ui) {
     const px = r.x0 * TS - camX, py = r.y0 * TS - camY, w = (r.x1 - r.x0 + 1) * TS, h = (r.y1 - r.y0 + 1) * TS;
     ctx.save();
     ctx.globalAlpha = alpha;
@@ -411,9 +496,9 @@
       g.addColorStop(0, 'rgba(235,242,242,.55)'); g.addColorStop(1, 'rgba(235,242,242,0)');
       ctx.fillStyle = g; ctx.fillRect(cx - 110, cy - 110, 220, 220);
     }
-    ctx.fillStyle = 'rgba(20,38,43,.75)'; ctx.font = 'bold 14px ' + FONT; ctx.textAlign = 'center';
-    const cx = Math.max(60, Math.min(canvas.width - 60, px + w / 2)), cy = Math.max(20, Math.min(canvas.height - 10, py + h / 2));
-    if (px < canvas.width && px + w > 0 && py < canvas.height && py + h > 0) ctx.fillText(T('Fog of Fallacy'), cx, cy);
+    ctx.fillStyle = 'rgba(20,38,43,.75)'; ctx.font = 'bold ' + Math.round(14 * (ui || 1)) + 'px ' + FONT; ctx.textAlign = 'center';
+    const cx = Math.max(60, Math.min(cam.w - 60, px + w / 2)), cy = Math.max(20, Math.min(cam.h - 10, py + h / 2));
+    if (px < cam.w && px + w > 0 && py < cam.h && py + h > 0) ctx.fillText(T('Fog of Fallacy'), cx, cy);
     ctx.restore();
   }
 
@@ -421,8 +506,8 @@
   let hover = null;   // mission under the pointer
   function siteAtPointer(e) {
     const rect = canvas.getBoundingClientRect();
-    const x = Math.floor(((e.clientX - rect.left) / rect.width * canvas.width + cam.x) / TS);
-    const y = Math.floor(((e.clientY - rect.top) / rect.height * canvas.height + cam.y) / TS);
+    const x = Math.floor(((e.clientX - rect.left) / rect.width * cam.w + cam.x) / TS);
+    const y = Math.floor(((e.clientY - rect.top) / rect.height * cam.h + cam.y) / TS);
     const m = D.MISSIONS.find(m => x >= m.site.x && x < m.site.x + m.site.w && y >= m.site.y && y < m.site.y + m.site.h);
     if (!m || m.region >= S.unlocked || built(m.id)) return null;
     return m;
@@ -434,7 +519,7 @@
     $('preview-img').src = 'img/preview-' + m.id + '.jpg'; $('preview-title').textContent = m.name;
     $('preview-text').textContent = T('Costs {n} coins. Needs {list}.', { n: m.cost, list: needsText(m) }) + ' ' + (m.income.rate ? T('Pays {n} coins a minute once built.', { n: m.income.rate }) : T('Lifts the fog from the whole Valley.'));
     box.hidden = false;
-    const scale = stage.width / canvas.width;
+    const scale = stage.width / cam.w;
     const sx = (m.site.x * TS - cam.x) * scale, sy = (m.site.y * TS - cam.y) * scale, sw = m.site.w * TS * scale, sh = m.site.h * TS * scale;
     const bw = box.offsetWidth, bh = box.offsetHeight;
     let left = Math.max(6, Math.min(stage.width - bw - 6, sx + sw / 2 - bw / 2));
@@ -450,9 +535,9 @@
   /* ---- minimap ---- */
   const mini = $('minimap'), mctx = mini.getContext('2d');
   mini.width = Wd.W * 2; mini.height = Wd.H * 2;
-  const MINI_COL = { G: '#82C773', T: '#2F7A44', F: '#A2703F', L: '#82C773', C: '#E2B93B', P: '#DCC79A', S: '#EBD9A8', K: '#C9BCA4', Q: '#A9A39A', W: '#5FB3D9', B: '#B08A5A', R: '#8E8A80', D: '#B08A5A', M: '#8B6A3E' };
+  const MINI_COL = { G: '#82C773', T: '#2F7A44', F: '#A2703F', L: '#82C773', C: '#E2B93B', P: '#DCC79A', S: '#EBD9A8', K: '#C9BCA4', Q: '#A9A39A', W: '#5FB3D9', B: '#B08A5A', R: '#8E8A80', D: '#B08A5A', M: '#8B6A3E', A: '#A8A49B' };
   function renderMini() {
-    for (let y = 0; y < Wd.H; y++) for (let x = 0; x < Wd.W; x++) { mctx.fillStyle = MINI_COL[Wd.at(x, y)] || '#000'; mctx.fillRect(x * 2, y * 2, 2, 2); }
+    for (let y = 0; y < Wd.H; y++) for (let x = 0; x < Wd.W; x++) { const c = Wd.at(x, y); mctx.fillStyle = (c === 'A' && S.throne ? MINI_COL.G : MINI_COL[c]) || '#000'; mctx.fillRect(x * 2, y * 2, 2, 2); }
     Wd.structures.forEach(s => { mctx.fillStyle = s.roof; mctx.fillRect(s.x * 2, s.y * 2, s.w * 2, s.h * 2); });
     D.STATUE.sites.forEach((s, i) => {
       const st = S.statues[i]; if (!st || st.status !== 'built') return;
@@ -475,7 +560,7 @@
   function loop(t) {
     const dt = Math.min(50, t - lastTime); lastTime = t;
     update(dt, t);
-    if (mode !== 'title') { render(t); if (mode === 'dialog') drawPortrait(t); if (!$('minimap-box').hidden && Math.floor(t / 250) !== Math.floor((t - dt) / 250)) renderMini(); }
+    if (mode !== 'title') { render(t, dt); if (mode === 'dialog') drawPortrait(t); if (mode === 'modal') drawModal(t); if (!$('minimap-box').hidden && Math.floor(t / 250) !== Math.floor((t - dt) / 250)) renderMini(); }
     requestAnimationFrame(loop);
   }
 
@@ -506,6 +591,7 @@
     $('dlg-choices').innerHTML = ''; $('dlg-choices').hidden = true; $('dlg-next').hidden = false;
     if (st.money) changeMoney(st.money);
     if (st.sfx) A.play(st.sfx);
+    if (st.game) { openGameStep(st); return; }
     if (st.who) { if (st.anim && st.who !== 'n' && st.who !== 'you') npcAnim = { id: st.who, kind: st.anim }; showLine(st.who, fill(st.text), st.text); return; }
     if (st.choice) { showChoice(st.choice, st.menu, st.prompt, st.speaker); return; }
     if (st.scene) { showScene(st.scene, fill(st.text), st.text); return; }
@@ -519,27 +605,29 @@
     const c = $('dlg-portrait');
     if (who === 'n') { c.hidden = true; portrait = null; return; }
     c.hidden = false;
+    if (who === 'simurgh') { portrait = { who, bird: true, mute: false }; drawPortrait(performance.now()); return; }
     const n = npcById(who);
-    portrait = { who, spec: who === 'you' ? D.LOOKS[S.look] : (n ? n.spec : D.LOOKS[S.look]), mute: false };
+    portrait = { who, spec: who === 'you' ? mySpec() : (n ? n.spec : mySpec()), mute: false };
     drawPortrait(performance.now());
   }
   function drawPortrait(t) {
     if (!portrait || $('dlg').hidden) return;
     const c = $('dlg-portrait');
     const talking = !portrait.mute && (typing !== null || A.isSpeaking());
-    Wd.drawFace(c.getContext('2d'), portrait.spec, t, talking, c.width, c.height);
+    if (portrait.bird) Wd.drawBirdFace(c.getContext('2d'), t, talking, c.width, c.height);
+    else Wd.drawFace(c.getContext('2d'), portrait.spec, t, talking, c.width, c.height);
   }
 
   function showLine(who, text, raw) {
     const n = npcById(who);
     $('dlg').hidden = false; $('scene').hidden = true;
     $('dlg').classList.toggle('narrator', who === 'n');
-    $('dlg-name').textContent = who === 'n' ? '' : who === 'you' ? S.name : (n ? n.name : who);
+    $('dlg-name').textContent = who === 'n' ? '' : speakerName(who);
     portraitFor(who);
     const el = $('dlg-text'); el.textContent = '';
     let i = 0;
     A.play('talk');
-    A.say(text, who, who === 'n' ? 'narrator' : who === 'you' ? 'you' : (n && n.v) || 'man', raw || text);
+    A.say(text, who, who === 'n' ? 'narrator' : who === 'you' ? 'you' : who === 'simurgh' ? 'bird' : (n && n.v) || 'man', raw || text);
     typingFull = text;
     typing = setInterval(() => { i++; el.textContent = text.slice(0, i); if (i >= text.length) finishTyping(); }, 18);
   }
@@ -573,7 +661,7 @@
     A.say(text, 'n', 'narrator', raw || text);
   }
 
-  function endDialog() { $('dlg').hidden = true; $('scene').hidden = true; script = null; npcAnim = null; mode = 'world'; A.stop(); updateHud(); }
+  function endDialog() { $('dlg').hidden = true; $('scene').hidden = true; script = null; npcAnim = null; mode = 'world'; A.stop(); if (bird && !bird.out) bird.out = performance.now(); updateHud(); }
 
   /* ================= cards (lesson pop-ups) ================= */
   function card(opts) {
@@ -622,12 +710,13 @@
   /* ================= talking ================= */
   function talkTo(n) {
     if (n.path) { n.path = null; n.fx = n.x; n.fy = n.y; n.walk = 0; }
+    if (n.city) { talkCity(n); return; }
     if (S.refuse[n.id] && D.REFUSE[n.id]) { runRefuse(n); return; }
     const jd = jobDeliverFor(n);
     if (jd) { deliverJob(jd, n); return; }
     const del = deliverFor(n);
     if (del) { completeDeliver(del, n); return; }
-    if (n.trick && !S.tricks[n.trick] && (!n.talk || S.flags['talked:' + n.id])) { runTrick(n.trick); return; }
+    if (n.trick && trickLive(n.trick) && !S.tricks[n.trick] && (!n.talk || S.flags['talked:' + n.id])) { runTrick(n.trick); return; }
     if (n.expert) { talkExpert(n); return; }
     const task = nextTask(n);
     if (task) { handleTask(task, n); return; }
@@ -637,7 +726,7 @@
     else if (tasksOf(n).length && tasksOf(n).every(t => S.tasks[t.id] === 'done')) { const last = tasksOf(n)[tasksOf(n).length - 1]; lines = last.done || lines; }
     S.flags['talked:' + n.id] = true; save();
     if (!lines.length) lines = ['...'];
-    runSteps(lines.map(text => ({ who: n.id, text })), null);
+    runSteps(normalize(lines, n.id), null);
   }
 
   /* ---- tricks ---- */
@@ -657,7 +746,7 @@
     const { chosen, correct } = answerTexts(c, o => /^right/.test(o.key));
     mode = 'world';
     if (kind === 'win') { S.tricks[id] = 'won'; save(); lessonWin(tr.fallacy, null, null, chosen); }
-    else if (kind === 'fail') lessonFail(tr.fallacy, null, null, chosen, correct);
+    else if (kind === 'fail') { lessonFail(tr.fallacy, null, null, chosen, correct); simEvent('fooled'); }
     else lessonOops(null, chosen, correct);
   }
 
@@ -683,7 +772,9 @@
   }
   /* Every line here is fixed text so it can be recorded in the expert's own voice; numbers live in the HUD. */
   function whyNotWorking(n) {
-    const L = D.LINES.why, lv = currentLevel(), m = mission(lv.mission), ms = S.missions[m.id] || {};
+    const L = D.LINES.why, lv = currentLevel();
+    if (!lv.mission) return L.built;
+    const m = mission(lv.mission), ms = S.missions[m.id] || {};
     if (ms.status === 'building') return L.building;
     if (ms.status === 'built') return L.built;
     const need = m.needs.find(nd => nd.role === n.expert.role);
@@ -710,9 +801,14 @@
     if (result === 'win') {
       e.cleared = idx + 1;
       const joined = !e.crew; e.crew = true; save();
-      const eyebrow = joined ? T('{name} joins your crew!', { name: n.name }) : T('{name} thinks clearer (+50% learning)', { name: n.name });
-      lessonWin(fog.fallacy, eyebrow, () => { if (joined) toast(T('👷 {name} joined', { name: n.name }), 'good'); updateHud(); placeCrew(true); }, chosen);
-    } else lessonFail(fog.fallacy, T('{name} is still foggy', { name: n.name }), null, chosen, correct);
+      const ally = isAlly(n);
+      const eyebrow = ally ? T('{name} is now a true ally!', { name: n.name }) : joined ? T('{name} joins your crew!', { name: n.name }) : T('{name} thinks clearer (+50% learning)', { name: n.name });
+      lessonWin(fog.fallacy, eyebrow, () => {
+        if (joined) toast(T('👷 {name} joined', { name: n.name }), 'good');
+        if (ally) { toast(T('⭐ {name} is a true ally', { name: n.name }), 'good', 2600); simEvent('ally'); }
+        updateHud(); placeCrew(true);
+      }, chosen);
+    } else { lessonFail(fog.fallacy, T('{name} is still foggy', { name: n.name }), null, chosen, correct); simEvent('fooled'); }
   }
 
   /* ---- the harder fog a preacher leaves behind: clear it and the expert rejoins the crew ---- */
@@ -795,6 +891,7 @@
     const job = allJobs().find(j => j.place === d.id);
     if (job) { doJob(job); return; }
     const task = allTasks().find(t => t.kind === 'spot' && t.target === d.id);
+    if (d.kind === 'fountain' && d.dry && !S.throne) { showVignette(d, D.FLAVOR.dryfountain, { dry: true }); return; }
     if (task && S.tasks[task.id] === 'active') {
       if (task.item && S.carry) { runSteps(nar(D.LINES.handsFull), null); return; }
       startAction(task.anim || 'pick', ACTION_MS[task.anim] || 2200, () => {
@@ -806,7 +903,98 @@
       });
       return;
     }
-    runSteps(nar(D.FLAVOR[d.kind] || D.FLAVOR.nothing), null);
+    const g = gameAt(d);
+    if (g) { startMiniGame(g, d); return; }
+    showVignette(d, D.FLAVOR[d.kind] || D.FLAVOR.nothing);
+  }
+
+  /* ================= scenes: little animated pictures and mini-games in a modal =================
+     A scene (js/scenes.js) draws on the canvas in #vig; game.js feeds it time, taps and keys and shows its
+     caption and buttons. Vignettes replace the narrator's flat line when you press A on a thing; mini-games
+     hide behind some things (the card table, the skipping stones, the fixed scarecrow, the fishing rod) and
+     inside Dodge's cup trick. */
+  let modal = null;   // { scene, api, prev, after, t0, result }
+  const vcan = $('vig-canvas');
+  function setVigButtons(list) {
+    const box = $('vig-ui'); box.innerHTML = '';
+    (list || []).forEach(o => { const b = document.createElement('button'); b.type = 'button'; b.className = 'choice'; b.textContent = o.text; b.addEventListener('click', () => { A.play('talk'); o.on(); }); box.appendChild(b); });
+  }
+  function openScene(make, cfg, after) {
+    if (!make) { if (cfg.caption) runSteps(nar(cfg.caption), null); return; }
+    hidePreview(); A.stop();
+    const t0 = performance.now();
+    const api = {
+      Wd, A, T, spec: mySpec(), t0, opts: cfg.opts || {}, lines: cfg.lines || {}, game: cfg.game || null,
+      caption: (text, speak) => { $('vig-text').textContent = text || ''; if (text && speak !== false) A.say(text, 'n', 'narrator', text); },
+      buttons: setVigButtons,
+      finish: r => { if (!modal) return; modal.result = r || {}; $('vig-close').textContent = T('OK'); setVigButtons([]); }
+    };
+    modal = { scene: null, api, prev: mode, after, t0, result: null };
+    mode = 'modal';
+    $('vig-text').textContent = ''; setVigButtons([]);
+    $('vig-close').textContent = cfg.game ? T('Leave') : T('OK');
+    $('vig').hidden = false;
+    modal.scene = make(api);
+    if (cfg.caption) api.caption(cfg.caption);
+    drawModal(performance.now());
+  }
+  function closeScene() {
+    if (!modal) return;
+    const m = modal; modal = null;
+    $('vig').hidden = true; setVigButtons([]); A.stop(); A.play('close');
+    mode = m.prev === 'modal' ? 'world' : m.prev;
+    if (m.after) m.after(m.result);
+    updateHud();
+  }
+  function drawModal(t) {
+    if (!modal || !modal.scene) return;
+    const want = Math.round((vcan.clientWidth || Sc.W) * dpr);
+    if (vcan.width !== want) { vcan.width = want; vcan.height = Math.round(want * Sc.H / Sc.W); }
+    const c = vcan.getContext('2d');
+    c.setTransform(vcan.width / Sc.W, 0, 0, vcan.height / Sc.H, 0, 0); c.clearRect(0, 0, Sc.W, Sc.H);
+    try { modal.scene.draw(c, t - modal.t0); } catch (e) { console.error(e); closeScene(); }   // a broken scene must never stop the game loop
+  }
+  const modalT = () => performance.now() - modal.t0;
+  /* Enter, Space or the A button inside a scene: the game's action key, or "close" once it is over. */
+  function modalPress() {
+    if (!modal) return;
+    if (modal.result || !modal.scene.key) closeScene(); else modal.scene.key('Enter', modalT());
+  }
+  vcan.addEventListener('pointerdown', e => {
+    if (!modal) return; e.preventDefault(); A.unlock();
+    const r = vcan.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * Sc.W, y = (e.clientY - r.top) / r.height * Sc.H;
+    if (modal.scene.pointer && !modal.result) modal.scene.pointer(x, y, modalT()); else closeScene();
+  });
+  $('vig-close').addEventListener('click', closeScene);
+  $('vig').addEventListener('click', e => { if (e.target === $('vig') && modal && !modal.api.game) closeScene(); });
+
+  function showVignette(d, caption, opts) {
+    const make = Sc && Sc.vignettes[d.kind];
+    openScene(make, { caption: fill(caption), opts: Object.assign({ text: d.text ? (I ? I.t(d.text) : d.text) : '' }, opts || {}) }, null);
+  }
+  /* A step { game, mode } inside a dialogue: the dialogue box steps aside, the game plays, the dialogue goes on. */
+  function openGameStep(st) {
+    const g = D.GAMES && D.GAMES[st.game], make = Sc && Sc.games[st.game];
+    if (!g || !make) { next(); return; }
+    $('dlg').hidden = true;
+    const who = script && script.steps.find(s => s.who && s.who !== 'n' && s.who !== 'you');
+    openScene(make, { game: g, lines: g.lines, opts: { mode: st.mode, npcSpec: (npcById(who ? who.who : 'dodge') || {}).spec } }, () => { $('dlg').hidden = false; next(); });
+  }
+  const allGames = () => Object.keys(D.GAMES || {}).map(id => Object.assign({ id }, D.GAMES[id]));
+  const gameAt = d => allGames().find(g => g.place && g.place === d.id && (!g.needs || S.flags[g.needs]) && Sc && Sc.games[g.id]) || null;
+  /* A hidden mini-game at a decoration. Coins are paid once per cooldown; a lesson question shows its card afterwards. */
+  function startMiniGame(g, d, extra) {
+    const st = S.games[g.id] || (S.games[g.id] = {}), canPay = !st.last || st.last + g.cooldown * 1000 < Date.now();
+    openScene(Sc.games[g.id], { game: g, lines: g.lines, opts: Object.assign({ text: d && d.text ? (I ? I.t(d.text) : d.text) : '', npcSpec: (npcById(g.npc || 'dodge') || {}).spec }, extra || {}) }, r => {
+      if (!r) return;
+      st.plays = (st.plays || 0) + 1; st.best = Math.max(st.best || 0, r.coins || 0); save();
+      if (r.coins && canPay) { st.last = Date.now(); save(); changeMoney(r.coins); A.play('coins'); }
+      else if (r.coins) toast(T('You already earned coins here. Come back later.'), '', 2600);
+      if (r.lesson) {
+        if (r.lesson.ok) lessonWin(r.lesson.fid, null, null, r.lesson.chosen);
+        else lessonFail(r.lesson.fid, null, null, r.lesson.chosen, r.lesson.correct);
+      }
+    });
   }
 
   /* ---- jobs: an animation at the spot, then pay, or carry something to a person who pays ---- */
@@ -849,10 +1037,12 @@
     n.x = x; n.y = y; n.fx = x; n.fy = y; n.path = null; n.walk = 0; n.dir = dir || n.dir;
     S.npcPos[n.id] = { x, y, dir: n.dir }; save();
   }
+  /* Crew needed for the current building wait at its camp; the rest go home. Allies on an errand are left alone. */
   function placeCrew(animate) {
-    const lv = currentLevel(), m = mission(lv.mission), ms = S.missions[m.id] || {};
-    const camp = m.camp || [];
-    const wanted = crew().filter(n => { const need = m.needs.find(nd => nd.role === n.expert.role); return need && !S.ended && ms.status !== 'built' && exLevel(n.id) >= need.level; });
+    const lv = currentLevel(), m = lv.mission ? mission(lv.mission) : null, ms = m ? (S.missions[m.id] || {}) : {};
+    const free = crew().filter(n => !(S.errands || {})[n.id]);
+    const camp = m ? m.camp || [] : [];
+    const wanted = m ? free.filter(n => { const need = m.needs.find(nd => nd.role === n.expert.role); return need && !S.ended && ms.status !== 'built' && exLevel(n.id) >= need.level; }) : [];
     const used = new Set();
     wanted.forEach(n => { const i = camp.findIndex(([x, y]) => x === n.x && y === n.y); if (i >= 0) used.add(i); });
     wanted.forEach(n => {
@@ -862,9 +1052,9 @@
       used.add(i);
       const [x, y] = camp[i];
       const facing = x < m.site.x ? 'right' : x >= m.site.x + m.site.w ? 'left' : y < m.site.y ? 'down' : 'up';
-      sendNpc(n, x, y, facing, animate && n.region === m.region);
+      sendNpc(n, x, y, facing, animate);
     });
-    crew().filter(n => !wanted.includes(n)).forEach(n => sendNpc(n, n.home.x, n.home.y, n.home.dir, false));
+    free.filter(n => !wanted.includes(n)).forEach(n => sendNpc(n, n.home.x, n.home.y, n.home.dir, animate));
   }
 
   /* ================= the Grey Order: preachers who fog cleared heads =================
@@ -874,17 +1064,18 @@
      inside a statue's circle can be reached. You cannot talk to a preacher. */
   const preachers = [];
   const preacherAt = (x, y) => preachers.find(p => p.phase !== 'gone' && ((p.x === x && p.y === y) || (p.path && p.path.length && p.path[0][0] === x && p.path[0][1] === y)));
-  const orderCfg = () => D.ORDER.byLevel[Math.min(S.unlocked, 5)] || null;
+  const orderCfg = () => D.ORDER.byLevel[Math.min(S.unlocked, 6)] || null;
   const isDeliverTarget = n => Object.values(D.JOBS).some(j => j.deliverTo === n.id) || Object.values(D.TASKS).some(t => t.kind === 'deliver' && t.target === n.id);
   const protectedAt = (x, y) => D.STATUE.sites.some((s, i) => S.statues[i] && S.statues[i].status === 'built' && dist(s.x, s.y, x, y) <= D.STATUE.radius);
   function canTarget(n) {
     if (n.region >= S.unlocked || protectedAt(n.x, n.y)) return false;
     if (preachers.some(p => p.phase !== 'gone' && p.target === n.id)) return false;
-    if (n.expert) return !!(ex(n.id).crew && !S.refog[n.id] && D.HARD[n.id] && D.HARD[n.id].length);
-    return !!(D.REFUSE[n.id] && !S.refuse[n.id] && (n.task || isDeliverTarget(n)));
+    if (n.expert) return !!(ex(n.id).crew && !isAlly(n) && !S.refog[n.id] && D.HARD[n.id] && D.HARD[n.id].length);
+    const cfg = orderCfg();
+    return !!(cfg && cfg.refuse && D.REFUSE[n.id] && !S.refuse[n.id] && (n.task || isDeliverTarget(n)));
   }
   /* Is this person still worth walking to? (Same as canTarget, minus the "already targeted" rule.) */
-  const stillValid = n => n.region < S.unlocked && !protectedAt(n.x, n.y) && (n.expert ? !!(ex(n.id).crew && !S.refog[n.id]) : !S.refuse[n.id]);
+  const stillValid = n => n.region < S.unlocked && !protectedAt(n.x, n.y) && (n.expert ? !!(ex(n.id).crew && !isAlly(n) && !S.refog[n.id]) : !S.refuse[n.id]);
   function pickTarget(region) {
     const cands = npcs.filter(n => canTarget(n) && (region === undefined || n.region === region));
     if (!cands.length) return null;
@@ -915,7 +1106,7 @@
     if ($('minimap-box').hidden) { $('minimap-box').hidden = false; renderMini(); }
   }
   function tickPreachers(dt) {
-    if (S.ended || S.unlocked < 2) return;
+    if (S.ended || S.unlocked < D.ORDER.fromLevel) return;
     const cfg = orderCfg(); if (!cfg) return;
     const now = Date.now();
     if (!S.orderSince) { S.orderSince = now; S.lastPreach = now - cfg.every * 1000 + D.ORDER.firstAfterSec * 1000; save(); }
@@ -982,11 +1173,149 @@
       e.crew = false; S.refog[n.id] = { idx: (e.hardIdx || 0) % Math.max(1, list.length) }; e.hardIdx = (e.hardIdx || 0) + 1;
       save(); sendNpc(n, n.home.x, n.home.y, n.home.dir, true);
       toast(T('{name} is foggy again', { name: n.name }), 'bad', 3000);
+      simEvent('fogged');
     } else {
       S.refuse[n.id] = true; save();
       toast(T('{name} refuses to work with you', { name: n.name }), 'bad', 3000);
+      simEvent('refused');
     }
     updateHud(); renderMini();
+  }
+
+  /* ================= the Simurgh: the magic bird who teaches the rules, one level at a time ================= */
+  let bird = null;              // { x, y, t0, out } while she is on screen
+  const simQueue = [];
+  function simEvent(key) {
+    if (S.simSeen[key] || !D.SIMURGH.events[key]) return;
+    S.simSeen[key] = true; save(); simQueue.push(D.SIMURGH.events[key]);
+  }
+  function simurghSay(lines) {
+    bird = { x: player.x + (player.dir === 'left' ? -1 : 1), y: player.y - 1, t0: performance.now(), out: 0 };
+    A.play('simurgh');
+    runSteps(lines.map(text => ({ who: 'simurgh', text })), null);
+  }
+  const lessonNow = () => { const ls = S.lesson, L = ls && D.SIMURGH.levels[ls.level]; return L && !ls.done ? { ls, L } : null; };
+  function lessonGoal() {
+    const x = lessonNow(); if (!x || !x.ls.intro) return null;
+    const st = x.L.steps[x.ls.step]; return st ? st.goal : null;
+  }
+  function stepDone(check) {
+    const [k, v] = check.split(':');
+    if (k === 'talk') return !!S.flags['talked:' + v];
+    if (k === 'earn') return S.stats.earned > 0;
+    if (k === 'crew') return crew().length >= +v;
+    if (k === 'role') return crew().some(n => n.expert.role === v);
+    if (k === 'built') return built(v);
+    if (k === 'collect') return !!S.flags.collected;
+    if (k === 'trick') return Object.keys(S.tricks).some(id => D.TRICKS[id] && D.TRICKS[id].cost);
+    if (k === 'statue') return Object.keys(S.statues).length > 0;
+    if (k === 'ally') return crew().some(isAlly);
+    if (k === 'throne') return !!S.throne;
+    return false;
+  }
+  /* She comes back when a step is done: praise, then what to do next. She cannot fly into the Grey City. */
+  let lessonAt = 0;
+  function tickLesson(t) {
+    if (mode !== 'world' || player.moving || S.ended || t - lessonAt < 400) return;
+    lessonAt = t;
+    if (Wd.regionAt(player.x, player.y) === 5 && !S.throne) return;
+    if (simQueue.length) { simurghSay(simQueue.shift()); return; }
+    const x = lessonNow(); if (!x) return;
+    const { ls, L } = x;
+    if (!ls.intro) { ls.intro = true; save(); simurghSay(L.say); return; }
+    let passed = null;
+    while (L.steps[ls.step] && stepDone(L.steps[ls.step].check)) { passed = L.steps[ls.step]; ls.step++; }
+    if (!passed) return;
+    const next = L.steps[ls.step];
+    if (!next) ls.done = true;
+    save(); updateHud();
+    const lines = [].concat(passed.praise || [], next && next.say ? next.say : []);
+    if (lines.length) simurghSay(lines);
+  }
+
+  /* ================= true allies: they walk to your buildings and bring back the coins ================= */
+  const nearSite = (n, m) => n.x >= m.site.x - 1 && n.x <= m.site.x + m.site.w && n.y >= m.site.y - 1 && n.y <= m.site.y + m.site.h;
+  function siteSpot(m) {
+    for (let y = m.site.y - 1; y <= m.site.y + m.site.h; y++) for (let x = m.site.x - 1; x <= m.site.x + m.site.w; x++)
+      if (Wd.walkable(x, y) && !npcAt(x, y) && !(player.x === x && player.y === y)) return [x, y];
+    return null;
+  }
+  function allyCollect(n, m) {
+    const ms = mstate(m.id), got = pending(m);
+    ms.lastCollect = Date.now();
+    if (!got) { save(); return; }
+    const share = Math.max(1, Math.round(got * D.ALLY.share)), mine = got - share;
+    S.allyShares[n.id] = (S.allyShares[n.id] || 0) + share; S.flags.collected = true;
+    S.allyLog.unshift({ who: n.id, m: m.id, got, mine, share, at: Date.now() }); S.allyLog.length = Math.min(S.allyLog.length, 6);
+    changeMoney(mine, true); A.play('coins');
+    toast(T('🪙 {name} collected {got} coins at {place}. You get {mine}, {name} keeps {share}.', { name: n.name, got, place: m.name, mine, share }), 'good', 4500);
+  }
+  let allyAt = 0;
+  function tickAllies(t) {
+    if (mode !== 'world' || t - allyAt < 1000) return;
+    allyAt = t;
+    const errands = S.errands || (S.errands = {});
+    Object.keys(errands).forEach(id => {
+      const n = npcById(id), er = errands[id], m = mission(er.m);
+      if (!n || !m || !isAlly(n)) { delete errands[id]; save(); return; }
+      if (n.path && n.path.length) return;
+      if (!nearSite(n, m)) {
+        er.tries = (er.tries || 0) + 1;
+        const spot = er.tries <= 3 ? siteSpot(m) : null;
+        if (spot) { sendNpc(n, spot[0], spot[1], null, true); return; }
+      }
+      delete errands[id]; allyCollect(n, m); placeCrew(true);
+    });
+    if (Date.now() - (S.lastErrand || 0) < D.ALLY.everySec * 1000) return;
+    const busy = new Set(Object.values(errands).map(e => e.m));
+    const m = D.MISSIONS.filter(x => built(x.id) && x.income.rate && !busy.has(x.id) && pending(x) >= D.ALLY.minCoins).sort((a, b) => pending(b) - pending(a))[0];
+    if (!m) return;
+    const n = crew().filter(o => isAlly(o) && !errands[o.id]).sort((a, b) => dist(a.x, a.y, m.site.x, m.site.y) - dist(b.x, b.y, m.site.x, m.site.y))[0];
+    if (!n) return;
+    errands[n.id] = { m: m.id, tries: 0 }; S.lastErrand = Date.now(); save();
+    const spot = siteSpot(m);
+    if (spot) sendNpc(n, spot[0], spot[1], null, true);
+  }
+
+  /* ================= the Grey City: everybody is fogged; convince one person and the monster falls ================= */
+  function talkCity(n) {
+    const c = n.city;
+    if (!c.gauntlet || S.throne) { runSteps(normalize(S.throne ? (c.after || n.talk) : n.talk, n.id), null); return; }
+    const st = S.city[n.id] || (S.city[n.id] = { step: 0 });
+    const q = c.gauntlet[st.step];
+    let result = 'fail';
+    const cx = {
+      branch: o => { result = o.right ? 'win' : 'fail'; return normalize(o.right ? q.right : q.wrong, n.id).concat([{ end: 'x' }]); },
+      finish: () => {
+        const { chosen, correct } = answerTexts(cx, o => !!o.right);
+        mode = 'world';
+        if (result === 'win') {
+          st.step++; save();
+          if (st.step >= c.gauntlet.length) lessonWin(q.fallacy, T('{name} is convinced!', { name: n.name }), () => crowned(n), chosen);
+          else lessonWin(q.fallacy, T('{name} is listening. {a} of {b} done.', { name: n.name, a: st.step, b: c.gauntlet.length }), () => talkCity(n), chosen);
+        } else { st.step = 0; save(); lessonFail(q.fallacy, T('{name} laughs at you. Start again.', { name: n.name }), null, chosen, correct); }
+      }
+    };
+    const intro = (st.step === 0 ? normalize(c.intro || [], n.id) : []).concat(normalize(q.intro, n.id));
+    runSteps(intro.concat([{ choice: q.options }]), cx);
+  }
+  function placePlayer(x, y, dir) {
+    player.x = player.fx = player.tx = x; player.y = player.fy = player.ty = y; player.moving = false;
+    if (dir) player.dir = dir;
+    S.x = x; S.y = y; trail.length = 0;
+  }
+  /* The monster breaks, the Simurgh flies in and tells the truth, and the player sits on the throne. */
+  function crowned(n) {
+    const th = D.CITY.throne, sim = lines => lines.map(text => ({ who: 'simurgh', text }));
+    const steps = normalize(n.city.convinced, n.id).concat(
+      [{ fn: () => { S.throne = true; save(); throneAnim = performance.now(); syncWorld(); A.play('fog'); } }],
+      nar(D.CITY.lift),
+      [{ fn: () => { bird = { x: player.x + 1, y: player.y - 1, t0: performance.now(), out: 0 }; A.play('simurgh'); } }],
+      sim(D.SIMURGH.ending),
+      [{ fn: () => { if (bird) bird.out = performance.now(); placePlayer(th.x, th.y, 'down'); S.ended = true; save(); syncWorld(); A.play('fanfare'); updateHud(); } }],
+      nar(D.CITY.sit),
+      [{ end: 'x' }]);
+    runSteps(steps, { finish: () => showEnd() });
   }
 
   /* ================= statues of Aristotle ================= */
@@ -994,6 +1323,7 @@
   function openStatue(i) {
     const site = D.STATUE.sites[i], st = S.statues[i], cost = D.STATUE.costs[i];
     if (site.region >= S.unlocked) return;
+    if (S.unlocked < D.STATUE.fromLevel) { runSteps(nar(D.STATUE.flavor), null); return; }
     if (st && st.status === 'built') { runSteps(nar([D.STATUE.inspect, D.STATUE.quote]), null); return; }
     if (st && st.status === 'building') {
       const p = Math.min(100, Math.round((Date.now() - st.startedAt) / (D.STATUE.buildSec * 10)));
@@ -1096,15 +1426,14 @@
       gains.push(T('{name} +{n} XP', { name: npcById(id).name, n: got }) + (exLevel(id) > before ? ' · ' + T('level up!') : ''));
     });
     const newRegion = m.unlocks < Wd.regions.length && m.unlocks >= S.unlocked ? m.unlocks : null;
-    if (newRegion !== null) S.unlocked = newRegion + 1;
+    if (newRegion !== null) { S.unlocked = newRegion + 1; S.lesson = { level: newRegion, step: 0, intro: false }; }
     save(); syncWorld(); placeCrew(false);
     A.play('fanfare');
     const steps = nar(m.done);
     steps.push({ who: 'n', text: D.LINES.crewLearned }, { fn: () => gains.forEach((g, i) => setTimeout(() => toast(g, 'good'), i * 700)) });
     if (newRegion !== null) steps.push({ fn: () => { fogAnim = { region: newRegion, t0: performance.now() }; A.play('fog'); A.play('unlock'); } });
     if (m.lift) steps.push({ who: 'n', text: m.lift });
-    if (m.id === 'lighthouse') steps.push({ fn: () => { S.ended = true; save(); } }, { end: 'x' });
-    runSteps(steps, { finish: () => showEnd() });
+    runSteps(steps, null);
   }
 
   function pending(m) {
@@ -1129,7 +1458,7 @@
       <div class="row"><button class="btn btn-big grow" id="p-collect" ${p ? '' : 'disabled'}>${esc(T('Collect {n} 🪙', { n: p }))}</button><button class="btn btn-ghost" id="p-close">${esc(T('Close'))}</button></div>
       ${train}`);
     $('p-close').onclick = closePanel;
-    $('p-collect').onclick = () => { const got = pending(m); ms.lastCollect = Date.now(); changeMoney(got); A.play('coins'); openBuilding(m); };
+    $('p-collect').onclick = () => { const got = pending(m); ms.lastCollect = Date.now(); S.flags.collected = true; changeMoney(got); A.play('coins'); openBuilding(m); };
     document.querySelectorAll('[data-train]').forEach(b => b.onclick = () => {
       if (S.money < 30) return;
       const id = b.dataset.train, before = exLevel(id);
@@ -1160,7 +1489,8 @@
     const rows = crew().map(n => {
       const e = ex(n.id), lvl = exLevel(n.id), nextNeed = D.XP_LEVELS[lvl] || null;
       const pct = nextNeed ? Math.round((e.xp - D.XP_LEVELS[lvl - 1]) / (nextNeed - D.XP_LEVELS[lvl - 1]) * 100) : 100;
-      return `<li><span class="ri">${D.ROLES[n.expert.role].icon}</span><div><b>${esc(n.name)}</b> · ${esc(roleName(n.expert.role))} ${stars(lvl)}<div class="bar"><span style="width:${pct}%"></span></div><small>${esc(T('{xp} XP · fee {fee} · fog cleared {a}/{b} · learns ×{m}', { xp: e.xp, fee: n.expert.fee, a: e.cleared, b: n.expert.fog.length, m: xpMult(n.id).toFixed(1) }))}</small></div></li>`;
+      const ally = isAlly(n), kept = S.allyShares[n.id] || 0;
+      return `<li class="${ally ? 'ally' : ''}"><span class="ri">${D.ROLES[n.expert.role].icon}</span><div><b>${esc(n.name)}</b>${ally ? ` <span class="tag">⭐ ${esc(T('True ally'))}</span>` : ''} · ${esc(roleName(n.expert.role))} ${stars(lvl)}<div class="bar"><span style="width:${pct}%"></span></div><small>${esc(T('{xp} XP · fee {fee} · fog cleared {a}/{b} · learns ×{m}', { xp: e.xp, fee: n.expert.fee, a: e.cleared, b: n.expert.fog.length, m: xpMult(n.id).toFixed(1) }))}${kept ? ' · ' + esc(T('kept {n} coins from collecting', { n: kept })) : ''}</small></div></li>`;
     }).join('');
     const foggy = npcs.filter(n => n.expert && S.refog[n.id]).map(n => `<li class="missing"><span class="ri">${D.ROLES[n.expert.role].icon}</span><div><b>${esc(n.name)}</b> · ${esc(roleName(n.expert.role))} <small>${esc(T('A preacher fogged their head again. Find them in {region} and clear it.', { region: regionName(n.region) }))}</small></div></li>`).join('');
     const known = npcs.filter(n => n.expert && n.region < S.unlocked && !S.refog[n.id] && !(S.experts[n.id] && S.experts[n.id].crew)).map(n => `<li class="missing"><span class="ri">${D.ROLES[n.expert.role].icon}</span><div><b>${esc(n.name)}</b> · ${esc(roleName(n.expert.role))} <small>${esc(T('Not yet convinced. Find them in {region}.', { region: regionName(n.region) }))}</small></div></li>`).join('');
@@ -1168,12 +1498,13 @@
       <ul class="needs">${rows || `<li><div>${esc(T('Nobody yet. Experts join when you clear the first fog from their head.'))}</div></li>`}</ul>
       ${foggy ? `<p class="eyebrow">${esc(T('Fogged by the Grey Order'))}</p><ul class="needs">${foggy}</ul>` : ''}
       ${known ? `<p class="eyebrow">${esc(T('Experts you have heard of'))}</p><ul class="needs">${known}</ul>` : ''}
-      <p class="spot">${esc(T('Each cleared fog makes an expert learn 50% faster from building. The Engineering School adds another 50%.'))}</p>`);
+      <p class="spot">${esc(T('Each cleared fog makes an expert learn 50% faster from building. The Engineering School adds another 50%.'))}</p>
+      <p class="spot">${esc(T('Clear every fog from an expert and they become a true ally. Preachers cannot fool a true ally, and allies collect coins from your buildings for you. They keep one coin in five.'))}</p>`);
     $('p-close').onclick = closePanel;
   }
 
   function showGoals() {
-    const lv = currentLevel(), m = mission(lv.mission);
+    const lv = currentLevel(), m = lv.mission ? mission(lv.mission) : null;
     const focus = lv.focus.map(id => fallacy(id)).map(f => `${f.icon} ${esc(f.nick)}`).join(', ');
     const info = trackerInfo();
     const tasks = allTasks().filter(t => npcById(t.giver).region < S.unlocked && S.tasks[t.id] && S.tasks[t.id] !== 'done')
@@ -1182,27 +1513,31 @@
     const inv = D.MISSIONS.filter(x => built(x.id) && x.income.rate).map(x => `<li><span class="ri">🏛️</span><div><b>${esc(x.name)}</b><small>${esc(T('{rate}/min · {n} stored', { rate: x.income.rate, n: pending(x) }))}</small></div></li>`).join('');
     const refusing = npcs.filter(n => S.refuse[n.id]).map(n => `<li class="missing"><span class="ri">✗</span><div><b>${esc(n.name)}</b><small>${esc(T('Refuses to work with you. Answer the preacher\'s argument.'))}</small></div></li>`).join('');
     const live = preachers.filter(p => p.phase !== 'gone');
-    const order = S.unlocked >= 2 ? `<p class="eyebrow">${esc(T('The Grey Order'))}</p><p class="spot">${esc(live.length ? T('{n} preacher(s) on the move. Open the map to see them.', { n: live.length }) : T('No preacher is out right now. Statues of Aristotle keep them away.'))}</p>${refusing ? `<ul class="needs">${refusing}</ul>` : ''}` : '';
+    const log = (S.allyLog || []).map(l => `<li><span class="ri">🪙</span><div><b>${esc(npcById(l.who).name)}</b><small>${esc(T('{place}: {got} coins. You got {mine}, they kept {share}.', { place: mission(l.m).name, got: l.got, mine: l.mine, share: l.share }))}</small></div></li>`).join('');
+    const order = S.unlocked >= D.ORDER.fromLevel ? `<p class="eyebrow">${esc(T('The Grey Order'))}</p><p class="spot">${esc(live.length ? T('{n} preacher(s) on the move. Open the map to see them.', { n: live.length }) : T('No preacher is out right now. Statues of Aristotle keep them away.'))}</p>${refusing ? `<ul class="needs">${refusing}</ul>` : ''}` : '';
     panel(`<div class="row between"><h2>${esc(T('Goals'))}</h2><button class="btn btn-ghost btn-sm" id="p-close">${esc(T('Back'))}</button></div>
       <p class="eyebrow">${esc(T('Level {n} · {region}', { n: S.unlocked, region: regionName(lv.region) }))}</p>
-      <p><b>${esc(T('Mission:'))}</b> ${esc(m.name)} — ${esc(objectiveText())}</p>
+      ${m ? `<p><b>${esc(T('Mission:'))}</b> ${esc(m.name)} — ${esc(objectiveText())}</p>` : `<p><b>${esc(objectiveText())}</b></p>`}
       <p class="spot">${esc(T('Tricks in this area:'))} ${focus}</p>
       ${info ? `<p class="eyebrow">${esc(T('Right now'))}</p><p><b>${esc(info.title)}</b>: ${esc(info.step)}</p>` : ''}
       ${order}
       <p class="eyebrow">${esc(T('Jobs you accepted'))}</p><ul class="needs">${carry + tasks || `<li><div>${esc(T('None yet. People with a ! have work for you, and job spots like the buckets pay every time.'))}</div></li>`}</ul>
-      <p class="eyebrow">${esc(T('Investments'))}</p><ul class="needs">${inv || `<li><div>${esc(T('Nothing built yet.'))}</div></li>`}</ul>`);
+      <p class="eyebrow">${esc(T('Investments'))}</p><ul class="needs">${inv || `<li><div>${esc(T('Nothing built yet.'))}</div></li>`}</ul>
+      ${log ? `<p class="eyebrow">${esc(T('Collected by your allies'))}</p><ul class="needs">${log}</ul>` : ''}`);
     $('p-close').onclick = closePanel;
   }
 
   function showEnd() {
     if (!S.ended) { mode = 'world'; return; }
     mode = 'end'; $('end').hidden = false;
-    $('end-stats').innerHTML = `<p class="big">${esc(T('Coins earned: {a} · lost to tricks: {b}', { a: S.stats.earned, b: S.stats.lost }))}</p><p>${esc(T('Fallacies spotted: {a} of {b}. Crew: {list}.', { a: spottedCount(), b: D.FALLACIES.length, list: crew().map(n => n.name).join(', ') }))}</p><p>${esc(T('Heads fogged by the Grey Order: {a} · cleared again: {b}', { a: S.orderStats.fogged, b: S.orderStats.cleared }))}</p>`;
+    const allies = crew().filter(isAlly).map(n => n.name).join(', ');
+    $('end-stats').innerHTML = `<p class="big">${esc(T('Coins earned: {a} · lost to tricks: {b}', { a: S.stats.earned, b: S.stats.lost }))}</p><p>${esc(T('Fallacies spotted: {a} of {b}. Crew: {list}.', { a: spottedCount(), b: D.FALLACIES.length, list: crew().map(n => n.name).join(', ') }))}</p>${allies ? `<p>${esc(T('True allies: {list}.', { list: allies }))}</p>` : ''}<p>${esc(T('Heads fogged by the Grey Order: {a} · cleared again: {b}', { a: S.orderStats.fogged, b: S.orderStats.cleared }))}</p>`;
     $('end-cards').innerHTML = D.FALLACIES.filter(f => S.spotted[f.id]).map(f => `<div class="mini">${f.img ? `<img src="${f.img}" alt="">` : `<div class="bicon">${f.icon}</div>`}<span>${f.icon} ${esc(f.nick)}</span></div>`).join('');
   }
 
   /* ================= input ================= */
   function pressA() {
+    if (mode === 'modal') { modalPress(); return; }
     if (mode === 'world') interact();
     else if (mode === 'dialog') { if (!$('dlg-choices').hidden) return; if ($('scene').hidden) next(); else { $('scene').hidden = true; next(); } }
     else if (mode === 'panel' && !$('card').hidden) closeCard();
@@ -1223,8 +1558,8 @@
   $('name-input').addEventListener('keydown', e => { if (e.key === 'Enter') startGame(); });
   $('reset').addEventListener('click', () => {
     if (!window.confirm(T('Start again from the beginning? Your coins, crew and buildings will be lost.'))) return;
-    const name = S.name; S = DEFAULT(); S.name = ''; save(); pushSave();
-    preachers.length = 0;
+    const name = S.name; S = migrate(DEFAULT()); S.name = ''; save(); pushSave();
+    preachers.length = 0; simQueue.length = 0; bird = null;
     player.x = player.fx = player.tx = S.x; player.y = player.fy = player.ty = S.y; syncWorld(); renderTitle();
     $('name-input').value = name;
   });
@@ -1234,6 +1569,7 @@
   $('tracker').addEventListener('click', () => { if (mode === 'world') showGoals(); });
   $('alert').addEventListener('click', () => { const b = $('minimap-box'); b.hidden = false; renderMini(); });
   $('hud-map').addEventListener('click', () => { const b = $('minimap-box'); b.hidden = !b.hidden; if (!b.hidden) renderMini(); A.play('open'); });
+  $('hud-zoom').addEventListener('click', () => { if (mode !== 'title') toggleZoom(); });
   $('hud-sound').addEventListener('click', () => { S.sound = !S.sound; A.settings.sfx = S.sound; save(); updateHud(); A.play('good'); });
   $('hud-voice').addEventListener('click', () => { S.voice = !S.voice; A.settings.voice = S.voice && voiceAvailable(); if (!S.voice) A.stop(); save(); updateHud(); });
   $('hud-home').addEventListener('click', () => { if (mode === 'world') renderTitle(); });
@@ -1243,17 +1579,25 @@
   const KEYS = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', w: 'up', s: 'down', a: 'left', d: 'right' };
   document.addEventListener('keydown', e => {
     if (e.target && e.target.tagName === 'INPUT') return;
+    if (mode === 'modal' && modal) {   // a scene takes every key: Esc leaves, the rest go to the game
+      if (e.key === 'Tab') return;
+      e.preventDefault(); A.unlock();
+      if (e.key === 'Escape') closeScene();
+      else if (e.key === 'Enter' || e.key === ' ') modalPress();
+      else if (modal.scene.key && !modal.result) modal.scene.key(e.key, modalT());
+      return;
+    }
     if (KEYS[e.key]) { e.preventDefault(); A.unlock(); held = KEYS[e.key]; if (mode === 'world') tryMove(held); }
     if (e.key === 'Enter' || e.key === ' ' || e.key === 'e') { e.preventDefault(); A.unlock(); pressA(); }
     if (e.key === 'Escape') { if (mode === 'panel' && !$('card').hidden) closeCard(); else if (mode === 'panel') closePanel(); else hidePreview(); }
-    if (mode === 'world') { if (e.key === 'b') showBook(); if (e.key === 'c') showCrew(); if (e.key === 'g') showGoals(); if (e.key === 'm') $('hud-map').click(); }
+    if (mode === 'world') { if (e.key === 'b') showBook(); if (e.key === 'c') showCrew(); if (e.key === 'g') showGoals(); if (e.key === 'm') $('hud-map').click(); if (e.key === 'z') toggleZoom(); }
   });
   document.addEventListener('keyup', e => { if (KEYS[e.key] === held) held = null; });
 
   /* ================= go ================= */
   syncWorld();
   window.FogDebug = {
-    go(x, y, dir) { player.x = player.fx = player.tx = x; player.y = player.fy = player.ty = y; player.moving = false; if (dir) player.dir = dir; S.x = x; S.y = y; updateHud(); },
+    go(x, y, dir) { placePlayer(x, y, dir); camNow = null; updateHud(); },
     money(n) { changeMoney(n); }, unlock(n) { S.unlocked = n; save(); syncWorld(); renderMini(); },
     state: () => ({ mode, x: player.x, y: player.y, money: S.money, unlocked: S.unlocked, crew: crew().map(n => n.id), missions: S.missions, tasks: S.tasks, tricks: S.tricks, carry: S.carry, follower: follower(), tracker: trackerInfo(), refog: S.refog, refuse: S.refuse, statues: S.statues, preachers: preachers.map(p => ({ id: p.id, x: p.x, y: p.y, phase: p.phase, target: p.target, converts: p.converts })), lang: I ? I.lang : 'en', missing: I ? I.missing() : [] }),
     save: () => S, press: pressA, next, interact, place: () => placeCrew(true), npc: id => { const n = npcById(id); return { x: n.x, y: n.y, path: n.path && n.path.length }; },
@@ -1261,7 +1605,13 @@
     joinCrew: id => { const e = ex(id); e.crew = true; e.cleared = Math.max(e.cleared, 1); save(); placeCrew(false); updateHud(); },
     spawnPreacher: () => { S.orderSince = S.orderSince || Date.now(); spawnPreacher(); }, preach: () => { preachers.forEach(p => { p.until = 0; }); },
     fastPreachers: () => preachers.forEach(p => { if (p.path) { while (p.path.length > 1) { const [x, y] = p.path.shift(); p.x = p.fx = x; p.y = p.fy = y; } } }),
-    convert: id => convert(npcById(id)), protectedNpc: id => { const n = npcById(id); return protectedAt(n.x, n.y); }, canTarget: id => canTarget(npcById(id)), statue: i => { S.statues[i] = { status: 'built', startedAt: 0 }; save(); syncWorld(); }, openStatue
+    convert: id => convert(npcById(id)), protectedNpc: id => { const n = npcById(id); return protectedAt(n.x, n.y); }, canTarget: id => canTarget(npcById(id)), statue: i => { S.statues[i] = { status: 'built', startedAt: 0 }; save(); syncWorld(); }, openStatue,
+    lesson: () => ({ lesson: S.lesson, goal: lessonGoal(), queued: simQueue.length, bird: !!bird }), sim: key => simEvent(key), isAlly: id => isAlly(npcById(id)),
+    allies: () => ({ errands: S.errands, shares: S.allyShares, log: S.allyLog }), errandNow: () => { S.lastErrand = 0; allyAt = 0; },
+    city: () => ({ city: S.city, throne: S.throne, ended: S.ended }), cam: () => Object.assign({ dpr, canvas: [canvas.width, canvas.height], region: lastRegion }, cam), zoom: toggleZoom,
+    vignette: (kind, text) => showVignette({ kind, text }, D.FLAVOR[kind] || kind), game: (id, extra) => startMiniGame(Object.assign({ id }, D.GAMES[id]), null, extra), games: () => S.games,
+    modal: () => modal ? { result: modal.result, caption: $('vig-text').textContent, buttons: [...$('vig-ui').querySelectorAll('button')].map(b => b.textContent), close: $('vig-close').textContent, t: modalT() } : null,
+    tap: (x, y) => { if (modal && modal.scene.pointer) modal.scene.pointer(x, y, modalT()); }, mkey: k => { if (modal && modal.scene.key) modal.scene.key(k, modalT()); }, mbutton: i => { const b = $('vig-ui').querySelectorAll('button')[i]; if (b) b.click(); }, closeScene, flag: k => { S.flags[k] = true; save(); syncWorld(); }
   };
   renderTitle();
   requestAnimationFrame(loop);

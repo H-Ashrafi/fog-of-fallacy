@@ -18,6 +18,8 @@ global.localStorage = { getItem: () => null, setItem() { } };
 require(path.join(ROOT, 'js', 'lang', code + '.js'));
 require(path.join(ROOT, 'js', 'data.js'));
 require(path.join(ROOT, 'js', 'data-order.js'));
+require(path.join(ROOT, 'js', 'data-story.js'));
+require(path.join(ROOT, 'js', 'data-games.js'));
 const D = window.FOG;
 const dict = (window.FOG_LANG || {})[code] || {};
 const en = JSON.parse(fs.readFileSync(path.join(ROOT, 'i18n', 'en.json'), 'utf8'));
@@ -39,6 +41,7 @@ D.NPCS.forEach(n => { if (n.expert) n.expert.fog.forEach((f, i) => sets.push([n.
 Object.entries(D.HARD).forEach(([id, fogs]) => fogs.forEach((f, i) => sets.push([id + ' hard ' + i, f.options, o => !!o.right])));
 Object.entries(D.REFUSE).forEach(([id, r]) => sets.push([id + ' refuse', r.options, o => !!o.right]));
 Object.entries(D.TRICKS).forEach(([id, tr]) => { sets.push([id, tr.options, o => /^right/.test(o.key)]); tr.stage2 && tr.stage2.forEach(s => { if (s.choice) sets.push([id + ' stage2', s.choice, o => /^right/.test(o.key)]); }); });
+Object.entries(D.GAMES).forEach(([id, g]) => { if (g.lines.options) sets.push([id + ' game', g.lines.options, o => !!o.right]); });
 const longest = [];
 sets.forEach(([label, opts, isRight]) => {
   const tr = opts.map(o => (dict[o.text] || o.text));

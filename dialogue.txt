@@ -1,0 +1,1833 @@
+FOG OF FALLACY — EVERY LINE OF DIALOGUE
+
+Notes for whoever rewrites this file:
+* Keep every [key] exactly as it is, one line per key, so the new text can be put back in the game.
+* The players are young children (about 7). Use short, simple, whole sentences. Every sentence needs a verb.
+* {name} is replaced by the player's name. Keep it wherever it appears.
+* PLAYER ANSWER lines are the choices on screen. The ✓ RIGHT answer must never be the longest one,
+  or children learn to pick the longest. Wrong answers should sound tempting and reasonable, not silly.
+  ✗ INSULT answers are name-calling on purpose: they teach that insults are not arguments.
+* Each argument teaches the named trick (fallacy). The bad argument must still clearly use that trick.
+* Numbers of coins in spoken lines must match the game (they are shown in the HUD too).
+* NARRATOR lines are read by a storyteller. SIMURGH is a wise, warm, ancient magic bird.
+
+==============================================================================
+LEVEL 1 · RIVERSIDE VILLAGE   (tricks here: bandwagon)
+==============================================================================
+
+--- The Simurgh arrives (start of the game) ---
+[SIMURGH.levels.0.say[0]] SIMURGH: Hello, {name}. You're safe. I'm the Simurgh, the oldest bird in the world.
+[SIMURGH.levels.0.say[1]] SIMURGH: Look at this valley. A grey fog covers it. The fog comes from bad arguments. Every time one wins, the fog grows.
+[SIMURGH.levels.0.say[2]] SIMURGH: A great monster lives at the far end of the valley. Its breath feeds the fog. While it lives, people can't build anything good.
+[SIMURGH.levels.0.say[3]] SIMURGH: You could build this valley into a beautiful place. One day you could even rule it. But first, the monster must fall.
+[SIMURGH.levels.0.say[4]] SIMURGH: You can't beat it with a sword. You beat it by thinking clearly. I'll show you how, one step at a time.
+[SIMURGH.levels.0.say[5]] SIMURGH: Walk with the arrow keys. Press A or Space to talk to people. Start with Elder Otto. He lives just south of here.
+[SIMURGH.levels.0.steps[0].goal] (GOAL shown on screen) Talk to Elder Otto. He stands outside his house, just south of here.
+  (when the goal is done)
+[SIMURGH.levels.0.steps[0].praise[0]] SIMURGH: Good. Now you know what the village needs. It needs a well.
+[SIMURGH.levels.0.steps[1].goal] (GOAL shown on screen) Earn some coins. Help someone with a yellow !, or carry water for Baker Hana.
+[SIMURGH.levels.0.steps[1].say[0]] SIMURGH: A well costs coins. You earn coins by doing honest work.
+[SIMURGH.levels.0.steps[1].say[1]] SIMURGH: People with a yellow ! have jobs for you. You can also carry the buckets by the river.
+  (when the goal is done)
+[SIMURGH.levels.0.steps[1].praise[0]] SIMURGH: Your first coins! Honest work always pays.
+[SIMURGH.levels.0.steps[2].goal] (GOAL shown on screen) Talk to Mo the Mason. Pick the answer that clears the fog from his head.
+[SIMURGH.levels.0.steps[2].say[0]] SIMURGH: A well needs builders. Mo the Mason sits by the north lane. But his head is full of fog.
+[SIMURGH.levels.0.steps[2].say[1]] SIMURGH: He believes a bad idea. Listen to him. Then pick the answer that shows why he is wrong.
+  (when the goal is done)
+[SIMURGH.levels.0.steps[2].praise[0]] SIMURGH: You cleared his head! Now he's working with you. That's how you win people over. You give good reasons, and you never use insults.
+[SIMURGH.levels.0.steps[3].goal] (GOAL shown on screen) Find Wren, the water engineer, by the river. Clear the fog from her head too.
+[SIMURGH.levels.0.steps[3].say[0]] SIMURGH: The well needs a water engineer too. Wren camps on the sandy beach by the river, to the east.
+  (when the goal is done)
+[SIMURGH.levels.0.steps[3].praise[0]] SIMURGH: You have two experts! Now you just need coins for the stones and their pay.
+[SIMURGH.levels.0.steps[4].goal] (GOAL shown on screen) Build the well. Walk to the glowing spot in the square and press A.
+[SIMURGH.levels.0.steps[4].say[0]] SIMURGH: The well will go on the glowing spot in the village square. Press A there to see the cost.
+
+--- Walking into Riverside Village ---
+[LEVELS[0].intro[0]] NARRATOR: You wake up in Riverside Village. You have 40 coins in your pouch.
+[LEVELS[0].intro[1]] NARRATOR: A grey fog covers the valley. Something sparkles in the air beside you.
+
+--- Building: The Village Well ---
+[MISSIONS#well.blurb] (DESCRIPTION on the building card) The village drinks muddy water from the river. A well in the square would give clean water. People will pay one coin to fill a bucket.
+[MISSIONS#well.start] NARRATOR: Your crew rolls up its sleeves. Work on the well begins!
+[MISSIONS#well.done[0]] NARRATOR: Clean water bubbles up from the ground. The whole village cheers.
+[MISSIONS#well.done[1]] NARRATOR: Elder Otto opens the south gate. He says, "River Farms could use a builder like you."
+[MISSIONS#well.lift] NARRATOR: The fog clears from River Farms.
+
+--- Repeatable job: Carry water ---
+[JOBS.water.steps[0]] (STEP shown on screen) Fill the two buckets at the river.
+[JOBS.water.steps[1]] (STEP shown on screen) Carry the water to Baker Hana at the bakery.
+[JOBS.water.thanks] BAKER HANA: Thank you for the water! Here are 4 coins.
+
+--- Elder Otto (otto) ---
+[NPCS#otto.talk[0]] ELDER OTTO: Welcome to Riverside, {name}. The fog comes from tricky arguments. Clear thinking makes it go away.
+[NPCS#otto.talk[1]] ELDER OTTO: The village needs a well. We marked the spot in the square. It costs coins, and it needs a water engineer and a mason.
+[NPCS#otto.talk[2]] ELDER OTTO: Wren camps by the river. Mo the mason sits by the north lane. Both of them have some fog in their heads.
+  (trick "ottoDoubt": bandwagon)
+[TRICKS.ottoDoubt.intro[0]] ELDER OTTO: I have one more question for you, {name}. Some villagers say, "Nobody here has ever built a well, so nobody should."
+[TRICKS.ottoDoubt.intro[1]] ELDER OTTO: They told me that last night. Everyone was nodding. What do you think about that?
+[TRICKS.ottoDoubt.options[0].text] (PLAYER ANSWER ✓ RIGHT) Everyone nodding isn't a reason. Has anyone checked?
+[TRICKS.ottoDoubt.options[1].text] (PLAYER ANSWER ✗ WRONG) If nobody has ever built one here, they probably know something we don't about the ground.
+[TRICKS.ottoDoubt.options[2].text] (PLAYER ANSWER ✗ INSULT) Those villagers sound stupid, and stupid people shouldn't get a vote on this.
+  (after answer "right")
+[TRICKS.ottoDoubt.right[0].text] ELDER OTTO: Ha! That's exactly what I hoped you would say.
+[TRICKS.ottoDoubt.right[1].text] ELDER OTTO: Nobody has checked. So we should check. Take these 8 coins for the well. That's my share.
+  (after answer "ok")
+[TRICKS.ottoDoubt.ok[0].text] ELDER OTTO: Hmm. That's what they said too. But is everyone agreeing a reason?
+[TRICKS.ottoDoubt.ok[1].text] NARRATOR: Otto looks sad. The fog around the square grows a little thicker.
+  (after answer "oops")
+[TRICKS.ottoDoubt.oops[0].text] ELDER OTTO: Calling them names doesn't answer them, child.
+
+--- Baker Hana (hana) ---
+[NPCS#hana.talk[0]] BAKER HANA: I bake fresh bread every morning. If you want regular coins, carry water from the river for me. The buckets sit by the bank.
+  (task "Bread for the barn", pays 12 coins)
+[TASKS.bread.offer[0]] BAKER HANA: Farmer Idris ordered six loaves, but I can't leave my oven.
+[TASKS.bread.offer[1]] BAKER HANA: Please carry them to his barn in the south-east. He will pay you 12 coins.
+[TASKS.bread.accept] BAKER HANA: Here you go. They are still warm. Mind the goats!
+[TASKS.bread.active[0]] BAKER HANA: Idris waits by the barn in the south-east. Go down the lane and turn left.
+[TASKS.bread.deliver[0]] FARMER IDRIS: You brought the bread! You saved my lunch. Here are 12 coins, as I promised.
+[TASKS.bread.done[0]] BAKER HANA: Idris told me the bread was perfect. You run fast.
+  (a Grey Order preacher turns Baker Hana against you)
+  (topic: A builder like the last one · trick: hastyGen)
+[REFUSE.hana.intro[0]] BAKER HANA: A preacher told me about a builder who came to a village in the north. He took the jobs, took the coins, and left a half-dug well.
+[REFUSE.hana.intro[1]] BAKER HANA: You are a builder too. So you will do the same. No more work for you, I'm sorry.
+[REFUSE.hana.options[0].text] (PLAYER ANSWER ✓ RIGHT) One builder doesn't mean every builder is the same. Judge me by the well I built.
+[REFUSE.hana.options[1].text] (PLAYER ANSWER ✗ WRONG) That builder sounds awful, and I understand why you are careful, so I'll pay you first and work after.
+[REFUSE.hana.options[2].text] (PLAYER ANSWER ✗ WRONG) The preacher made that story up, because preachers say anything to get people scared.
+[REFUSE.hana.options[3].text] (PLAYER ANSWER ✗ WRONG) Every village has a story like that, and stories grow in the telling, so it probably never happened at all.
+  (if the player picks the right answer)
+[REFUSE.hana.right[0]] BAKER HANA: The well in the square. You did dig that, and it isn't half.
+[REFUSE.hana.right[1]] BAKER HANA: One builder in the north isn't you. The buckets are by the river, if you want the work.
+  (if the player picks a wrong answer)
+[REFUSE.hana.wrong[0]] BAKER HANA: I'll pay first... no. No, I won't.
+[REFUSE.hana.wrong[1]] BAKER HANA: Hana turns back to her oven.
+
+--- Farmer Idris (idris) ---
+[NPCS#idris.talk[0]] FARMER IDRIS: The goats break something every single day.
+  (task "The broken fence", pays 12 coins)
+[TASKS.fence.offer[0]] FARMER IDRIS: The goats knocked down my fence on the west side of the field.
+[TASKS.fence.offer[1]] FARMER IDRIS: Please fix the rails. I'll pay you 12 coins.
+[TASKS.fence.accept] FARMER IDRIS: I left a hammer and nails by the gap. Watch your thumbs.
+[TASKS.fence.active[0]] FARMER IDRIS: The gap is on the west side of my field, next to the square.
+[TASKS.fence.found[0]] NARRATOR: You line up the rails and hammer them straight.
+[TASKS.fence.found[1]] NARRATOR: The fence looks as good as new.
+[TASKS.fence.reward[0]] FARMER IDRIS: That fence is straighter than the one I built! Here are 12 coins.
+[TASKS.fence.done[0]] FARMER IDRIS: The fence is staying up. The goats are very unhappy.
+  (a Grey Order preacher turns Farmer Idris against you)
+  (topic: You talk to tricksters · trick: adHominem)
+[REFUSE.idris.intro[0]] FARMER IDRIS: The preacher saw you talking to Pip and to Dodge. Tricksters, both of them.
+[REFUSE.idris.intro[1]] FARMER IDRIS: Anyone who talks with tricksters is a trickster, he says. I don't deal with tricksters. Go away.
+[REFUSE.idris.options[0].text] (PLAYER ANSWER ✓ RIGHT) Who I talk to doesn't prove how I work. Look at the fence I fixed.
+[REFUSE.idris.options[1].text] (PLAYER ANSWER ✗ WRONG) Pip and Dodge are children, not tricksters, so the preacher is simply wrong about them.
+[REFUSE.idris.options[2].text] (PLAYER ANSWER ✗ WRONG) I only talked to them to catch them out, so really I'm the opposite of a trickster.
+[REFUSE.idris.options[3].text] (PLAYER ANSWER ✗ WRONG) The preacher talks to everyone in the valley, so by his own rule he is a trickster too.
+  (if the player picks the right answer)
+[REFUSE.idris.right[0]] FARMER IDRIS: The fence. Straighter than mine, I said so myself.
+[REFUSE.idris.right[1]] FARMER IDRIS: Who you talk to. Hm. I talk to the goats and I'm not a goat. All right.
+  (if the player picks a wrong answer)
+[REFUSE.idris.wrong[0]] FARMER IDRIS: Go away, I said.
+[REFUSE.idris.wrong[1]] FARMER IDRIS: Idris turns his back and counts goats.
+
+--- Old Sal (sal) ---
+[NPCS#sal.talk[0]] OLD SAL: My knees know when rain is coming. Today they say no rain.
+  (task "The lost goat", pays 10 coins)
+[TASKS.goat.offer[0]] OLD SAL: My goat Pickle ran off again. She likes the trees behind the barn.
+[TASKS.goat.offer[1]] OLD SAL: Please bring her home. I'll give you 10 coins.
+[TASKS.goat.accept] OLD SAL: She is white and she wears a bell. Listen for it.
+[TASKS.goat.active[0]] OLD SAL: Pickle likes the trees behind the barn, in the far south-east corner.
+[TASKS.goat.found[0]] NARRATOR: You find Pickle chewing a bush behind the barn.
+[TASKS.goat.found[1]] NARRATOR: You take her bell in your hand and lead her home.
+[TASKS.goat.reward[0]] OLD SAL: You found Pickle! Here are 10 coins. You earned them.
+[TASKS.goat.done[0]] OLD SAL: Pickle has stayed home since you found her. Thank you.
+  (a Grey Order preacher turns Old Sal against you)
+  (topic: Poor Pickle · trick: emotion)
+[REFUSE.sal.intro[0]] OLD SAL: The preacher says builders scare goats. Poor Pickle. She would shake all night because of your hammering.
+[REFUSE.sal.intro[1]] OLD SAL: I couldn't bear that. I can't have you near my cottage any more.
+[REFUSE.sal.options[0].text] (PLAYER ANSWER ✓ RIGHT) Pickle shaking is a sad picture, not a reason. Has she shaken once since the well?
+[REFUSE.sal.options[1].text] (PLAYER ANSWER ✗ WRONG) You are right, I would never want to scare her, so I'll keep away from the cottage.
+[REFUSE.sal.options[2].text] (PLAYER ANSWER ✗ WRONG) Goats don't have feelings like that, so there is nothing to worry about.
+[REFUSE.sal.options[3].text] (PLAYER ANSWER ✗ WRONG) The preacher doesn't even like goats, so why would he care about Pickle?
+  (if the player picks the right answer)
+[REFUSE.sal.right[0]] OLD SAL: Since the well? She slept through the whole thing. Right by the site.
+[REFUSE.sal.right[1]] OLD SAL: He made me picture her shaking. Nothing shook. Come by when you like, dear.
+  (if the player picks a wrong answer)
+[REFUSE.sal.wrong[0]] OLD SAL: Keep away, then. Thank you.
+[REFUSE.sal.wrong[1]] OLD SAL: Sal shuts the cottage door.
+
+--- Mo the Mason (mo) ---
+  (fog 1 in Mo the Mason's head: clear it and they join your crew)
+  (topic: Why you stayed behind · trick: bandwagon)
+[NPCS#mo.expert.fog[0].intro[0]] MO THE MASON: You want me to build a well? No. All the other masons left for the city.
+[NPCS#mo.expert.fog[0].intro[1]] MO THE MASON: Everyone says there is no work in this valley. If everyone left, they must be right.
+[NPCS#mo.expert.fog[0].intro[2]] MO THE MASON: So I stay here. Why should I be the only mason left?
+[NPCS#mo.expert.fog[0].options[0].text] (PLAYER ANSWER ✓ RIGHT) Everyone leaving doesn't prove there is no work. We have a well to build.
+[NPCS#mo.expert.fog[0].options[1].text] (PLAYER ANSWER ✗ WRONG) You're right. If every other mason left, the work must really be gone from here.
+[NPCS#mo.expert.fog[0].options[2].text] (PLAYER ANSWER ✗ WRONG) The other masons were cowards. Don't be a coward.
+  (if the player picks the right answer)
+[NPCS#mo.expert.fog[0].right[0]] MO THE MASON: A well? Here? Huh.
+[NPCS#mo.expert.fog[0].right[1]] MO THE MASON: Everyone said there was no work, and I never looked for myself.
+[NPCS#mo.expert.fog[0].right[2]] MO THE MASON: Fine. Show me the site. I charge 10 coins a job.
+  (if the player picks a wrong answer)
+[NPCS#mo.expert.fog[0].wrong[0]] MO THE MASON: That's what I said. So we agree. There's no work.
+[NPCS#mo.expert.fog[0].wrong[1]] MO THE MASON: Mo goes back to staring at the river.
+  (fog 2 in Mo the Mason's head)
+  (topic: River sand for the mortar · trick: bandwagon)
+[NPCS#mo.expert.fog[1].intro[0]] MO THE MASON: Everyone in the village mixes their mortar with river sand. Everyone does it, so it must be the best way.
+[NPCS#mo.expert.fog[1].intro[1]] MO THE MASON: I'll use river sand on your well.
+[NPCS#mo.expert.fog[1].options[0].text] (PLAYER ANSWER ✓ RIGHT) Everyone using it doesn't make it best. Let's test one brick first.
+[NPCS#mo.expert.fog[1].options[1].text] (PLAYER ANSWER ✗ WRONG) Everyone does it and nobody complains, so yes, river sand will be fine for the well.
+[NPCS#mo.expert.fog[1].options[2].text] (PLAYER ANSWER ✗ WRONG) Everyone in this village is a fool.
+  (if the player picks the right answer)
+[NPCS#mo.expert.fog[1].right[0].text] MO THE MASON: You want to test it? Fine. Look, the river sand crumbles. The pit sand holds.
+[NPCS#mo.expert.fog[1].right[1]] MO THE MASON: Everyone was wrong together. The fog in my head is already lighter.
+  (if the player picks a wrong answer)
+[NPCS#mo.expert.fog[1].wrong[0]] MO THE MASON: Right. I'll use river sand.
+[NPCS#mo.expert.fog[1].wrong[1]] MO THE MASON: A month later, the mortar crumbles. Everyone was wrong together.
+[NPCS#mo.expert.crew[0]] MO THE MASON: I'm ready when you are. Stone doesn't build itself.
+  (a Grey Order preacher fogs Mo the Mason again, hard fog 1)
+  (topic: What the preacher knows · trick: authority)
+[HARD.mo[0].intro[0]] MO THE MASON: A preacher in grey came by. He has read more books than anyone in this valley.
+[HARD.mo[0].intro[1]] MO THE MASON: He says stone that is cut on a Tuesday cracks in the frost. He knows many things, so he knows this too.
+[HARD.mo[0].intro[2]] MO THE MASON: I won't cut stone this week. Ask me again next week.
+[HARD.mo[0].options[0].text] (PLAYER ANSWER ✓ RIGHT) Reading many books isn't proof about stone. Has any Tuesday stone cracked?
+[HARD.mo[0].options[1].text] (PLAYER ANSWER ✗ WRONG) He does sound very learned, and frost really does crack stone, so waiting a week is the careful choice.
+[HARD.mo[0].options[2].text] (PLAYER ANSWER ✗ WRONG) Everyone respects the preacher, so we should respect what he says about stone too.
+[HARD.mo[0].options[3].text] (PLAYER ANSWER ✗ WRONG) A week is nothing. Let the stone rest, and let the preacher have his little rule.
+  (if the player picks the right answer)
+[HARD.mo[0].right[0]] MO THE MASON: Has any cracked? I have cut stone on every day of the week for thirty years.
+[HARD.mo[0].right[1]] MO THE MASON: Knowing many things isn't the same as knowing this thing. My head is clear again.
+  (if the player picks a wrong answer)
+[HARD.mo[0].wrong[0]] MO THE MASON: Next week, then.
+[HARD.mo[0].wrong[1]] MO THE MASON: Next week the preacher has a new rule. The work waits.
+  (a Grey Order preacher fogs Mo the Mason again, hard fog 2)
+  (topic: One crack leads to ruin · trick: slipperySlope)
+[HARD.mo[1].intro[0]] MO THE MASON: The preacher showed me a crack in an old wall. He was very calm about it.
+[HARD.mo[1].intro[1]] MO THE MASON: He said one crack lets in water. Water makes two cracks. Two make ten. Ten bring the wall down. Then the whole village.
+[HARD.mo[1].intro[2]] MO THE MASON: It made sense, step by step. So I won't build walls any more. Walls only fall.
+[HARD.mo[1].options[0].text] (PLAYER ANSWER ✓ RIGHT) Each step needs its own proof. Does one crack really make two?
+[HARD.mo[1].options[1].text] (PLAYER ANSWER ✗ WRONG) He is right that water gets into cracks, so the safest thing is to build nothing that can crack.
+[HARD.mo[1].options[2].text] (PLAYER ANSWER ✗ WRONG) That wall is old and badly built. Yours will be better, so it will never crack at all.
+[HARD.mo[1].options[3].text] (PLAYER ANSWER ✗ WRONG) The preacher has never laid a stone in his life, so nothing he says about walls counts.
+  (if the player picks the right answer)
+[HARD.mo[1].right[0]] MO THE MASON: Does one crack make two? Only if nobody fills it. I fill cracks. That's my job.
+[HARD.mo[1].right[1]] MO THE MASON: He ran the steps together, and I ran after him. Not any more.
+  (if the player picks a wrong answer)
+[HARD.mo[1].wrong[0]] MO THE MASON: Yes. Nothing that can crack. So, nothing.
+[HARD.mo[1].wrong[1]] MO THE MASON: Mo sits on a pile of stone he won't use.
+
+--- Wren (wren) ---
+  (fog 1 in Wren's head: clear it and they join your crew)
+  (topic: Wells in this valley · trick: bandwagon)
+[NPCS#wren.expert.fog[0].intro[0]] WREN: You want a well? Nobody digs wells around here. Nobody ever has.
+[NPCS#wren.expert.fog[0].intro[1]] WREN: If wells worked, everybody would have one. Nobody does. So wells don't work here.
+[NPCS#wren.expert.fog[0].intro[2]] WREN: I dig ditches. Everyone wants ditches.
+[NPCS#wren.expert.fog[0].options[0].text] (PLAYER ANSWER ✓ RIGHT) Nobody trying doesn't prove it won't work. Let's test the ground.
+[NPCS#wren.expert.fog[0].options[1].text] (PLAYER ANSWER ✗ WRONG) Fair point. If nobody in the whole valley has one, wells must not work here.
+[NPCS#wren.expert.fog[0].options[2].text] (PLAYER ANSWER ✗ WRONG) Ditch-diggers don't know anything about wells.
+  (if the player picks the right answer)
+[NPCS#wren.expert.fog[0].right[0].text] WREN: You want to test the ground? I have a probe rod. Give me a moment.
+[NPCS#wren.expert.fog[0].right[1].text] WREN: I found water. It sits four metres down. Nobody ever checked.
+[NPCS#wren.expert.fog[0].right[2]] WREN: All right, builder. I charge 15 coins a job, and I'm yours.
+  (if the player picks a wrong answer)
+[NPCS#wren.expert.fog[0].wrong[0]] WREN: Exactly. Now, let us talk about ditches.
+[NPCS#wren.expert.fog[0].wrong[1]] WREN: Wren goes back to sharpening her spade.
+  (fog 2 in Wren's head)
+  (topic: Digging at the full moon · trick: bandwagon)
+[NPCS#wren.expert.fog[1].intro[0]] WREN: Everyone says you must dig a well at the full moon, or it runs dry.
+[NPCS#wren.expert.fog[1].intro[1]] WREN: I know it sounds odd, but everyone says it. So we wait two weeks.
+[NPCS#wren.expert.fog[1].options[0].text] (PLAYER ANSWER ✓ RIGHT) Everyone saying it isn't proof. Water doesn't care about the moon.
+[NPCS#wren.expert.fog[1].options[1].text] (PLAYER ANSWER ✗ WRONG) If everyone says it, there must be something in it. Let's wait for the full moon.
+[NPCS#wren.expert.fog[1].options[2].text] (PLAYER ANSWER ✗ WRONG) Everyone in this valley is full of superstitions and silly.
+  (if the player picks the right answer)
+[NPCS#wren.expert.fog[1].right[0]] WREN: The moon doesn't reach four metres underground, does it?
+[NPCS#wren.expert.fog[1].right[1]] WREN: I feel clearer now. I learn faster with a clear head.
+  (if the player picks a wrong answer)
+[NPCS#wren.expert.fog[1].wrong[0]] WREN: We wait. Two weeks pass and nothing happens.
+[NPCS#wren.expert.fog[1].wrong[1]] WREN: The well works exactly the same as it would have. Everyone was wrong together.
+[NPCS#wren.expert.crew[0]] WREN: Water always finds a way. So do we.
+  (a Grey Order preacher fogs Wren again, hard fog 1)
+  (topic: The dry spring · trick: postHoc)
+[HARD.wren[0].intro[0]] WREN: The preacher walked past the spring on the hill on Monday. On Tuesday the spring ran dry.
+[HARD.wren[0].intro[1]] WREN: He says the ground is angry with us because we dig where we shouldn't. He said it, and then the spring dried up.
+[HARD.wren[0].intro[2]] WREN: If I dig for you again, the river might dry up next. I can't risk that.
+[HARD.wren[0].options[0].text] (PLAYER ANSWER ✓ RIGHT) He came first. Did he cause it? What else happened?
+[HARD.wren[0].options[1].text] (PLAYER ANSWER ✗ WRONG) That's a strange thing to happen the very next day, so it is wise to stop digging until we understand it.
+[HARD.wren[0].options[2].text] (PLAYER ANSWER ✗ WRONG) Springs dry up in summer all the time, and this one dried up because it is old, not because of any preacher.
+[HARD.wren[0].options[3].text] (PLAYER ANSWER ✗ WRONG) The preacher is only trying to scare you, and people who scare others shouldn't be listened to.
+  (if the player picks the right answer)
+[HARD.wren[0].right[0]] WREN: What else happened? It hasn't rained for three weeks. That's what happened.
+[HARD.wren[0].right[1]] WREN: The spring dried because the sky was dry. Coming first isn't causing. I forgot that for a moment.
+  (if the player picks a wrong answer)
+[HARD.wren[0].wrong[0]] WREN: You are right. I'll stop digging.
+[HARD.wren[0].wrong[1]] WREN: The spring comes back with the rain, and nobody says sorry.
+  (a Grey Order preacher fogs Wren again, hard fog 2)
+  (topic: The preacher's two paths · trick: falseDilemma)
+[HARD.wren[1].intro[0]] WREN: The preacher says every well is a choice. We either trust the old river, or we trust holes in the ground and lose the river.
+[HARD.wren[1].intro[1]] WREN: He put it so simply. River or hole. I can't choose against the river.
+[HARD.wren[1].options[0].text] (PLAYER ANSWER ✓ RIGHT) Why only two? A well and the river can both give water.
+[HARD.wren[1].options[1].text] (PLAYER ANSWER ✗ WRONG) When you put it like that, the river has kept us alive for years, so the river must come first.
+[HARD.wren[1].options[2].text] (PLAYER ANSWER ✗ WRONG) Our grandparents drank from the river and they were fine, so the old way is clearly the right way.
+[HARD.wren[1].options[3].text] (PLAYER ANSWER ✗ WRONG) The preacher wants us to stay thirsty so we stay weak, and a man like that shouldn't choose for us.
+  (if the player picks the right answer)
+[HARD.wren[1].right[0]] WREN: Both? The well for drinking and the river for the fields.
+[HARD.wren[1].right[1]] WREN: He built two doors and hid the third. I nearly walked through his door.
+  (if the player picks a wrong answer)
+[HARD.wren[1].wrong[0]] WREN: The river, then. Only the river.
+[HARD.wren[1].wrong[1]] WREN: The village drinks muddy water for another year.
+
+--- Pip (pip) ---
+[NPCS#pip.talk[0]] PIP: I collect pebbles. The round ones are my favourite. I'm saving them for something big.
+  (trick "pipPebble": bandwagon, tries to take 10 coins)
+[TRICKS.pipPebble.intro[0]] PIP: Psst! {name}! I sell lucky pebbles. They cost ten coins.
+[TRICKS.pipPebble.intro[1]] PIP: Everyone in the village bought one. Hana bought one. Idris bought one. The twins bought one. Everyone!
+[TRICKS.pipPebble.intro[2]] PIP: You don't want to be the only one without a lucky pebble, do you?
+[TRICKS.pipPebble.options[0].text] (PLAYER ANSWER ✗ WRONG) Everyone has one? Then I'd better have one too. Here's 10 coins, I don't want to be the odd one out.
+[TRICKS.pipPebble.options[1].text] (PLAYER ANSWER ✓ RIGHT) Everyone buying one doesn't make it lucky. What does it do?
+[TRICKS.pipPebble.options[2].text] (PLAYER ANSWER ✗ INSULT) You are a little cheat, Pip, and everybody in this village knows it.
+  (after answer "ok")
+[TRICKS.pipPebble.ok[0].text] NARRATOR: You hand over 10 coins. Pip hands you a grey pebble.
+[TRICKS.pipPebble.ok[1].text] NARRATOR: It's a pebble. Later, Idris tells you he never bought one. Hana didn't buy one either.
+[TRICKS.pipPebble.ok[2].text] NARRATOR (picture card): You paid ten coins for a pebble. "Everyone" turned out to be nobody.
+  (after answer "right")
+[TRICKS.pipPebble.right[0].text] PIP: It... um. It sits there. It sits there luckily.
+[TRICKS.pipPebble.right[1].text] PIP: OK, nobody bought one. You were my first try. Take 6 coins for not falling for it. I'm being honest, see?
+  (after answer "oops")
+[TRICKS.pipPebble.oops[0].text] PIP: I'm not!
+[TRICKS.pipPebble.oops[1].text] NARRATOR: Pip runs off. You still don't know what the pebble does.
+  (after the trick is beaten)
+[NPCS#pip.after[0]] PIP: It turns out the pebbles are just pebbles. Do you want one for free?
+
+--- Dodge (dodge) ---
+[NPCS#dodge.talk[0]] DODGE: I'm practising a game with three cups. It isn't ready yet. Come back later.
+  (trick "dodgeCups": bandwagon, tries to take 15 coins)
+[TRICKS.dodgeCups.intro[0]] DODGE: I have three cups and one pea. You pay fifteen coins to play. You win thirty if you find the pea!
+[TRICKS.dodgeCups.intro[1]] DODGE: Everybody plays this game. All the kids played today. Everybody loves it. Come on, join everybody!
+[TRICKS.dodgeCups.options[0].text] (PLAYER ANSWER ✗ WRONG) Everybody plays and everybody loves it, so it must be fair. Fine, 15 coins, shuffle them.
+[TRICKS.dodgeCups.options[1].text] (PLAYER ANSWER ✓ RIGHT) Everyone playing doesn't mean anyone wins. How many won today?
+[TRICKS.dodgeCups.options[2].text] (PLAYER ANSWER ✗ INSULT) Cheaters like you should be run out of town on the back of a cart.
+  (after answer "ok")
+[TRICKS.dodgeCups.ok[0].text] NARRATOR: You pay 15 coins. Dodge shuffles the cups so fast that they blur.
+[TRICKS.dodgeCups.ok[2].text] NARRATOR: You pick a cup. It's empty. The pea was never under any of them.
+[TRICKS.dodgeCups.ok[3].text] NARRATOR (picture card): Everybody played. Nobody won. A crowd doing something doesn't make it a good idea.
+  (after answer "right")
+[TRICKS.dodgeCups.right[0].text] DODGE: How many won? Er. About... none.
+[TRICKS.dodgeCups.right[1].text] DODGE: You're sharper than the others. Take 6 coins, and please don't tell Elder Otto.
+[TRICKS.dodgeCups.right[2].text] DODGE: Look, I'll show you how it works. Nobody ever wins.
+  (after answer "oops")
+[TRICKS.dodgeCups.oops[0].text] DODGE: Oi!
+[TRICKS.dodgeCups.oops[1].text] NARRATOR: Dodge packs up his cups. A crowd gathers to argue about who's a cheat. Nobody asks how many people won.
+  (after the trick is beaten)
+[NPCS#dodge.after[0]] DODGE: Fine, fine. The cups game is a trick. Please don't tell the others.
+[NPCS#dodge.after[1].text] DODGE: Do you want a fair round, for fun? No coins this time.
+
+==============================================================================
+LEVEL 2 · RIVER FARMS   (tricks here: falseDilemma)
+==============================================================================
+
+--- The Simurgh arrives (as this level opens) ---
+[SIMURGH.levels.1.say[0]] SIMURGH: You built your first building, {name}! Now everyone has clean water.
+[SIMURGH.levels.1.say[1]] SIMURGH: Here's a secret. A building keeps paying you. People pay a coin each time they use the well.
+[SIMURGH.levels.1.say[2]] SIMURGH: The coins pile up inside it. Walk to the well and press A to collect them.
+[SIMURGH.levels.1.say[3]] SIMURGH: Now I must warn you. Tricksters live in this valley. They use bad arguments to take your coins.
+[SIMURGH.levels.1.say[4]] SIMURGH: A red ! means someone wants your money. Pip and Dodge in the village have new games too.
+[SIMURGH.levels.1.say[5]] SIMURGH: Before you pay anyone, ask yourself one thing. Is that a good reason?
+[SIMURGH.levels.1.steps[0].goal] (GOAL shown on screen) Collect the coins from the well. Walk up to it and press A.
+  (when the goal is done)
+[SIMURGH.levels.1.steps[0].praise[0]] SIMURGH: Your building paid you. The more you build, the more you earn.
+[SIMURGH.levels.1.steps[1].goal] (GOAL shown on screen) Beat a trickster. Talk to someone with a red ! and spot the bad argument.
+  (when the goal is done)
+[SIMURGH.levels.1.steps[1].praise[0]] SIMURGH: You kept your coins! A clear head is the best purse there is.
+[SIMURGH.levels.1.steps[2].goal] (GOAL shown on screen) Build the bridge. It needs a carpenter, a surveyor and a mason.
+
+--- Walking into River Farms ---
+[LEVELS[1].intro[0]] NARRATOR: The gate swings open. You walk into River Farms.
+[LEVELS[1].intro[1]] NARRATOR: People here love to say there are only two choices. There are almost always more.
+[LEVELS[1].intro[2]] NARRATOR: The farmers need a way across the river. A bridge needs a carpenter, a surveyor and a mason.
+
+--- Building: The River Bridge ---
+[MISSIONS#bridge.blurb] (DESCRIPTION on the building card) The ferry is the only way across, and the ferryman charges what he likes. A bridge would carry carts, and a small toll would pay you back.
+[MISSIONS#bridge.start] NARRATOR: Your crew rolls up its sleeves. Work on the bridge begins!
+[MISSIONS#bridge.done[0]] NARRATOR: The last plank drops into place. Carts roll across the river for the first time.
+[MISSIONS#bridge.done[1]] NARRATOR: Ferryman Gus grumbles. Everyone else is happy. Market Town lies ahead.
+[MISSIONS#bridge.lift] NARRATOR: The fog lifts from Market Town.
+
+--- Repeatable job: Milk the goats ---
+[JOBS.milk.steps[0]] (STEP shown on screen) Milk the goats in the pen.
+[JOBS.milk.steps[1]] (STEP shown on screen) Carry the pail of milk to Rin.
+[JOBS.milk.thanks] RIN: Fresh milk! Here are 5 coins.
+
+--- Farmer Pia (pia) ---
+[NPCS#pia.talk[0]] FARMER PIA: A bridge would double my sales. Half my apples rot while they wait for the ferry.
+  (task "Apple harvest", pays 30 coins)
+[TASKS.apples.offer[0]] FARMER PIA: The trees are dropping apples faster than I can pick them.
+[TASKS.apples.offer[1]] FARMER PIA: Please fill the basket in the orchard, to the north-west. I'll pay you 30 coins.
+[TASKS.apples.accept] FARMER PIA: The basket sits under the trees. Fill it right to the top.
+[TASKS.apples.active[0]] FARMER PIA: The orchard is north-west of my farm. Follow the lane north.
+[TASKS.apples.found[0]] NARRATOR: You pick apples until the basket is heavy and your arms ache.
+[TASKS.apples.found[1]] NARRATOR: You count about two hundred apples.
+[TASKS.apples.reward[0]] FARMER PIA: You picked a proper harvest! Here are 30 coins, and take an apple for the road.
+[TASKS.apples.done[0]] FARMER PIA: I'm baking apple pie tonight. Come by if you like.
+  (task "Seeds for Old Sal", pays 30 coins)
+[TASKS.seeds.offer[0]] FARMER PIA: Old Sal in the village wants bean seeds for the spring.
+[TASKS.seeds.offer[1]] FARMER PIA: Please take this bag to her cottage. She will pay you 30 coins when it arrives.
+[TASKS.seeds.accept] FARMER PIA: Hold it tight. If you drop it, there will be beans everywhere.
+[TASKS.seeds.active[0]] FARMER PIA: Sal lives in the village, in the south-west, back through the gate.
+[TASKS.seeds.deliver[0]] OLD SAL: You brought my bean seeds, just in time! Here are 30 coins. Please thank Pia for me.
+[TASKS.seeds.done[0]] FARMER PIA: I planted the beans already. You did good work.
+  (a Grey Order preacher turns Farmer Pia against you)
+  (topic: The bruised apples · trick: postHoc)
+[REFUSE.pia.intro[0]] FARMER PIA: The day after you crossed the new bridge, half my apples came up bruised.
+[REFUSE.pia.intro[1]] FARMER PIA: The preacher says the bridge shakes the ground and bruises the fruit. It came first. So it did it. No more work for you.
+[REFUSE.pia.options[0].text] (PLAYER ANSWER ✓ RIGHT) The bridge came first. Did it bruise the apples? What else changed?
+[REFUSE.pia.options[1].text] (PLAYER ANSWER ✗ WRONG) Bridges do carry heavy carts and heavy carts do shake the ground, so the preacher may well be right.
+[REFUSE.pia.options[2].text] (PLAYER ANSWER ✗ WRONG) Apples bruise when you pick them badly, so this is your fault and not the bridge.
+[REFUSE.pia.options[3].text] (PLAYER ANSWER ✗ WRONG) The preacher wants the bridge gone because he hates anything new, so ignore him.
+  (if the player picks the right answer)
+[REFUSE.pia.right[0]] FARMER PIA: What else changed? There was hail that night. Small hail. I forgot the hail.
+[REFUSE.pia.right[1]] FARMER PIA: Hail bruises apples. Bridges don't. Coming first isn't causing.
+  (if the player picks a wrong answer)
+[REFUSE.pia.wrong[0]] FARMER PIA: He may well be right. Go.
+[REFUSE.pia.wrong[1]] FARMER PIA: Pia sorts bruised apples and blames the bridge.
+
+--- Ren (ren) ---
+[NPCS#ren.talk[0]] REN: My sister and I argue about the field every single spring.
+  (task "The fallen scarecrow", pays 30 coins)
+[TASKS.scarecrow.offer[0]] REN: Our scarecrow fell over, and now the crows are having a party.
+[TASKS.scarecrow.offer[1]] REN: Please stand him up again at the bottom of the big field. I'll pay 30 coins.
+[TASKS.scarecrow.accept] REN: His hat fell in the mud somewhere. Good luck.
+[TASKS.scarecrow.active[0]] REN: The scarecrow lies at the bottom of the big field, east of the lane.
+[TASKS.scarecrow.found[0]] NARRATOR: You heave the scarecrow up, straighten his hat, and tie his arms.
+[TASKS.scarecrow.found[1]] NARRATOR: The crows fly away in a huff.
+[TASKS.scarecrow.reward[0]] REN: The crows are gone! Here are 30 coins, and thank you.
+[TASKS.scarecrow.done[0]] REN: We haven't seen a crow for a week.
+  (trick "twinsField": falseDilemma)
+[TRICKS.twinsField.intro[0].text] REN: {name}! Please settle this for us. We should plant the big field with wheat. All wheat!
+[TRICKS.twinsField.intro[1].text] RIN: No! All beans! It's beans or wheat, one or the other, and Ren is wrong.
+[TRICKS.twinsField.intro[2].text] REN: Well? Wheat or beans? Pick one!
+[TRICKS.twinsField.options[0].text] (PLAYER ANSWER ✗ WRONG) You have to pick one, so wheat. It sells better and everyone around here grows it.
+[TRICKS.twinsField.options[1].text] (PLAYER ANSWER ✓ RIGHT) Why only one? We can plant half wheat and half beans.
+[TRICKS.twinsField.options[2].text] (PLAYER ANSWER ✗ INSULT) You two are the silliest farmers in the valley and I'm not surprised the crows visit.
+  (after answer "ok")
+[TRICKS.twinsField.ok[0].text] RIN: Wheat?! Fine. We plant wheat.
+[TRICKS.twinsField.ok[1].text] NARRATOR: The wheat catches a disease. The whole field is lost. Beans would have been fine in half of it.
+  (after answer "right")
+[TRICKS.twinsField.right[0].text] REN: Half... and half.
+[TRICKS.twinsField.right[1].text] RIN: We argued for five years. Five years!
+[TRICKS.twinsField.right[2].text] REN: Take 15 coins. You ended a war.
+  (after answer "oops")
+[TRICKS.twinsField.oops[0].text] RIN: Well, at least we agree that you are rude.
+  (a Grey Order preacher turns Ren against you)
+  (topic: With the preacher or against him · trick: falseDilemma)
+[REFUSE.ren.intro[0]] REN: The preacher says you are either with the valley or with the builders. I'm with the valley.
+[REFUSE.ren.intro[1]] REN: So I can't be with you. That's how it is, one or the other.
+[REFUSE.ren.options[0].text] (PLAYER ANSWER ✓ RIGHT) Why only two? Builders can help the valley too. The bridge is for the valley.
+[REFUSE.ren.options[1].text] (PLAYER ANSWER ✗ WRONG) If I have to pick, then I pick the valley too, and you can keep your scarecrow money.
+[REFUSE.ren.options[2].text] (PLAYER ANSWER ✗ WRONG) The preacher isn't from the valley, so he doesn't get to say who's with it.
+[REFUSE.ren.options[3].text] (PLAYER ANSWER ✗ WRONG) I'm with the valley more than you are, because I built the well and you only grow beans.
+  (if the player picks the right answer)
+[REFUSE.ren.right[0]] REN: The bridge is for the valley. My carts cross it.
+[REFUSE.ren.right[1]] REN: One or the other. Or both. He never said both.
+  (if the player picks a wrong answer)
+[REFUSE.ren.wrong[0]] REN: You can keep it. Yes.
+[REFUSE.ren.wrong[1]] REN: Ren goes back to arguing with Rin.
+
+--- Rin (rin) ---
+[NPCS#rin.talk[0]] RIN: We should plant beans. Or wheat. It has to be one or the other!
+  (after the trick is beaten)
+[NPCS#rin.after[0]] RIN: We plant half and half now. Why did that take us five years?
+  (a Grey Order preacher turns Rin against you)
+  (topic: The whole lane agrees · trick: bandwagon)
+[REFUSE.rin.intro[0]] RIN: Everyone on our lane says the preacher is right about you. Every single house.
+[REFUSE.rin.intro[1]] RIN: When the whole lane agrees, that is that. I can't take your milk any more.
+[REFUSE.rin.options[0].text] (PLAYER ANSWER ✓ RIGHT) A whole lane agreeing isn't proof. What did the preacher say I did?
+[REFUSE.rin.options[1].text] (PLAYER ANSWER ✗ WRONG) If every house on the lane agrees, then I must have done something, and I'm sorry for it.
+[REFUSE.rin.options[2].text] (PLAYER ANSWER ✗ WRONG) The lane has four houses, and four people are hardly everyone.
+[REFUSE.rin.options[3].text] (PLAYER ANSWER ✗ WRONG) They only agree because they are afraid of him, so their opinion is not useful.
+  (if the player picks the right answer)
+[REFUSE.rin.right[0]] RIN: What did he say you did? He didn't say. He said everyone knew.
+[REFUSE.rin.right[1]] RIN: Everyone knew, and nobody knew what. I'll take the milk.
+  (if the player picks a wrong answer)
+[REFUSE.rin.wrong[0]] RIN: Something. Yes. Go away, please.
+[REFUSE.rin.wrong[1]] RIN: Rin looks at the neighbours and says nothing.
+
+--- Ferryman Gus (gus) ---
+  (trick "gusFerry": falseDilemma, tries to take 30 coins)
+[TRICKS.gusFerry.intro[0]] FERRYMAN GUS: Do you want to see the other side of the river? It's simple.
+[TRICKS.gusFerry.intro[1]] FERRYMAN GUS: Either you pay me 30 coins for the ferry, or you never see the other side. Ever.
+[TRICKS.gusFerry.intro[2]] FERRYMAN GUS: You have two choices. That's all there is.
+[TRICKS.gusFerry.options[0].text] (PLAYER ANSWER ✗ WRONG) If those are the only two choices, I suppose I have to pay. Here's 30 coins for the ferry.
+[TRICKS.gusFerry.options[1].text] (PLAYER ANSWER ✓ RIGHT) Those aren't the only two choices. I could build a bridge.
+[TRICKS.gusFerry.options[2].text] (PLAYER ANSWER ✗ INSULT) You greedy old goat, no wonder nobody likes you.
+  (after answer "ok")
+[TRICKS.gusFerry.ok[0].text] NARRATOR: You pay 30 coins. Gus rows you out, turns around halfway, and rows you back.
+[TRICKS.gusFerry.ok[1].text] FERRYMAN GUS: The trip across costs extra. You should have asked.
+[TRICKS.gusFerry.ok[2].text] NARRATOR (picture card): You paid thirty coins, and you are still on this side. Two doors were never the only doors.
+  (after answer "right")
+[TRICKS.gusFerry.right[0].text] FERRYMAN GUS: A... bridge.
+[TRICKS.gusFerry.right[1].text] FERRYMAN GUS: Nobody ever says that. Here, take 15 coins. Call it a gift for when I retire.
+  (after answer "oops")
+[TRICKS.gusFerry.oops[0].text] FERRYMAN GUS: You are the goat!
+[TRICKS.gusFerry.oops[1].text] NARRATOR: You both stand on the bank and glare at each other. The river doesn't care.
+  (after the trick is beaten)
+[NPCS#gus.after[0]] FERRYMAN GUS: A bridge, eh? I suppose I could sell boat rides for fun instead.
+
+--- Lotto Lou (lou) ---
+  (trick "louLotto": falseDilemma, tries to take 12 coins)
+[TRICKS.louLotto.intro[0]] LOTTO LOU: I sell lotto tickets for 12 coins! The grand prize is 500!
+[TRICKS.louLotto.intro[1]] LOTTO LOU: Listen. In this life you are either a winner or a quitter.
+[TRICKS.louLotto.intro[2]] LOTTO LOU: Winners buy tickets. So which one are you?
+[TRICKS.louLotto.options[0].text] (PLAYER ANSWER ✗ WRONG) I'm no quitter, and 500 coins would fix everything. Give me a ticket, here's 12.
+[TRICKS.louLotto.options[1].text] (PLAYER ANSWER ✓ RIGHT) Or a third choice: keep your 12 coins.
+[TRICKS.louLotto.options[2].text] (PLAYER ANSWER ✗ INSULT) Only losers sell lottery tickets, and only bigger losers buy them.
+  (after answer "ok")
+[TRICKS.louLotto.ok[0].text] NARRATOR: You buy a ticket. Lou draws a number. It isn't yours.
+[TRICKS.louLotto.ok[1].text] LOTTO LOU: You were so close! Winners try again.
+[TRICKS.louLotto.ok[2].text] NARRATOR (picture card): Twelve coins are gone. "Winner or quitter" hid the real third door: keep your money.
+  (after answer "right")
+[TRICKS.louLotto.right[0].text] LOTTO LOU: A person who keeps their coins. That option isn't on my sign.
+[TRICKS.louLotto.right[1].text] LOTTO LOU: To be honest, nobody has won yet. Take 15 coins for seeing the third door.
+  (after answer "oops")
+[TRICKS.louLotto.oops[0].text] LOTTO LOU: That's rude!
+[TRICKS.louLotto.oops[1].text] NARRATOR: Lou sells three tickets to the people who came to watch the argument.
+  (after the trick is beaten)
+[NPCS#lou.after[0]] LOTTO LOU: You can be a winner, a quitter, or a person who keeps their coins. Fine, you win.
+
+--- Cass (cass) ---
+  (fog 1 in Cass's head: clear it and they join your crew)
+  (topic: Working for the sawmill boss · trick: falseDilemma)
+[NPCS#cass.expert.fog[0].intro[0]] CASS: You want to hire a carpenter? Not me.
+[NPCS#cass.expert.fog[0].intro[1]] CASS: Either I work for the sawmill boss for pennies, or I don't work at all. Those are my two choices.
+[NPCS#cass.expert.fog[0].intro[2]] CASS: I chose "not at all".
+[NPCS#cass.expert.fog[0].options[0].text] (PLAYER ANSWER ✓ RIGHT) Those aren't the only choices. Work for me on the bridge.
+[NPCS#cass.expert.fog[0].options[1].text] (PLAYER ANSWER ✗ WRONG) That's a hard choice, and I understand picking neither. Better idle than poorly paid.
+[NPCS#cass.expert.fog[0].options[2].text] (PLAYER ANSWER ✗ WRONG) The sawmill boss is a crook, so you should hate him.
+  (if the player picks the right answer)
+[NPCS#cass.expert.fog[0].right[0]] CASS: You want me to work for you? On a bridge?
+[NPCS#cass.expert.fog[0].right[1]] CASS: I never thought of a third door. I was too busy hating door number one.
+[NPCS#cass.expert.fog[0].right[2]] CASS: I charge 25 coins a job. We have a deal.
+  (if the player picks a wrong answer)
+[NPCS#cass.expert.fog[0].wrong[0]] CASS: You see? Even you agree. There are two doors, and both are bad.
+[NPCS#cass.expert.fog[0].wrong[1].text] CASS: Cass goes back to carving a stick.
+  (fog 2 in Cass's head)
+  (topic: Oak or pine for the deck · trick: falseDilemma)
+[NPCS#cass.expert.fog[1].intro[0]] CASS: We must pick wood for the bridge deck. Either we use oak and it takes a year, or we use pine and it rots in two winters.
+[NPCS#cass.expert.fog[1].intro[1]] CASS: Pick one. Slow or rotten.
+[NPCS#cass.expert.fog[1].options[0].text] (PLAYER ANSWER ✓ RIGHT) We could use pine on oak beams that last.
+[NPCS#cass.expert.fog[1].options[1].text] (PLAYER ANSWER ✗ WRONG) Oak then. A year is fine, this bridge should last a hundred.
+[NPCS#cass.expert.fog[1].options[2].text] (PLAYER ANSWER ✗ WRONG) Pine. Rotting is fine, we'll worry about that in two winters.
+  (if the player picks the right answer)
+[NPCS#cass.expert.fog[1].right[0]] CASS: Oak bones and pine skin. Ha! Yes!
+[NPCS#cass.expert.fog[1].right[1]] CASS: I saw two doors, and there was a window the whole time.
+  (if the player picks a wrong answer)
+[NPCS#cass.expert.fog[1].wrong[0]] CASS: If you say so.
+[NPCS#cass.expert.fog[1].wrong[1]] CASS: The bridge could have been better. There was a third way.
+[NPCS#cass.expert.crew[0]] CASS: I measure twice, I cut once, and I never argue.
+  (a Grey Order preacher fogs Cass again, hard fog 1)
+  (topic: Bridges are not our way · trick: tradition)
+[HARD.cass[0].intro[0]] CASS: The preacher in grey sat with me for an hour. He knows the old stories of this valley.
+[HARD.cass[0].intro[1]] CASS: For three hundred years, he said, the farms used the ferry. Three hundred years can't be wrong.
+[HARD.cass[0].intro[2]] CASS: Who am I to cut a plank against three hundred years?
+[HARD.cass[0].options[0].text] (PLAYER ANSWER ✓ RIGHT) Old isn't the same as right. Did the ferry serve the farms well?
+[HARD.cass[0].options[1].text] (PLAYER ANSWER ✗ WRONG) Three hundred years is a long time, and a way that lasts that long has probably earned some respect.
+[HARD.cass[0].options[2].text] (PLAYER ANSWER ✗ WRONG) Half the farmers want a bridge, so the old way has already lost, whatever the preacher says.
+[HARD.cass[0].options[3].text] (PLAYER ANSWER ✗ WRONG) The ferry is Gus's business, and the preacher is probably a friend of Gus, so of course he wants the ferry.
+  (if the player picks the right answer)
+[HARD.cass[0].right[0]] CASS: Did it serve them well? Pia loses half her apples every year waiting for the ferry.
+[HARD.cass[0].right[1]] CASS: Three hundred years of rotten apples. Old isn't the same as right.
+  (if the player picks a wrong answer)
+[HARD.cass[0].wrong[0]] CASS: I won't cut against the years.
+[HARD.cass[0].wrong[1]] CASS: Cass puts her saw away.
+  (a Grey Order preacher fogs Cass again, hard fog 2)
+  (topic: What the builder really wants · trick: strawMan)
+[HARD.cass[1].intro[0].text] CASS: The preacher told me what you really want. You want to pave the whole river and drive the fish away.
+[HARD.cass[1].intro[1].text] PLAYER: I never said that. I want one bridge.
+[HARD.cass[1].intro[2].text] CASS: He explained it, though. One bridge, then two, then a road on the water. He was very sure. I can't help someone who hates fish.
+[HARD.cass[1].options[0].text] (PLAYER ANSWER ✓ RIGHT) That isn't what I said. One bridge. Nothing about paving a river.
+[HARD.cass[1].options[1].text] (PLAYER ANSWER ✗ WRONG) I would never pave the river, I promise, and I like fish very much, so please help me anyway.
+[HARD.cass[1].options[2].text] (PLAYER ANSWER ✗ WRONG) Even if there were a road on the water one day, more roads bring more trade, so it wouldn't be so bad.
+[HARD.cass[1].options[3].text] (PLAYER ANSWER ✗ WRONG) The preacher is a liar, and liars should be run out of the valley before they say anything else.
+  (if the player picks the right answer)
+[HARD.cass[1].right[0]] CASS: Nothing about paving? He said it as if you had said it.
+[HARD.cass[1].right[1]] CASS: He built a scarecrow of you and knocked it down. I clapped. I'm sorry.
+  (if the player picks a wrong answer)
+[HARD.cass[1].wrong[0]] CASS: Hmm. That's what he said you would say.
+[HARD.cass[1].wrong[1].text] CASS: Cass goes back to carving. The river stays uncrossed.
+
+--- Sy (sy) ---
+  (fog 1 in Sy's head: clear it and they join your crew)
+  (topic: Measuring the river · trick: falseDilemma)
+[NPCS#sy.expert.fog[0].intro[0]] SY: You want me to measure the river for a bridge? That's impossible.
+[NPCS#sy.expert.fog[0].intro[1]] SY: Either the King's surveyors measure it with their brass tools, or nobody checks it at all.
+[NPCS#sy.expert.fog[0].intro[2]] SY: And the King's men never come here.
+[NPCS#sy.expert.fog[0].options[0].text] (PLAYER ANSWER ✓ RIGHT) You have a tripod and a rope. Measure it yourself.
+[NPCS#sy.expert.fog[0].options[1].text] (PLAYER ANSWER ✗ WRONG) True. Without the King's men and their brass tools, nothing here can be checked the right way.
+[NPCS#sy.expert.fog[0].options[2].text] (PLAYER ANSWER ✗ WRONG) The King's men are lazy snobs anyway.
+  (if the player picks the right answer)
+[NPCS#sy.expert.fog[0].right[0]] SY: You want me to do it myself? With my own tripod?
+[NPCS#sy.expert.fog[0].right[1].text] SY: The river is twenty-two paces wide, bank to bank. I just checked it.
+[NPCS#sy.expert.fog[0].right[2]] SY: I charge 20 coins a job, and I'm on your crew.
+  (if the player picks a wrong answer)
+[NPCS#sy.expert.fog[0].wrong[0]] SY: Exactly. So we wait for the King. We will wait forever.
+[NPCS#sy.expert.fog[0].wrong[1]] SY: Sy polishes his glasses and stares at the water.
+  (fog 2 in Sy's head)
+  (topic: Where the bridge should go · trick: falseDilemma)
+[NPCS#sy.expert.fog[1].intro[0]] SY: The bridge must go right here at the ferry, or it must not go anywhere.
+[NPCS#sy.expert.fog[1].intro[1]] SY: If we put it anywhere else, the whole plan fails.
+[NPCS#sy.expert.fog[1].options[0].text] (PLAYER ANSWER ✓ RIGHT) Or upstream where the banks are rock. More than two places exist.
+[NPCS#sy.expert.fog[1].options[1].text] (PLAYER ANSWER ✗ WRONG) Here or nowhere, and the farms need a crossing. Here, then, on the mud.
+[NPCS#sy.expert.fog[1].options[2].text] (PLAYER ANSWER ✗ WRONG) Nowhere. Forget the bridge.
+  (if the player picks the right answer)
+[NPCS#sy.expert.fog[1].right[0]] SY: The rock banks! Of course. I only ever looked at two spots.
+[NPCS#sy.expert.fog[1].right[1]] SY: My head feels clearer. I can see more doors now.
+  (if the player picks a wrong answer)
+[NPCS#sy.expert.fog[1].wrong[0]] SY: We build it here, on the soft mud.
+[NPCS#sy.expert.fog[1].wrong[1]] SY: The bridge could have been better. Two choices were never the only choices.
+[NPCS#sy.expert.crew[0]] SY: I like straight lines and honest numbers.
+  (a Grey Order preacher fogs Sy again, hard fog 1)
+  (topic: The preacher's map · trick: authority)
+[HARD.sy[0].intro[0]] SY: The preacher showed me a map. It has a gold seal from the capital.
+[HARD.sy[0].intro[1]] SY: On the map the river is forty paces wide. I checked twenty-two. But my rope is only a rope, and his map has a seal.
+[HARD.sy[0].intro[2]] SY: I must have checked wrong. I can't plan anything on a wrong number.
+[HARD.sy[0].options[0].text] (PLAYER ANSWER ✓ RIGHT) A seal isn't proof. Measure it again and trust the rope.
+[HARD.sy[0].options[1].text] (PLAYER ANSWER ✗ WRONG) A map from the capital was made by trained people with proper tools, so forty paces is the safer number.
+[HARD.sy[0].options[2].text] (PLAYER ANSWER ✗ WRONG) Twenty-two, forty, it hardly matters, just build everything long enough for both and be done with it.
+[HARD.sy[0].options[3].text] (PLAYER ANSWER ✗ WRONG) Preachers don't know maps, and a man who can't measure shouldn't tell a surveyor his business.
+  (if the player picks the right answer)
+[HARD.sy[0].right[0].text] SY: Again? Twenty-two paces. Twenty-two both times.
+[HARD.sy[0].right[1]] SY: The seal is pretty. The rope is right. I trust what I can check.
+  (if the player picks a wrong answer)
+[HARD.sy[0].wrong[0]] SY: Forty, then. I'll plan for forty.
+[HARD.sy[0].wrong[1]] SY: Everything is planned twice too long and costs twice too much.
+  (a Grey Order preacher fogs Sy again, hard fog 2)
+  (topic: One surveyor who lied · trick: hastyGen)
+[HARD.sy[1].intro[0]] SY: The preacher told me about a surveyor in the north who faked his numbers. A bridge fell. People were hurt.
+[HARD.sy[1].intro[1]] SY: One surveyor did that. So surveyors can't be trusted, he says, and I'm a surveyor.
+[HARD.sy[1].intro[2]] SY: Maybe he is right. Maybe you shouldn't trust my numbers either.
+[HARD.sy[1].options[0].text] (PLAYER ANSWER ✓ RIGHT) One surveyor isn't every surveyor. Check the numbers before you judge.
+[HARD.sy[1].options[1].text] (PLAYER ANSWER ✗ WRONG) It's true that one bad surveyor can do great harm, so checking everything twice is the careful choice.
+[HARD.sy[1].options[2].text] (PLAYER ANSWER ✗ WRONG) That bridge fell because of bad wood, I'm sure of it, so the surveyor was probably blamed unfairly.
+[HARD.sy[1].options[3].text] (PLAYER ANSWER ✗ WRONG) The preacher tells that story to everyone, and a man who tells scary stories shouldn't be believed.
+  (if the player picks the right answer)
+[HARD.sy[1].right[0]] SY: Judge the numbers, not the trade. Yes.
+[HARD.sy[1].right[1]] SY: One man from the north isn't me. My head is clearer.
+  (if the player picks a wrong answer)
+[HARD.sy[1].wrong[0]] SY: Maybe you shouldn't. I wouldn't.
+[HARD.sy[1].wrong[1]] SY: Sy puts his tripod away.
+
+==============================================================================
+LEVEL 3 · MARKET TOWN   (tricks here: emotion, postHoc)
+==============================================================================
+
+--- The Simurgh arrives (as this level opens) ---
+[SIMURGH.levels.2.say[0]] SIMURGH: {name}, I must tell you something. We are halfway to the monster now, and it has noticed you.
+[SIMURGH.levels.2.say[1]] SIMURGH: Look for men in long black robes and white turbans. They are the Grey Order. They serve the monster.
+[SIMURGH.levels.2.say[2]] SIMURGH: They walk out of the grey lodges. They look for the people whose heads you cleared.
+[SIMURGH.levels.2.say[3]] SIMURGH: They talk and talk, and when they leave, the fog is back. You can't talk to them. They won't listen.
+[SIMURGH.levels.2.say[4]] SIMURGH: When a red banner appears at the top, a preacher is out. It tells you who he is walking to.
+[SIMURGH.levels.2.say[5]] SIMURGH: There's a way to stop them. Build a statue of Aristotle on a stone plinth. Nobody inside its circle can be fooled.
+[SIMURGH.levels.2.steps[0].goal] (GOAL shown on screen) Build a Statue of Aristotle on a glowing stone plinth. You need a mason and some coins.
+  (when the goal is done)
+[SIMURGH.levels.2.steps[0].praise[0]] SIMURGH: Aristotle stands guard now. Keep your friends inside his circle.
+[SIMURGH.levels.2.steps[1].goal] (GOAL shown on screen) Build the Engineering School. Walk to its glowing site to see who you need.
+
+--- Walking into Market Town ---
+[LEVELS[2].intro[0]] NARRATOR: You cross your new bridge and walk into Market Town.
+[LEVELS[2].intro[1]] NARRATOR: Two tricks live here. Some people push on your feelings. Others say "this came first, so it caused that."
+[LEVELS[2].intro[2]] NARRATOR: The town wants an Engineering School. Experts learn faster when they train there.
+
+--- Building: Engineering School ---
+[MISSIONS#school.blurb] (DESCRIPTION on the building card) Market Town has clever young people and nobody to teach them. A school earns fees, and your crew can train there to learn faster.
+[MISSIONS#school.start] NARRATOR: Your crew rolls up its sleeves. Work on the school begins!
+[MISSIONS#school.done[0]] NARRATOR: The school bell rings. Students run in with their notebooks.
+[MISSIONS#school.done[1]] NARRATOR: The first class checks the rockfall north of town and clears a path to the Hill Mine.
+[MISSIONS#school.lift] NARRATOR: The fog lifts from the Hill Mine.
+
+--- Repeatable job: Sweep the square ---
+[JOBS.sweep.steps[0]] (STEP shown on screen) Sweep the square with the broom.
+
+--- Vell (vell) ---
+  (trick "vellPuppy": emotion, tries to take 20 coins)
+[TRICKS.vellPuppy.intro[0]] VELL: Please. Please. My puppy is starving. Look at my face. Look at it!
+[TRICKS.vellPuppy.intro[1]] VELL: If you don't give me 20 coins right now, he won't eat tonight, and it will be your fault.
+[TRICKS.vellPuppy.intro[2]] VELL: Do you want a puppy to starve? Do you?
+[TRICKS.vellPuppy.options[0].text] (PLAYER ANSWER ✗ WRONG) No! Don't let him starve, that would be awful. Here, take 20 coins and buy him something.
+[TRICKS.vellPuppy.options[1].text] (PLAYER ANSWER ✓ RIGHT) Sorry you're upset, but feelings aren't reasons. Where's the puppy? Let's feed him.
+[TRICKS.vellPuppy.options[2].text] (PLAYER ANSWER ✗ INSULT) Beggars are all liars.
+  (after answer "ok")
+[TRICKS.vellPuppy.ok[0].text] NARRATOR: You hand over 20 coins. Vell nods sadly and walks into the Inn.
+[TRICKS.vellPuppy.ok[1].text] NARRATOR: Through the window, you see him order a pie. There's no puppy.
+[TRICKS.vellPuppy.ok[2].text] NARRATOR (picture card): You paid twenty coins for a sad face. Feelings are real, but they aren't reasons.
+  (after answer "right")
+[TRICKS.vellPuppy.right[0].text] VELL: You want to feed him? He is, er, at my cousin's house. In another town.
+[TRICKS.vellPuppy.right[1].text] VELL: Oh, all right. There's no puppy. You have a cool head. Take 15 coins, and I'll try honest work.
+  (after answer "oops")
+[TRICKS.vellPuppy.oops[0].text] VELL: How dare you!
+[TRICKS.vellPuppy.oops[1].text] NARRATOR: Now everyone is yelling. Nobody asks where the puppy is.
+  (after the trick is beaten)
+[NPCS#vell.after[0]] VELL: All right, the puppy is fine. He is fat, actually. You are a hard one to fool.
+
+--- Zia (zia) ---
+  (trick "ziaCharm": postHoc, tries to take 25 coins)
+[TRICKS.ziaCharm.intro[0]] ZIA: I sell good luck charms! They cost 25 coins, and I promise them!
+[TRICKS.ziaCharm.intro[1]] ZIA: The day I hung this charm on my stall, my sales doubled. They doubled on the very same day!
+[TRICKS.ziaCharm.intro[2]] ZIA: The charm caused it. Obviously. Buy one and double your coins.
+[TRICKS.ziaCharm.options[0].text] (PLAYER ANSWER ✗ WRONG) Sales doubled the very same day? That's proof enough for me. Sold, 25 coins.
+[TRICKS.ziaCharm.options[1].text] (PLAYER ANSWER ✓ RIGHT) It came first, but did it cause the sales? What else changed?
+[TRICKS.ziaCharm.options[2].text] (PLAYER ANSWER ✗ INSULT) Charms are for idiots and people who believe in them deserve to lose their coins.
+  (after answer "ok")
+[TRICKS.ziaCharm.ok[0].text] NARRATOR: You buy the charm and hang it on your pouch.
+[TRICKS.ziaCharm.ok[1].text] NARRATOR: Your coins don't double. You have 25 fewer.
+[TRICKS.ziaCharm.ok[2].text] NARRATOR (picture card): The charm came first. Market day caused the sales. Coming first isn't the same as causing.
+  (after answer "right")
+[TRICKS.ziaCharm.right[0].text] ZIA: What else changed? Well, that was the day I moved my stall next to the fountain.
+[TRICKS.ziaCharm.right[1].text] ZIA: Oh. Oh! The spot did it. Take 15 coins. You just saved me from buying twenty more charms.
+  (after answer "oops")
+[TRICKS.ziaCharm.oops[0].text] ZIA: Excuse me?!
+  (after the trick is beaten)
+[NPCS#zia.after[0]] ZIA: Maybe the new stall spot did it, and not the charm. Hmm.
+
+--- Fortune Mags (mags) ---
+  (trick "magsFortune": postHoc, tries to take 15 coins)
+[TRICKS.magsFortune.intro[0]] FORTUNE MAGS: I'll tell your fortune for 15 coins, dear. And listen, it works.
+[TRICKS.magsFortune.intro[1]] FORTUNE MAGS: Last week I told a farmer he would find gold. The next day he found a gold coin in his field!
+[TRICKS.magsFortune.intro[2]] FORTUNE MAGS: I said it, and then it happened. My words made it happen. Pay 15 coins and hear yours.
+[TRICKS.magsFortune.options[0].text] (PLAYER ANSWER ✗ WRONG) You said it and then it happened, that can't be a chance. 15 coins, tell me mine.
+[TRICKS.magsFortune.options[1].text] (PLAYER ANSWER ✓ RIGHT) Saying it first isn't causing it. Coins get lost in fields all the time.
+[TRICKS.magsFortune.options[2].text] (PLAYER ANSWER ✗ INSULT) Fortune tellers are all frauds.
+  (after answer "ok")
+[TRICKS.magsFortune.ok[0].text] NARRATOR: You pay 15 coins. Mags peers at your palm.
+[TRICKS.magsFortune.ok[1].text] FORTUNE MAGS: You will spend money today. Ah! It has already come true!
+[TRICKS.magsFortune.ok[2].text] NARRATOR (picture card): You paid fifteen coins. She said it first, but saying a thing isn't causing it.
+  (after answer "right")
+[TRICKS.magsFortune.right[0].text] FORTUNE MAGS: Coins get lost in fields all the time. Yes. They do.
+[TRICKS.magsFortune.right[1].text] FORTUNE MAGS: You have a clear eye, dear. Take 15 coins, and don't tell my customers.
+  (after answer "oops")
+[TRICKS.magsFortune.oops[0].text] FORTUNE MAGS: Frauds? I see a rude future for you.
+  (after the trick is beaten)
+[NPCS#mags.after[0]] FORTUNE MAGS: You see too clearly for my trade. Go and build your school.
+
+--- Auctioneer Bram (bram) ---
+  (trick "bramAuction": emotion, tries to take 30 coins)
+[TRICKS.bramAuction.intro[0]] AUCTIONEER BRAM: Going once! I'm selling this fine vase. It's only slightly cracked. It can be yours for 30 coins, friend!
+[TRICKS.bramAuction.intro[1]] AUCTIONEER BRAM: My poor old mother painted it. She would weep to see it unsold. She would weep!
+[TRICKS.bramAuction.intro[2]] AUCTIONEER BRAM: You wouldn't break an old woman's heart over 30 coins, would you?
+[TRICKS.bramAuction.options[0].text] (PLAYER ANSWER ✗ WRONG) I couldn't break an old woman's heart over a few coins. Fine, 30 coins for the vase.
+[TRICKS.bramAuction.options[1].text] (PLAYER ANSWER ✓ RIGHT) Her feelings aren't a reason. Is a cracked vase worth 30? No.
+[TRICKS.bramAuction.options[2].text] (PLAYER ANSWER ✗ INSULT) Your mother probably can't paint, and neither can you sell.
+  (after answer "ok")
+[TRICKS.bramAuction.ok[0].text] NARRATOR: You pay 30 coins. The vase leaks.
+[TRICKS.bramAuction.ok[1].text] AUCTIONEER BRAM: My mother? Oh, she is fine. She never painted a thing in her life. Sold!
+[TRICKS.bramAuction.ok[2].text] NARRATOR (picture card): You paid thirty coins for a cracked vase and a made-up heartbreak.
+  (after answer "right")
+[TRICKS.bramAuction.right[0].text] AUCTIONEER BRAM: Is it worth 30? No, it isn't, is it. It's worth about 3.
+[TRICKS.bramAuction.right[1].text] AUCTIONEER BRAM: You judge fairly! Take 15 coins. The market needs more heads like yours.
+  (after answer "oops")
+[TRICKS.bramAuction.oops[0].text] AUCTIONEER BRAM: Leave my mother out of this!
+  (after the trick is beaten)
+[NPCS#bram.after[0]] AUCTIONEER BRAM: A fair price is a fair price. Even I know that on a good day.
+
+--- Innkeeper Dot (dot) ---
+[NPCS#dot.talk[0]] INNKEEPER DOT: We have rooms upstairs and soup downstairs.
+  (task "Parcel to the Town Hall", pays 45 coins)
+[TASKS.parcel.offer[0]] INNKEEPER DOT: This parcel is for Clerk Ossian at the Town Hall. I think it holds papers. Heavy ones.
+[TASKS.parcel.offer[1]] INNKEEPER DOT: Please deliver it. He will pay you 45 coins.
+[TASKS.parcel.accept] INNKEEPER DOT: Be careful, the string is loose. The Town Hall stands north of the square.
+[TASKS.parcel.active[0]] INNKEEPER DOT: The Town Hall stands at the top of the square. Ossian waits outside.
+[TASKS.parcel.deliver[0]] CLERK OSSIAN: You brought the deeds! At last. Here are 45 coins. The town thanks you.
+[TASKS.parcel.done[0]] INNKEEPER DOT: Ossian says the papers were the deeds for the school land. You came at the right time.
+  (a Grey Order preacher turns Innkeeper Dot against you)
+  (topic: One builder, then a city · trick: slipperySlope)
+[REFUSE.dot.intro[0]] INNKEEPER DOT: The preacher sat in my inn all evening. He said one builder brings a school. A school brings students. Students bring noise. Noise brings a city. Then the city eats an inn like mine.
+[REFUSE.dot.intro[1]] INNKEEPER DOT: So I can't help a builder. It ends with my inn gone.
+[REFUSE.dot.options[0].text] (PLAYER ANSWER ✓ RIGHT) Each step needs its own proof. Does a school really bring a city?
+[REFUSE.dot.options[1].text] (PLAYER ANSWER ✗ WRONG) It's true that towns do grow, and a careful innkeeper should think about where it all ends.
+[REFUSE.dot.options[2].text] (PLAYER ANSWER ✗ WRONG) A city would bring more guests, so you should want a city and thank the builder.
+[REFUSE.dot.options[3].text] (PLAYER ANSWER ✗ WRONG) The preacher drank three bowls of your soup and didn't pay, so why do you listen to him?
+  (if the player picks the right answer)
+[REFUSE.dot.right[0]] INNKEEPER DOT: Does a school bring a city? Market Town is still Market Town.
+[REFUSE.dot.right[1]] INNKEEPER DOT: He ran the steps together. I ran with him. Sit down, have some soup.
+  (if the player picks a wrong answer)
+[REFUSE.dot.wrong[0]] INNKEEPER DOT: Where it all ends. Yes. Go on now.
+[REFUSE.dot.wrong[1]] INNKEEPER DOT: Dot wipes the same table twice.
+
+--- Clerk Ossian (ossian) ---
+[NPCS#ossian.talk[0]] CLERK OSSIAN: I fill in forms all day. The school will need a licence. I have already stamped it.
+  (task "The dark lamp", pays 45 coins)
+[TASKS.lamp.offer[0]] CLERK OSSIAN: The lamp in the south-west corner of the square has been dark for weeks.
+[TASKS.lamp.offer[1]] CLERK OSSIAN: Please climb up and light it again. The town will pay you 45 coins.
+[TASKS.lamp.accept] CLERK OSSIAN: You will find matches in the base. Mind the ladder.
+[TASKS.lamp.active[0]] CLERK OSSIAN: The dark lamp stands at the south-west corner of the square.
+[TASKS.lamp.found[0]] NARRATOR: You climb up, clean the glass, and strike a match.
+[TASKS.lamp.found[1]] NARRATOR: Warm light spills over the cobbles.
+[TASKS.lamp.reward[0]] CLERK OSSIAN: We have light at last! Here are 45 coins from the town purse.
+[TASKS.lamp.done[0]] CLERK OSSIAN: The square feels much friendlier at night now.
+  (a Grey Order preacher turns Clerk Ossian against you)
+  (topic: The seal on the letter · trick: authority)
+[REFUSE.ossian.intro[0]] CLERK OSSIAN: The preacher brought a letter with a seal. It says builders need a permit from the Grey Order.
+[REFUSE.ossian.intro[1]] CLERK OSSIAN: A seal is a seal. I can't stamp anything for you until you have their permit.
+[REFUSE.ossian.options[0].text] (PLAYER ANSWER ✓ RIGHT) A seal isn't a law. Which law says builders need their permit?
+[REFUSE.ossian.options[1].text] (PLAYER ANSWER ✗ WRONG) Seals are serious things, and a clerk who ignores one could lose his job, so I understand you.
+[REFUSE.ossian.options[2].text] (PLAYER ANSWER ✗ WRONG) Anyone can melt wax and press a ring in it, so the letter is clearly fake.
+[REFUSE.ossian.options[3].text] (PLAYER ANSWER ✗ WRONG) I'll go and get their permit, then, if that is what the letter says.
+  (if the player picks the right answer)
+[REFUSE.ossian.right[0]] CLERK OSSIAN: Which law? I have every law in this hall. None of them says it.
+[REFUSE.ossian.right[1]] CLERK OSSIAN: A seal is wax. A law is a law. I had them muddled.
+  (if the player picks a wrong answer)
+[REFUSE.ossian.wrong[0]] CLERK OSSIAN: I understand too, but I still can't stamp it.
+[REFUSE.ossian.wrong[1]] CLERK OSSIAN: Ossian files the letter under "important".
+
+--- Shopkeeper Nell (nell) ---
+[NPCS#nell.talk[0]] SHOPKEEPER NELL: I sell rope, nails and lamp oil. If I sell it, you need it.
+  (task "The missing sign", pays 45 coins)
+[TASKS.lostsign.offer[0]] SHOPKEEPER NELL: Somebody stole my shop sign! I heard it is lying in the field north-east of the hall.
+[TASKS.lostsign.offer[1]] SHOPKEEPER NELL: Please bring it back. I'll pay you 45 coins.
+[TASKS.lostsign.accept] SHOPKEEPER NELL: It's a big wooden sign that says SHOP. You can't miss it.
+[TASKS.lostsign.active[0]] SHOPKEEPER NELL: Look in the grass north-east of the Town Hall, near the trees.
+[TASKS.lostsign.found[0]] NARRATOR: You find the sign lying face-down in the grass. It's muddy but whole.
+[TASKS.lostsign.found[1]] NARRATOR: You lift it onto your shoulder and carry it back.
+[TASKS.lostsign.reward[0]] SHOPKEEPER NELL: You found my sign! Here are 45 coins and my thanks.
+[TASKS.lostsign.done[0]] SHOPKEEPER NELL: Business is better now that people can find me.
+  (a Grey Order preacher turns Shopkeeper Nell against you)
+  (topic: The preacher's pamphlets · trick: sunkCost)
+[REFUSE.nell.intro[0]] SHOPKEEPER NELL: I paid the preacher forty coins for a box of pamphlets about the dangers of builders.
+[REFUSE.nell.intro[1]] SHOPKEEPER NELL: Forty coins! If I sell to a builder now, the forty coins were for nothing. So no rope, no nails, no oil for you.
+[REFUSE.nell.options[0].text] (PLAYER ANSWER ✓ RIGHT) The forty coins are gone either way. Does refusing me earn them back?
+[REFUSE.nell.options[1].text] (PLAYER ANSWER ✗ WRONG) Forty coins is a lot for a small shop, so it makes sense to get your money's worth out of the pamphlets.
+[REFUSE.nell.options[2].text] (PLAYER ANSWER ✗ WRONG) The preacher cheated you, and a cheated person should never trust anyone again.
+[REFUSE.nell.options[3].text] (PLAYER ANSWER ✗ WRONG) Sell the pamphlets to me, then, and you will have your forty back.
+  (if the player picks the right answer)
+[REFUSE.nell.right[0]] SHOPKEEPER NELL: Does it earn them back? No. It just loses me a customer too.
+[REFUSE.nell.right[1]] SHOPKEEPER NELL: Gone is gone. I'll use the pamphlets to wrap nails.
+  (if the player picks a wrong answer)
+[REFUSE.nell.wrong[0]] SHOPKEEPER NELL: My money's worth. Yes. No sale.
+[REFUSE.nell.wrong[1]] SHOPKEEPER NELL: Nell straightens a pile of pamphlets nobody buys.
+
+--- Professor Ada (ada) ---
+  (fog 1 in Professor Ada's head: clear it and they join your crew)
+  (topic: The students who cried · trick: emotion)
+[NPCS#ada.expert.fog[0].intro[0]] PROFESSOR ADA: You want me to teach at a school? Never again.
+[NPCS#ada.expert.fog[0].intro[1]] PROFESSOR ADA: Last year two students failed their exam and cried in my library. I can't bear that again.
+[NPCS#ada.expert.fog[0].intro[2]] PROFESSOR ADA: How can a school be a good idea when it makes children cry?
+[NPCS#ada.expert.fog[0].options[0].text] (PLAYER ANSWER ✓ RIGHT) Tears are real, but not a reason. Did the students who passed learn?
+[NPCS#ada.expert.fog[0].options[1].text] (PLAYER ANSWER ✗ WRONG) You're right, anything that makes children cry is a bad idea, however useful.
+[NPCS#ada.expert.fog[0].options[2].text] (PLAYER ANSWER ✗ WRONG) Crying students are weak. Ignore them.
+  (if the player picks the right answer)
+[NPCS#ada.expert.fog[0].right[0]] PROFESSOR ADA: Did they learn? Forty of them passed. Two of them cried.
+[NPCS#ada.expert.fog[0].right[1]] PROFESSOR ADA: I let two tears decide for forty students.
+[NPCS#ada.expert.fog[0].right[2]] PROFESSOR ADA: Very well. I charge 40 coins a job, and I'll run your school.
+  (if the player picks a wrong answer)
+[NPCS#ada.expert.fog[0].wrong[0]] PROFESSOR ADA: Then we agree. There will be no school.
+[NPCS#ada.expert.fog[0].wrong[1].text] PROFESSOR ADA: Ada returns to her book.
+  (fog 2 in Professor Ada's head)
+  (topic: The lucky green scarf · trick: postHoc)
+[NPCS#ada.expert.fog[1].intro[0]] PROFESSOR ADA: I always lecture in my green scarf. The one year I forgot it, three students failed.
+[NPCS#ada.expert.fog[1].intro[1]] PROFESSOR ADA: The scarf must be lucky. I can't teach without it, and it is at the cleaners.
+[NPCS#ada.expert.fog[1].options[0].text] (PLAYER ANSWER ✓ RIGHT) The scarf came first. Did it cause the passes? What else changed?
+[NPCS#ada.expert.fog[1].options[1].text] (PLAYER ANSWER ✗ WRONG) Then we wait for the scarf, it's not worth risking a whole year of students.
+[NPCS#ada.expert.fog[1].options[2].text] (PLAYER ANSWER ✗ WRONG) Scarves are silly. Throw it away.
+  (if the player picks the right answer)
+[NPCS#ada.expert.fog[1].right[0]] PROFESSOR ADA: What else changed? I was ill that year, and I missed six lectures.
+[NPCS#ada.expert.fog[1].right[1]] PROFESSOR ADA: The scarf never mattered. My head feels clearer already.
+  (if the player picks a wrong answer)
+[NPCS#ada.expert.fog[1].wrong[0]] PROFESSOR ADA: We wait for the scarf.
+[NPCS#ada.expert.fog[1].wrong[1]] PROFESSOR ADA: Coming first was never the same as causing.
+[NPCS#ada.expert.crew[0]] PROFESSOR ADA: Knowledge is the only building that grows when you share it.
+  (a Grey Order preacher fogs Professor Ada again, hard fog 1)
+  (topic: The children in the rain · trick: emotion)
+[HARD.ada[0].intro[0]] PROFESSOR ADA: The preacher spoke of the children who walk to school in the rain. Their cold little hands. Their wet shoes.
+[HARD.ada[0].intro[1]] PROFESSOR ADA: He said a school makes children walk, and walking in rain makes them ill, and could I live with that?
+[HARD.ada[0].intro[2]] PROFESSOR ADA: I cried, honestly. I can't run a school that makes children ill.
+[HARD.ada[0].options[0].text] (PLAYER ANSWER ✓ RIGHT) Sad pictures aren't reasons. Do children who walk to school get ill more?
+[HARD.ada[0].options[1].text] (PLAYER ANSWER ✗ WRONG) Wet shoes really are miserable, and if even one child gets ill because of the school, that is one too many.
+[HARD.ada[0].options[2].text] (PLAYER ANSWER ✗ WRONG) Children walk in the rain to the bakery too, so the preacher should complain about bread as well.
+[HARD.ada[0].options[3].text] (PLAYER ANSWER ✗ WRONG) The preacher has no children of his own, so he has no right to talk about them.
+  (if the player picks the right answer)
+[HARD.ada[0].right[0]] PROFESSOR ADA: Do they? Forty children walked to my library last winter. None of them caught a cold from walking.
+[HARD.ada[0].right[1]] PROFESSOR ADA: He painted a picture and I stepped into it. Feelings aren't reasons.
+  (if the player picks a wrong answer)
+[HARD.ada[0].wrong[0]] PROFESSOR ADA: One too many. Yes. No school.
+[HARD.ada[0].wrong[1].text] PROFESSOR ADA: Ada shuts her book. The children stay untaught, in the dry.
+  (a Grey Order preacher fogs Professor Ada again, hard fog 2)
+  (topic: The question he never answered · trick: redHerring)
+[HARD.ada[1].intro[0].text] PLAYER: Ada, the preacher told you the school is a bad idea. Did he say why?
+[HARD.ada[1].intro[1].text] PROFESSOR ADA: He spoke of the stars, and of humility, and of how small we are.
+[HARD.ada[1].intro[2].text] PROFESSOR ADA: It was beautiful. I felt very small. Too small to run a school.
+[HARD.ada[1].options[0].text] (PLAYER ANSWER ✓ RIGHT) But did he answer the question? Why is the school a bad idea?
+[HARD.ada[1].options[1].text] (PLAYER ANSWER ✗ WRONG) Humility is a fine thing, and a person who feels small is right to be careful with big plans like a school.
+[HARD.ada[1].options[2].text] (PLAYER ANSWER ✗ WRONG) Stars have nothing to do with schools, so the preacher clearly knows nothing about teaching.
+[HARD.ada[1].options[3].text] (PLAYER ANSWER ✗ WRONG) If it was beautiful, then he must have been wise, and wise people are worth listening to.
+  (if the player picks the right answer)
+[HARD.ada[1].right[0]] PROFESSOR ADA: Why is it a bad idea? He never said. He talked about the stars until I forgot the question.
+[HARD.ada[1].right[1]] PROFESSOR ADA: A beautiful speech about the wrong thing is still about the wrong thing.
+  (if the player picks a wrong answer)
+[HARD.ada[1].wrong[0]] PROFESSOR ADA: Careful with big plans. Yes.
+[HARD.ada[1].wrong[1]] PROFESSOR ADA: Ada looks at the stars. The question still has no answer.
+
+--- Brick (brick) ---
+  (fog 1 in Brick's head: clear it and they join your crew)
+  (topic: The bell tower that fell · trick: postHoc)
+[NPCS#brick.expert.fog[0].intro[0]] BRICK: I laid the last stones on the bell tower. A week later, it fell down.
+[NPCS#brick.expert.fog[0].intro[1]] BRICK: My stones caused it. My hands are cursed. I'll never lay stone again.
+[NPCS#brick.expert.fog[0].options[0].text] (PLAYER ANSWER ✓ RIGHT) Your stones came before the fall. Was the ground checked?
+[NPCS#brick.expert.fog[0].options[1].text] (PLAYER ANSWER ✗ WRONG) If it fell a week after your stones, your stones did it. Best leave building to others.
+[NPCS#brick.expert.fog[0].options[2].text] (PLAYER ANSWER ✗ WRONG) Curses aren't real, you silly fool.
+  (if the player picks the right answer)
+[NPCS#brick.expert.fog[0].right[0]] BRICK: The ground? The surveyor said the ground was soft. Nobody listened to him.
+[NPCS#brick.expert.fog[0].right[1]] BRICK: My hands are fine. The ground did it.
+[NPCS#brick.expert.fog[0].right[2]] BRICK: I charge 35 coins a job. Let me build something that stands.
+  (if the player picks a wrong answer)
+[NPCS#brick.expert.fog[0].wrong[0]] BRICK: I'm cursed. I told you.
+[NPCS#brick.expert.fog[0].wrong[1]] BRICK: Brick stares at his hands.
+[NPCS#brick.expert.crew[0]] BRICK: I keep it level, plumb and square. Every time.
+  (a Grey Order preacher fogs Brick again, hard fog 1)
+  (topic: All the masons agree · trick: bandwagon)
+[HARD.brick[0].intro[0]] BRICK: The preacher gathered all the masons at the inn. All of them. He asked who thought the next building would stand.
+[HARD.brick[0].intro[1]] BRICK: Nobody put a hand up. Not one. When every mason doubts, the doubt must be right.
+[HARD.brick[0].intro[2]] BRICK: So I doubt it too.
+[HARD.brick[0].options[0].text] (PLAYER ANSWER ✓ RIGHT) Nobody raising a hand doesn't prove the plan is good. What's wrong with the plan?
+[HARD.brick[0].options[1].text] (PLAYER ANSWER ✗ WRONG) When every expert in a room agrees, that is as close to proof as you get, so I would listen to them.
+[HARD.brick[0].options[2].text] (PLAYER ANSWER ✗ WRONG) Masons at an inn have been drinking, and drunk men don't count.
+[HARD.brick[0].options[3].text] (PLAYER ANSWER ✗ WRONG) They were all afraid of the preacher, so they said nothing, and that means the building is probably fine.
+  (if the player picks the right answer)
+[HARD.brick[0].right[0]] BRICK: What's wrong with it? I looked at the plan. Nothing. The ground is checked. The stone is good.
+[HARD.brick[0].right[1]] BRICK: A room of quiet men isn't a reason. I nearly let it be one.
+  (if the player picks a wrong answer)
+[HARD.brick[0].wrong[0]] BRICK: I doubt it too, then.
+[HARD.brick[0].wrong[1]] BRICK: Brick puts his trowel down.
+  (a Grey Order preacher fogs Brick again, hard fog 2)
+  (topic: The old plan · trick: sunkCost)
+[HARD.brick[1].intro[0]] BRICK: I spent a month on an old plan before the preacher came. The one with the big tower.
+[HARD.brick[1].intro[1]] BRICK: He said the tower would fall. He is right, actually. The base is too narrow.
+[HARD.brick[1].intro[2]] BRICK: But a month! I can't throw away a month. I'll build the tower and hope.
+[HARD.brick[1].options[0].text] (PLAYER ANSWER ✓ RIGHT) The month is spent either way. Is the tower worth building? No.
+[HARD.brick[1].options[1].text] (PLAYER ANSWER ✗ WRONG) A month of work is a lot to lose, so the smart thing is to keep the tower and just make the base a little wider.
+[HARD.brick[1].options[2].text] (PLAYER ANSWER ✗ WRONG) The preacher only says it will fall because he wants you to fail, so build the tower and prove him wrong.
+[HARD.brick[1].options[3].text] (PLAYER ANSWER ✗ WRONG) If it falls, it falls, and at least the month wasn't wasted.
+  (if the player picks the right answer)
+[HARD.brick[1].right[0]] BRICK: Is the tower worth building? No. It falls. I knew that.
+[HARD.brick[1].right[1]] BRICK: The month is gone whether I build it or not. That's a hard thing to say out loud.
+  (if the player picks a wrong answer)
+[HARD.brick[1].wrong[0]] BRICK: I'll build the tower and hope.
+[HARD.brick[1].wrong[1]] BRICK: The tower falls in the first storm. The month is still gone.
+
+==============================================================================
+LEVEL 4 · HILL MINE   (tricks here: gambler, sunkCost, hastyGen)
+==============================================================================
+
+--- The Simurgh arrives (as this level opens) ---
+[SIMURGH.levels.3.say[0]] SIMURGH: The Grey Order is getting bolder, {name}.
+[SIMURGH.levels.3.say[1]] SIMURGH: Now the preachers also visit the people who give you work. They turn them against you.
+[SIMURGH.levels.3.say[2]] SIMURGH: A red ✗ over somebody means they refuse you. Talk to them and answer the preacher's argument.
+[SIMURGH.levels.3.say[3]] SIMURGH: Remember this too. When you clear every fog from an expert's head, they become a true ally. No preacher can fool a true ally.
+[SIMURGH.levels.3.steps[0].goal] (GOAL shown on screen) Make a true ally. Clear every fog from one expert. The Crew panel shows who's close.
+  (when the goal is done)
+[SIMURGH.levels.3.steps[0].praise[0]] SIMURGH: A true ally stands with you. Watch the top of the screen for news of your coins.
+[SIMURGH.levels.3.steps[1].goal] (GOAL shown on screen) Build the Waterwheel Mill by the river.
+
+--- Walking into Hill Mine ---
+[LEVELS[3].intro[0]] NARRATOR: The students cleared the rockfall. The road to the Hill Mine is open.
+[LEVELS[3].intro[1]] NARRATOR: Hold on to your pouch. Gamblers here believe luck is "due". Sellers say you must keep paying because you already paid.
+[LEVELS[3].intro[2]] NARRATOR: The miners need a waterwheel mill on the river to crush their ore.
+
+--- Building: The Waterwheel Mill ---
+[MISSIONS#mill.blurb] (DESCRIPTION on the building card) The miners crush ore by hand, and it takes forever. A waterwheel would do it a hundred times faster. The mine will pay well for it.
+[MISSIONS#mill.start] NARRATOR: Your crew rolls up its sleeves. Work on the mill begins!
+[MISSIONS#mill.done[0]] NARRATOR: The wheel turns. The ore crunches. The miners whoop and throw their hats.
+[MISSIONS#mill.done[1]] NARRATOR: The foreman unlocks the harbour wall. She says, "Go on. The coast needs you more than we do."
+[MISSIONS#mill.lift] NARRATOR: The fog lifts from the Harbour.
+
+--- Repeatable job: Sort ore ---
+[JOBS.ore.steps[0]] (STEP shown on screen) Sort the shiny ore out of the rock pile.
+[JOBS.ore.steps[1]] (STEP shown on screen) Carry the basket of ore to Cook Mab.
+[JOBS.ore.thanks] COOK MAB: Good ore! Here are 8 coins.
+
+--- Ace (ace) ---
+  (trick "aceCards": gambler, tries to take 40 coins)
+[TRICKS.aceCards.intro[0]] ACE: Pick red or black, friend. You bet 40 coins, and you win double if you guess right.
+[TRICKS.aceCards.intro[1]] ACE: And listen to this. Red has come up five times in a row. Five!
+[TRICKS.aceCards.intro[2]] ACE: Black is due. It's overdue! Bet on black and you can't lose.
+[TRICKS.aceCards.options[0].text] (PLAYER ANSWER ✗ WRONG) Five reds in a row? Black is definitely due now. 40 coins on black, turn it over.
+[TRICKS.aceCards.options[1].text] (PLAYER ANSWER ✓ RIGHT) Cards don't remember. Five reds don't make black more likely.
+[TRICKS.aceCards.options[2].text] (PLAYER ANSWER ✗ INSULT) You are a filthy card cheat and everyone at this table knows it.
+  (after answer "ok")
+[TRICKS.aceCards.ok[0].text] NARRATOR: You put 40 coins on black. Ace turns the card over.
+[TRICKS.aceCards.ok[1].text] NARRATOR: It's red. That makes six in a row. Ace shrugs.
+[TRICKS.aceCards.ok[2].text] ACE: Wow. Now black is really due. Do you want to bet another 40?
+  (after answer "right")
+[TRICKS.aceCards.right[0].text] ACE: Cards don't remember. Well. You've spoiled my game.
+[TRICKS.aceCards.right[1].text] ACE: Take 20 coins for being honest. Most folk never work that out.
+  (after answer "oops")
+[TRICKS.aceCards.oops[0].text] ACE: A cheat? Prove it.
+[TRICKS.aceCards.oops[1].text] NARRATOR: You can't prove it. Nobody talks about whether black was really "due".
+  (after the trick is beaten)
+[NPCS#ace.after[0]] ACE: So cards have no memory, eh? You would make a awful customer.
+
+--- Sterling (sterling) ---
+  (trick "sterlingShares": sunkCost, tries to take 50 coins)
+[TRICKS.sterlingShares.intro[0]] STERLING: I sell shares in the Dry Gulch shaft for just 20 coins! I promise there is silver down there.
+[TRICKS.sterlingShares.intro[1]] STERLING: What do you say? You pay a small stake for a big future.
+[TRICKS.sterlingShares.options[0].text] (PLAYER ANSWER → LEADS ON) All right, a small stake for a big future. 20 coins for a share.
+[TRICKS.sterlingShares.options[1].text] (PLAYER ANSWER ✓ RIGHT) No thanks. Show me the silver first.
+[TRICKS.sterlingShares.options[2].text] (PLAYER ANSWER ✗ INSULT) Share sellers are all crooks.
+  (after answer "stage2")
+[TRICKS.sterlingShares.stage2[0].text] NARRATOR: You pay 20 coins. Sterling hands you a certificate.
+[TRICKS.sterlingShares.stage2[1].text] STERLING: Hmm, I have bad news. The shaft needs a new pump. Every shareholder must put in 30 more coins.
+[TRICKS.sterlingShares.stage2[2].text] STERLING: You have already put in 20. You can't throw that away! Pay 30 more, or you lose it all.
+[TRICKS.sterlingShares.stage2[3].choice[0].text] (PLAYER ANSWER ✗ WRONG) I've already paid 20. If I stop now it's wasted. Here's 30 more, fix the pump.
+[TRICKS.sterlingShares.stage2[3].choice[1].text] (PLAYER ANSWER ✓ RIGHT) The 20 is gone either way. Is the NEXT 30 worth it? No.
+[TRICKS.sterlingShares.stage2[3].choice[2].text] (PLAYER ANSWER ✗ INSULT) You planned this, you snake.
+  (after answer "ok2")
+[TRICKS.sterlingShares.ok2[0].text] NARRATOR: You pay 30 more coins.
+[TRICKS.sterlingShares.ok2[1].text] STERLING: Splendid. Oh dear, the pump broke. Can you spare another 40?
+[TRICKS.sterlingShares.ok2[2].text] NARRATOR: You dropped fifty coins into a dry hole. Money you already spent is gone. It never buys the next coin back.
+  (after answer "right2")
+[TRICKS.sterlingShares.right2[0].text] STERLING: The 20 is gone either way. Yes. Yes, it is.
+[TRICKS.sterlingShares.right2[1].text] STERLING: Most people pay the 30. Then they pay the 40. Take your 20 back, and 20 more for the lesson.
+  (after answer "right")
+[TRICKS.sterlingShares.right[0].text] STERLING: You want to see the silver? Ah. The silver is, um, still in the ground.
+[TRICKS.sterlingShares.right[1].text] STERLING: You are a careful investor. That's rare. Take 20 coins. Call it a dividend.
+  (after answer "oops")
+[TRICKS.sterlingShares.oops[0].text] STERLING: Crooks! Nobody has ever insulted me so badly before lunch.
+  (after the trick is beaten)
+[NPCS#sterling.after[0]] STERLING: The Dry Gulch shaft is dry. There, I said it.
+
+--- Grit (grit) ---
+  (trick "gritDale": hastyGen, tries to take 35 coins)
+[TRICKS.gritDale.intro[0]] GRIT: Do you need tools? Buy them from me. Never buy from Dale, up the hill.
+[TRICKS.gritDale.intro[1]] GRIT: A fellow from Dale sold me a cracked pick once. One fellow. So all Dale folk are cheats.
+[TRICKS.gritDale.intro[2]] GRIT: My picks cost 35 coins. Theirs cost 15. But theirs are Dale picks.
+[TRICKS.gritDale.options[0].text] (PLAYER ANSWER ✗ WRONG) If a Dale man cheated you, the rest can't be trusted either. 35 coins for yours, then.
+[TRICKS.gritDale.options[1].text] (PLAYER ANSWER ✓ RIGHT) One cheat doesn't make everyone in Dale a cheat. Judge each pick.
+[TRICKS.gritDale.options[2].text] (PLAYER ANSWER ✗ INSULT) You are the cheat here, old man.
+  (after answer "ok")
+[TRICKS.gritDale.ok[0].text] NARRATOR: You pay 35 coins for a pick that looks exactly like the 15-coin one.
+[TRICKS.gritDale.ok[1].text] NARRATOR (picture card): You wasted twenty coins. One person from a place isn't everyone from that place.
+  (after answer "right")
+[TRICKS.gritDale.right[0].text] GRIT: Judge each pick by itself. Hm. That's fair.
+[TRICKS.gritDale.right[1].text] GRIT: I blamed a whole town for one fellow. Take 20 coins, and buy a good pick wherever it comes from.
+  (after answer "oops")
+[TRICKS.gritDale.oops[0].text] GRIT: Old man?! I'm barely seventy!
+  (after the trick is beaten)
+[NPCS#grit.after[0]] GRIT: One man from Dale cheated me. One. And I blamed the whole town for it.
+
+--- Foreman Tam (tam) ---
+[NPCS#tam.talk[0]] FOREMAN TAM: A mill would change everything up here. Fen knows how to build one. Fen just needs a clear head.
+  (task "Lamp oil for the mine", pays 75 coins)
+[TASKS.oil.offer[0]] FOREMAN TAM: The miners are working in the dark. This can of lamp oil must reach Quill at the mine mouth.
+[TASKS.oil.offer[1]] FOREMAN TAM: Please carry it there. You will get 75 coins.
+[TASKS.oil.accept] FOREMAN TAM: Don't spill it, and don't stand near the camp fire.
+[TASKS.oil.active[0]] FOREMAN TAM: Quill waits at the mine entrance, north-east, up the road.
+[TASKS.oil.deliver[0]] QUILL: You brought the oil! Now we can see the ore we are hitting. Here are 75 coins, friend.
+[TASKS.oil.done[0]] FOREMAN TAM: Quill says the lamps are burning bright.
+  (a Grey Order preacher turns Foreman Tam against you)
+  (topic: You want to close the mine · trick: strawMan)
+[REFUSE.tam.intro[0]] FOREMAN TAM: The preacher says a mill means you want to close the mine and put every miner out of work.
+[REFUSE.tam.intro[1]] FOREMAN TAM: You said you wanted to crush ore faster. Faster means fewer miners. Fewer means none. I heard it from him. No oil for you.
+[REFUSE.tam.options[0].text] (PLAYER ANSWER ✓ RIGHT) That isn't what I said. A mill crushes ore. It doesn't dig it.
+[REFUSE.tam.options[1].text] (PLAYER ANSWER ✗ WRONG) I would never close the mine, I promise, and I'll hire every miner myself if I have to.
+[REFUSE.tam.options[2].text] (PLAYER ANSWER ✗ WRONG) Fewer miners might be a good thing, honestly, because the mine is unsafe.
+[REFUSE.tam.options[3].text] (PLAYER ANSWER ✗ WRONG) The preacher has never been down a mine, so he knows nothing about it.
+  (if the player picks the right answer)
+[REFUSE.tam.right[0]] FOREMAN TAM: It doesn't dig it. The miners dig. The mill only crushes.
+[REFUSE.tam.right[1]] FOREMAN TAM: He put words in your mouth, and I heard them in his voice. Take the oil.
+  (if the player picks a wrong answer)
+[REFUSE.tam.wrong[0]] FOREMAN TAM: No oil. I said.
+[REFUSE.tam.wrong[1]] FOREMAN TAM: Tam turns back to the shift board.
+
+--- Quill (quill) ---
+[NPCS#quill.talk[0]] QUILL: It's dark down there. Very dark.
+  (task "The broken ore cart", pays 75 coins)
+[TASKS.cart.offer[0]] QUILL: Our ore cart lost a wheel on the road south of here.
+[TASKS.cart.offer[1]] QUILL: Please fix it. The mine will pay you 75 coins.
+[TASKS.cart.accept] QUILL: We strapped a spare wheel underneath. It's heavy, mind.
+[TASKS.cart.active[0]] QUILL: The cart sits on the grass south of the mine, near the road.
+[TASKS.cart.found[0]] NARRATOR: You lift the cart onto a rock and bolt the wheel back on.
+[TASKS.cart.found[1]] NARRATOR: You give it a push. It rolls.
+[TASKS.cart.reward[0]] QUILL: The cart is rolling again! Here are 75 coins from the mine.
+[TASKS.cart.done[0]] QUILL: That cart has hauled ten loads since you fixed it.
+  (a Grey Order preacher turns Quill against you)
+  (topic: Due for a cave-in · trick: gambler)
+[REFUSE.quill.intro[0]] QUILL: The preacher counted for me. Twelve safe months in this mine. Twelve! A cave-in is due, he says, and builders bring bad luck.
+[REFUSE.quill.intro[1]] QUILL: I can't let a builder near the cart while a cave-in is due.
+[REFUSE.quill.options[0].text] (PLAYER ANSWER ✓ RIGHT) Twelve safe months don't make a cave-in due. Rock doesn't keep count.
+[REFUSE.quill.options[1].text] (PLAYER ANSWER ✗ WRONG) Twelve months is a long run of luck, so being extra careful right now is only careful.
+[REFUSE.quill.options[2].text] (PLAYER ANSWER ✗ WRONG) Cave-ins come from bad timber, and the timber is fine, so there will never be one.
+[REFUSE.quill.options[3].text] (PLAYER ANSWER ✗ WRONG) The preacher isn't a miner, so he can't say anything about cave-ins.
+  (if the player picks the right answer)
+[REFUSE.quill.right[0]] QUILL: Rock doesn't keep count. It doesn't know about months.
+[REFUSE.quill.right[1]] QUILL: I put a calendar on a mountain. Silly. The cart needs its wheel.
+  (if the player picks a wrong answer)
+[REFUSE.quill.wrong[0]] QUILL: Extra careful. Yes. Stay away.
+[REFUSE.quill.wrong[1]] QUILL: Quill checks the roof again, for the tenth time today.
+
+--- Cook Mab (mab) ---
+[NPCS#mab.talk[0]] COOK MAB: I cook stew for the miners. If you want coins, sort the ore at the pile east of here.
+  (task "The escaped canary", pays 75 coins)
+[TASKS.canary.offer[0]] COOK MAB: Our canary flew out of her cage! She keeps the miners safe from bad air.
+[TASKS.canary.offer[1]] COOK MAB: She likes the bushes north-east of the mine. Please bring her back. I'll pay 75 coins.
+[TASKS.canary.accept] COOK MAB: Whistle to her. She likes whistling.
+[TASKS.canary.active[0]] COOK MAB: Look in the grass north-east of the mine, up by the rocks.
+[TASKS.canary.found[0]] NARRATOR: You whistle. A yellow flash lands on your shoulder.
+[TASKS.canary.found[1]] NARRATOR: She sings all the way back.
+[TASKS.canary.reward[0]] COOK MAB: You found Goldie! She is safe and sound. Here are 75 coins.
+[TASKS.canary.done[0]] COOK MAB: Goldie is singing again, and the miners are happy.
+  (a Grey Order preacher turns Cook Mab against you)
+  (topic: What about the stew? · trick: redHerring)
+[REFUSE.mab.intro[0].text] PLAYER: Mab, why will you not take the ore basket from me any more?
+[REFUSE.mab.intro[1].text] COOK MAB: Have you tasted the stew today? The preacher says the carrots are too small. Look at the carrots!
+[REFUSE.mab.intro[2].text] COOK MAB: Tiny. And the onions. Don't get me started on the onions.
+[REFUSE.mab.options[0].text] (PLAYER ANSWER ✓ RIGHT) The carrots can wait. Why will you not take the ore?
+[REFUSE.mab.options[1].text] (PLAYER ANSWER ✗ WRONG) Those are small carrots, you are right, and I think the onions look a bit sad too.
+[REFUSE.mab.options[2].text] (PLAYER ANSWER ✗ WRONG) The preacher knows nothing about cooking, so his carrot opinion is not useful.
+[REFUSE.mab.options[3].text] (PLAYER ANSWER ✗ WRONG) If the stew is bad, then the miners will be cross, and cross miners are the real problem here.
+  (if the player picks the right answer)
+[REFUSE.mab.right[0]] COOK MAB: Why? He said builders are trouble. He didn't say why. Then we talked about carrots.
+[REFUSE.mab.right[1]] COOK MAB: I never asked him why. I'll take the ore.
+  (if the player picks a wrong answer)
+[REFUSE.mab.wrong[0]] COOK MAB: The onions. Yes. Exactly.
+[REFUSE.mab.wrong[1]] COOK MAB: You talk about onions for a long time. The ore basket stays full.
+
+--- Fen (fen) ---
+  (fog 1 in Fen's head: clear it and they join your crew)
+  (topic: Three fallen mills · trick: gambler)
+[NPCS#fen.expert.fog[0].intro[0]] FEN: You want me to build a mill? Oh, I will. But I won't use a plan.
+[NPCS#fen.expert.fog[0].intro[1]] FEN: My last three mills fell down. Three failures in a row! So this one is due to work.
+[NPCS#fen.expert.fog[0].intro[2]] FEN: Luck has to turn. I don't need drawings. Let us just start.
+[NPCS#fen.expert.fog[0].options[0].text] (PLAYER ANSWER ✓ RIGHT) Three failures don't make a success due. Why did they fall?
+[NPCS#fen.expert.fog[0].options[1].text] (PLAYER ANSWER ✗ WRONG) Three in a row! You're definitely due. Let's start now before the luck wears off.
+[NPCS#fen.expert.fog[0].options[2].text] (PLAYER ANSWER ✗ WRONG) Three failures? You are clearly a awful millwright.
+  (if the player picks the right answer)
+[NPCS#fen.expert.fog[0].right[0].text] FEN: Why did they fall? The wheel was too heavy for the axle. It happened all three times.
+[NPCS#fen.expert.fog[0].right[1]] FEN: Luck was never coming. A stronger axle is.
+[NPCS#fen.expert.fog[0].right[2]] FEN: I charge 60 coins a job, and I'll draw it the right way this time.
+  (if the player picks a wrong answer)
+[NPCS#fen.expert.fog[0].wrong[0]] FEN: That's the spirit! We need no plan!
+[NPCS#fen.expert.fog[0].wrong[1].text] FEN: Fen picks up a hammer and a hopeful look.
+  (fog 2 in Fen's head)
+  (topic: The 400-coin design · trick: sunkCost)
+[NPCS#fen.expert.fog[1].intro[0]] FEN: I have spent 400 coins on a mill design that can't work. The axle is wrong.
+[NPCS#fen.expert.fog[1].intro[1]] FEN: But I spent 400 coins! I can't throw that away. I must spend 200 more to finish it.
+[NPCS#fen.expert.fog[1].options[0].text] (PLAYER ANSWER ✓ RIGHT) The 400 is gone either way. Is the next 200 worth it? No.
+[NPCS#fen.expert.fog[1].options[1].text] (PLAYER ANSWER ✗ WRONG) You've spent so much already, you have to finish it or it was all for nothing.
+[NPCS#fen.expert.fog[1].options[2].text] (PLAYER ANSWER ✗ WRONG) You wasted 400 coins? Fool.
+  (if the player picks the right answer)
+[NPCS#fen.expert.fog[1].right[0]] FEN: The next 200 coins would buy me a mill that falls down.
+[NPCS#fen.expert.fog[1].right[1]] FEN: The 400 is gone whatever I do. That hurts. But I see it clearly now.
+  (if the player picks a wrong answer)
+[NPCS#fen.expert.fog[1].wrong[0]] FEN: Right. I'll spend 200 more.
+[NPCS#fen.expert.fog[1].wrong[1]] FEN: Six hundred coins of mill fall into the river.
+[NPCS#fen.expert.crew[0]] FEN: I draw a good wheel twice before I build it once.
+  (a Grey Order preacher fogs Fen again, hard fog 1)
+  (topic: The preacher's calm spell · trick: gambler)
+[HARD.fen[0].intro[0]] FEN: The preacher read the sky for me. Three storms hit this valley in three weeks, he said.
+[HARD.fen[0].intro[1]] FEN: So the weather owes us calm. It must be calm for months now. We should start the wheel without the flood wall.
+[HARD.fen[0].intro[2]] FEN: He is good with skies. Let us skip the wall and save the coins.
+[HARD.fen[0].options[0].text] (PLAYER ANSWER ✓ RIGHT) The sky doesn't keep score. Three storms don't make calm due.
+[HARD.fen[0].options[1].text] (PLAYER ANSWER ✗ WRONG) Three storms in three weeks is very unusual, so it does stand to reason that we are owed a quiet spell.
+[HARD.fen[0].options[2].text] (PLAYER ANSWER ✗ WRONG) We should build the flood wall twice as high, because three storms mean this valley is cursed.
+[HARD.fen[0].options[3].text] (PLAYER ANSWER ✗ WRONG) The preacher can't read skies, nobody can, so ignore him and just do whatever is cheapest.
+  (if the player picks the right answer)
+[HARD.fen[0].right[0]] FEN: The sky doesn't keep score. Neither do dice. I said that once, before.
+[HARD.fen[0].right[1]] FEN: We build the flood wall. Storms don't owe anyone anything.
+  (if the player picks a wrong answer)
+[HARD.fen[0].wrong[0]] FEN: We skip the wall.
+[HARD.fen[0].wrong[1]] FEN: The fourth storm takes the wheel. The sky wasn't keeping count.
+  (a Grey Order preacher fogs Fen again, hard fog 2)
+  (topic: Wood or iron · trick: falseDilemma)
+[HARD.fen[1].intro[0]] FEN: The preacher says a wheel is either all wood, blessed and old, or all iron, cold and new. There's no other kind.
+[HARD.fen[1].intro[1]] FEN: All iron rusts by the river. So it must be all wood. And all wood is too weak for the big wheel. So no wheel.
+[HARD.fen[1].options[0].text] (PLAYER ANSWER ✓ RIGHT) We could use a wood wheel with iron bands.
+[HARD.fen[1].options[1].text] (PLAYER ANSWER ✗ WRONG) He knows wheels better than either of us, and if he says there are two kinds, then there are two kinds.
+[HARD.fen[1].options[2].text] (PLAYER ANSWER ✗ WRONG) Then iron, and we paint it every month, because a rusty wheel is better than no wheel.
+[HARD.fen[1].options[3].text] (PLAYER ANSWER ✗ WRONG) Old blessed wood sounds like silly talk, and a man who blesses wood isn't worth listening to.
+  (if the player picks the right answer)
+[HARD.fen[1].right[0]] FEN: Wood with iron bands. Of course. Every cart wheel in the valley is made that way.
+[HARD.fen[1].right[1]] FEN: Two doors, and a window right there. I keep forgetting the window.
+  (if the player picks a wrong answer)
+[HARD.fen[1].wrong[0]] FEN: No wheel, then.
+[HARD.fen[1].wrong[1]] FEN: The miners crush ore by hand for another year.
+
+==============================================================================
+LEVEL 5 · HARBOUR   (tricks here: authority, slipperySlope, strawMan, redHerring, tradition, adHominem)
+==============================================================================
+
+--- The Simurgh arrives (as this level opens) ---
+[SIMURGH.levels.4.say[0]] SIMURGH: This is the last town before the monster's city, {name}.
+[SIMURGH.levels.4.say[1]] SIMURGH: Every trick you have met lives here, all at once. The preachers come out often now.
+[SIMURGH.levels.4.say[2]] SIMURGH: Build the lighthouse at the end of the pier. Its light will show you the road to the monster.
+[SIMURGH.levels.4.steps[0].goal] (GOAL shown on screen) Build the lighthouse at the end of the pier. It needs six experts.
+
+--- Walking into Harbour ---
+[LEVELS[4].intro[0]] NARRATOR: The harbour wall opens. You smell salt and hear the gulls.
+[LEVELS[4].intro[1]] NARRATOR: Every trick you have ever heard lives here, all at once.
+[LEVELS[4].intro[2]] NARRATOR: Ships crash on the rocks every winter. A lighthouse would save them, and its light would show you the road ahead.
+
+--- Building: The Lighthouse ---
+[MISSIONS#lighthouse.blurb] (DESCRIPTION on the building card) Ships crash on the rocks every winter. A lighthouse at the end of the pier would guide them home. Its light would also show you the road to the monster.
+[MISSIONS#lighthouse.start] NARRATOR: Your crew rolls up its sleeves. Work on the lighthouse begins!
+[MISSIONS#lighthouse.done[0]] NARRATOR: The great lamp flares. Its beam sweeps across the sea.
+[MISSIONS#lighthouse.done[1]] NARRATOR: Far to the east, the beam lands on high grey walls. That's the Grey City, where the monster lives.
+[MISSIONS#lighthouse.lift] NARRATOR: The fog lifts from the road to the Grey City.
+
+--- Repeatable job: Coil ropes ---
+[JOBS.ropes.steps[0]] (STEP shown on screen) Coil the wet ropes on the quay.
+
+--- Harbour Master Coyle (coyle) ---
+  (trick "coyleStorm": authority, tries to take 40 coins)
+[TRICKS.coyleStorm.intro[0]] HARBOUR MASTER COYLE: So you want a lighthouse? The Guild Master says bright lights attract storms.
+[TRICKS.coyleStorm.intro[1]] HARBOUR MASTER COYLE: He is the Guild Master. He wears the gold chain. So it must be true.
+[TRICKS.coyleStorm.intro[2]] HARBOUR MASTER COYLE: Luckily, I sell storm-charms. Pay 40 coins and your lighthouse will be safe.
+[TRICKS.coyleStorm.options[0].text] (PLAYER ANSWER ✗ WRONG) If the Guild Master says so, who am I to argue? 40 coins for a storm-charm, to be safe.
+[TRICKS.coyleStorm.options[1].text] (PLAYER ANSWER ✓ RIGHT) A title isn't proof. What's his proof that light attracts storms?
+[TRICKS.coyleStorm.options[2].text] (PLAYER ANSWER ✗ INSULT) The Guild Master is a pompous fool.
+  (after answer "ok")
+[TRICKS.coyleStorm.ok[0].text] NARRATOR: You buy a storm-charm. It's a shell on a string.
+[TRICKS.coyleStorm.ok[1].text] NARRATOR: Storms arrive exactly as often as before. Important people need reasons too.
+  (after answer "right")
+[TRICKS.coyleStorm.right[0].text] HARBOUR MASTER COYLE: His proof? He... said it at a dinner.
+[TRICKS.coyleStorm.right[1].text] HARBOUR MASTER COYLE: You ask hard questions. Take 25 coins and build your light. I won't tell the Guild.
+  (after answer "oops")
+[TRICKS.coyleStorm.oops[0].text] HARBOUR MASTER COYLE: I shall report that remark.
+  (after the trick is beaten)
+[NPCS#coyle.after[0]] HARBOUR MASTER COYLE: I checked. The Guild Master has never seen a storm from a boat.
+
+--- Sailor Bo (bo) ---
+  (trick "boSlope": slipperySlope, tries to take 30 coins)
+[TRICKS.boSlope.intro[0]] SAILOR BO: You want to build a lighthouse? Are you mad?
+[TRICKS.boSlope.intro[1]] SAILOR BO: If you build a lighthouse, more ships will come. More ships will bring pirates. Pirates will burn the town. The town will be ash. Ash!
+[TRICKS.boSlope.intro[2]] SAILOR BO: Unless you buy my pirate insurance. It costs 30 coins.
+[TRICKS.boSlope.options[0].text] (PLAYER ANSWER ✗ WRONG) I don't want the town to burn, and that does sound like how it goes. 30 coins for insurance.
+[TRICKS.boSlope.options[1].text] (PLAYER ANSWER ✓ RIGHT) Each step needs its own proof. A light doesn't make pirates appear.
+[TRICKS.boSlope.options[2].text] (PLAYER ANSWER ✗ INSULT) You are a coward, Bo.
+  (after answer "ok")
+[TRICKS.boSlope.ok[0].text] NARRATOR: You buy pirate insurance. It's a napkin with "INSURANCE" written on it.
+[TRICKS.boSlope.ok[1].text] NARRATOR: No pirates come. You spent thirty coins on a slide that was never real.
+  (after answer "right")
+[TRICKS.boSlope.right[0].text] SAILOR BO: Each step needs its own proof. I did run the steps together, didn't I?
+[TRICKS.boSlope.right[1].text] SAILOR BO: Take 25 coins. Nobody ever stops me at step two.
+  (after answer "oops")
+[TRICKS.boSlope.oops[0].text] SAILOR BO: A coward?! I have sailed through three gales!
+  (after the trick is beaten)
+[NPCS#bo.after[0]] SAILOR BO: I take one step at a time now. Lighthouses don't summon pirates. I knew that, really.
+
+--- Merchant Vance (vance) ---
+  (trick "vanceStraw": strawMan, tries to take 35 coins)
+[TRICKS.vanceStraw.intro[0].text] MERCHANT VANCE: You want a lighthouse at the end of the pier, yes?
+[TRICKS.vanceStraw.intro[1].text] PLAYER: Yes. I want to stop the wrecks.
+[TRICKS.vanceStraw.intro[2].text] MERCHANT VANCE: So you are saying that every ship must be forced to dock here and pay you. You want a toll on the whole sea!
+[TRICKS.vanceStraw.intro[3].text] MERCHANT VANCE: That's too much. Luckily, I sell "free sea" permits. Pay 35 coins and I'll tell nobody about your sea-toll.
+[TRICKS.vanceStraw.options[0].text] (PLAYER ANSWER ✗ WRONG) I don't want people thinking I'd tax the sea. 35 coins for the permit, and please keep quiet.
+[TRICKS.vanceStraw.options[1].text] (PLAYER ANSWER ✓ RIGHT) That's not what I said. A light to stop wrecks. Nothing about tolls.
+[TRICKS.vanceStraw.options[2].text] (PLAYER ANSWER ✗ INSULT) You lying weasel merchant.
+  (after answer "ok")
+[TRICKS.vanceStraw.ok[0].text] NARRATOR: You buy a permit for a plan you never had.
+[TRICKS.vanceStraw.ok[1].text] NARRATOR (picture card): You paid thirty-five coins to defend a scarecrow. Nobody said "sea toll" except Vance.
+  (after answer "right")
+[TRICKS.vanceStraw.right[0].text] MERCHANT VANCE: That isn't what you said. No. It isn't.
+[TRICKS.vanceStraw.right[1].text] MERCHANT VANCE: It's an old habit. I twist your words, and then I sell you the untwisting. Take 25 coins. You are hard to twist.
+  (after answer "oops")
+[TRICKS.vanceStraw.oops[0].text] MERCHANT VANCE: A weasel? I'm a merchant!
+  (after the trick is beaten)
+[NPCS#vance.after[0]] MERCHANT VANCE: I may have twisted your words a little. It's a habit in my trade.
+
+--- Captain Hale (hale) ---
+  (trick "haleFires": tradition, tries to take 45 coins)
+[TRICKS.haleFires.intro[0]] CAPTAIN HALE: A lighthouse? Bah. We have lit bonfires on the cliff for two hundred years.
+[TRICKS.haleFires.intro[1]] CAPTAIN HALE: Two hundred years! That's how we do it, so that is the best way to do it.
+[TRICKS.haleFires.intro[2]] CAPTAIN HALE: Give 45 coins to the bonfire fund instead, like every captain before you did.
+[TRICKS.haleFires.options[0].text] (PLAYER ANSWER ✗ WRONG) Two hundred years of captains can't all be wrong. 45 coins for the bonfires, as always.
+[TRICKS.haleFires.options[1].text] (PLAYER ANSWER ✓ RIGHT) Old isn't the same as right. How many ships wrecked with the fires lit?
+[TRICKS.haleFires.options[2].text] (PLAYER ANSWER ✗ INSULT) Old sailors are too stubborn to think.
+  (after answer "ok")
+[TRICKS.haleFires.ok[0].text] NARRATOR: You give 45 coins. The bonfire blows out in the first wind, just as it has for two hundred years.
+[TRICKS.haleFires.ok[1].text] NARRATOR: They always did it this way. Ships always wrecked.
+  (after answer "right")
+[TRICKS.haleFires.right[0].text] CAPTAIN HALE: How many wrecked? Still plenty. Aye. Twelve wrecked last winter.
+[TRICKS.haleFires.right[1].text] CAPTAIN HALE: Two hundred years, and I never counted. Take 25 coins for the lamp. Make it bright.
+  (after answer "oops")
+[TRICKS.haleFires.oops[0].text] CAPTAIN HALE: Stubborn? I'll show you stubborn.
+  (after the trick is beaten)
+[NPCS#hale.after[0]] CAPTAIN HALE: We lit bonfires for two hundred years. And ships wrecked for two hundred years. Aye.
+
+--- Dockhand Rook (rook) ---
+  (trick "rookInsult": adHominem, tries to take 30 coins)
+[TRICKS.rookInsult.intro[0]] DOCKHAND ROOK: You want Iva the Smith to forge your lamp? Her?
+[TRICKS.rookInsult.intro[1]] DOCKHAND ROOK: She talks funny. She comes from up the coast. She is short. You can't trust a lamp from someone like that.
+[TRICKS.rookInsult.intro[2]] DOCKHAND ROOK: Buy a lamp from my cousin instead. Pay 30 coins as a deposit, today only.
+[TRICKS.rookInsult.options[0].text] (PLAYER ANSWER ✗ WRONG) If she's not the reliable type, I'd rather not risk it. 30 coins for your cousin's lamp.
+[TRICKS.rookInsult.options[1].text] (PLAYER ANSWER ✓ RIGHT) Where she's from says nothing about her lamps. Has any Iva lamp failed?
+[TRICKS.rookInsult.options[2].text] (PLAYER ANSWER ✗ INSULT) You are the not reliable one, ugly.
+  (after answer "ok")
+[TRICKS.rookInsult.ok[0].text] NARRATOR: You pay 30 coins. The cousin doesn't exist.
+[TRICKS.rookInsult.ok[1].text] NARRATOR (picture card): You lost thirty coins because someone insulted a smith. Who says a thing doesn't make it right or wrong.
+  (after answer "right")
+[TRICKS.rookInsult.right[0].text] DOCKHAND ROOK: Has any of her lamps failed? No. Not one.
+[TRICKS.rookInsult.right[1].text] DOCKHAND ROOK: I was just being nasty. Take 25 coins, and get your lamp from Iva.
+  (after answer "oops")
+[TRICKS.rookInsult.oops[0].text] DOCKHAND ROOK: Ugly?!
+[TRICKS.rookInsult.oops[1].text] NARRATOR: Now two people are insulting each other. Nobody talks about lamps.
+  (after the trick is beaten)
+[NPCS#rook.after[0]] DOCKHAND ROOK: Fine, the smith knows her metal. Even if she does have a funny accent.
+
+--- Orla (orla) ---
+[NPCS#orla.talk[0]] ORLA: The sea gives and the sea takes. Mostly it takes.
+  (task "The lost oar", pays 90 coins)
+[TASKS.oar.offer[0]] ORLA: The tide took my best oar. It washed up on the west beach, past the old footbridge.
+[TASKS.oar.offer[1]] ORLA: Please bring it back. I'll pay you 90 coins.
+[TASKS.oar.accept] ORLA: It's long, and the handle is carved. My father made it.
+[TASKS.oar.active[0]] ORLA: Cross the old footbridge to the west, then walk along the beach.
+[TASKS.oar.found[0]] NARRATOR: You spot a long oar with a carved handle, half buried in the sand.
+[TASKS.oar.found[1]] NARRATOR: You dig it out and shake off the seaweed.
+[TASKS.oar.reward[0]] ORLA: You found my father's oar! Here are 90 coins. You have no idea what this means to me.
+[TASKS.oar.done[0]] ORLA: Orla rows out every morning now.
+  (trick "orlaHerring": redHerring)
+[TRICKS.orlaHerring.intro[0].text] PLAYER: Orla, the harbour fund is short by 50 coins. The ledger says you took them out.
+[TRICKS.orlaHerring.intro[1].text] ORLA: The fund? Oh, look at that sunset! Have you ever seen colours like that? And look at the gulls!
+[TRICKS.orlaHerring.intro[2].text] ORLA: You know what, let me tell you about the time a gull stole my hat.
+[TRICKS.orlaHerring.options[0].text] (PLAYER ANSWER ✗ WRONG) That IS a lovely sunset. Go on then, tell me about the gull and your hat.
+[TRICKS.orlaHerring.options[1].text] (PLAYER ANSWER ✓ RIGHT) The sunset can wait. Orla, did you take the 50 coins?
+[TRICKS.orlaHerring.options[2].text] (PLAYER ANSWER ✗ INSULT) Thief! You are a thief and everybody on this quay should know it!
+  (after answer "ok")
+[TRICKS.orlaHerring.ok[0].text] NARRATOR: The gull story lasts twenty minutes. The sun sets. The fund is still short.
+[TRICKS.orlaHerring.ok[1].text] NARRATOR (picture card): Your question never got an answer. That was the whole point of the sunset.
+  (after answer "right")
+[TRICKS.orlaHerring.right[0].text] ORLA: Yes. I took them to fix my boat. I was going to put them back.
+[TRICKS.orlaHerring.right[1].text] ORLA: Here are 25 of them now. I'll pay the rest next week. Thank you for not letting me wriggle away.
+  (after answer "oops")
+[TRICKS.orlaHerring.oops[0].text] ORLA: A thief?! After all I have done for this quay?
+[TRICKS.orlaHerring.oops[1].text] NARRATOR: Now you are arguing about her character. Your question is still without an answer.
+  (a Grey Order preacher turns Orla against you)
+  (topic: My father's harbour · trick: emotion)
+[REFUSE.orla.intro[0]] ORLA: The preacher says builders will change the harbour, and my father's harbour will be gone forever. He said it very softly.
+[REFUSE.orla.intro[1]] ORLA: I cried. I can't help anyone who would erase my father.
+[REFUSE.orla.options[0].text] (PLAYER ANSWER ✓ RIGHT) Missing your father is real, but not a reason. Would a lighthouse erase him?
+[REFUSE.orla.options[1].text] (PLAYER ANSWER ✗ WRONG) I would never want to hurt your father's memory, so I'll leave the harbour as it is.
+[REFUSE.orla.options[2].text] (PLAYER ANSWER ✗ WRONG) Your father is gone and the harbour isn't his any more, so let it go.
+[REFUSE.orla.options[3].text] (PLAYER ANSWER ✗ WRONG) The preacher used your father to make you cry, and a man who does that is wicked.
+  (if the player picks the right answer)
+[REFUSE.orla.right[0]] ORLA: Would it erase him? He rowed out in the dark every winter. A light would have brought him home.
+[REFUSE.orla.right[1]] ORLA: The preacher made me cry and called it a reason. The oar job is yours.
+  (if the player picks a wrong answer)
+[REFUSE.orla.wrong[0]] ORLA: Leave it as it is. Yes.
+[REFUSE.orla.wrong[1]] ORLA: Orla looks at the sea.
+
+--- Fisher Lin (lin) ---
+[NPCS#lin.talk[0]] FISHER LIN: Rope work pays if you need coins. The coils sit further down the quay.
+  (task "Fish for the tavern", pays 90 coins)
+[TASKS.fish.offer[0]] FISHER LIN: This crate of fish must reach Bea at the Tavern before it goes off.
+[TASKS.fish.offer[1]] FISHER LIN: She pays 90 coins for a fresh crate.
+[TASKS.fish.accept] FISHER LIN: Go quickly. If you get lost, follow your nose.
+[TASKS.fish.active[0]] FISHER LIN: Walk west along the quay, then go up. Bea stands outside the Tavern.
+[TASKS.fish.deliver[0]] COOK BEA: This fish is as fresh as the sea! Here are 90 coins, and I'll give you a bowl of chowder if you want one.
+[TASKS.fish.done[0]] FISHER LIN: Bea says that was the best crate all season.
+  (a Grey Order preacher turns Fisher Lin against you)
+  (topic: Fish are sold by hand · trick: tradition)
+[REFUSE.lin.intro[0]] FISHER LIN: The preacher says fish were always sold by the fisher, on the quay, by hand. Always.
+[REFUSE.lin.intro[1]] FISHER LIN: Carrying crates for the Tavern isn't the old way. So no crates for you.
+[REFUSE.lin.options[0].text] (PLAYER ANSWER ✓ RIGHT) Doing the same thing every time isn't a reason. Does the crate keep the fish fresh?
+[REFUSE.lin.options[1].text] (PLAYER ANSWER ✗ WRONG) The old ways do keep a harbour together, and I wouldn't want to be the one who broke them.
+[REFUSE.lin.options[2].text] (PLAYER ANSWER ✗ WRONG) Everyone else sends crates to the Tavern, so you are the odd one out.
+[REFUSE.lin.options[3].text] (PLAYER ANSWER ✗ WRONG) The preacher has never sold a fish, so he can't know how fish are sold.
+  (if the player picks the right answer)
+[REFUSE.lin.right[0]] FISHER LIN: Fresh? Fresher than waiting on the quay all day, yes.
+[REFUSE.lin.right[1]] FISHER LIN: Always is a long time to do the wrong thing. Take the crate.
+  (if the player picks a wrong answer)
+[REFUSE.lin.wrong[0]] FISHER LIN: I wouldn't break them either. Go.
+[REFUSE.lin.wrong[1]] FISHER LIN: Lin sells fish by hand, slowly.
+
+--- Cook Bea (bea) ---
+[NPCS#bea.talk[0]] COOK BEA: I make chowder. I always make chowder.
+  (task "The tavern ledger", pays 90 coins)
+[TASKS.ledger.offer[0]] COOK BEA: Lin forgot her ledger here. Without it she can't sell a single fish.
+[TASKS.ledger.offer[1]] COOK BEA: Please take it back to her on the quay. I'll pay you 90 coins.
+[TASKS.ledger.accept] COOK BEA: It's the blue book. Don't get it wet.
+[TASKS.ledger.active[0]] COOK BEA: Lin stands on the quay next to the pier.
+[TASKS.ledger.deliver[0]] FISHER LIN: You brought my ledger! I would have lost a whole day. Here are 90 coins.
+[TASKS.ledger.done[0]] COOK BEA: Lin keeps the ledger on a string now.
+  (a Grey Order preacher turns Cook Bea against you)
+  (topic: The preacher's cookbook · trick: authority)
+[REFUSE.bea.intro[0]] COOK BEA: The preacher has a cookbook older than the Tavern. It says a cook must never take goods from people you don't know.
+[REFUSE.bea.intro[1]] COOK BEA: A book that old must be right. So no ledger, no fish, nothing from you.
+[REFUSE.bea.options[0].text] (PLAYER ANSWER ✓ RIGHT) An old book isn't a reason. Does it say why?
+[REFUSE.bea.options[1].text] (PLAYER ANSWER ✗ WRONG) Old cookbooks hold a lot of wisdom, and a cook would be foolish to ignore one.
+[REFUSE.bea.options[2].text] (PLAYER ANSWER ✗ WRONG) You should burn that book, because old books are always full of silly talk.
+[REFUSE.bea.options[3].text] (PLAYER ANSWER ✗ WRONG) I'm not a person you don't know, we met last week, so the book doesn't apply to me.
+  (if the player picks the right answer)
+[REFUSE.bea.right[0]] COOK BEA: Does it say why? It says "it is written". That's all it says.
+[REFUSE.bea.right[1]] COOK BEA: A book that old, and that is the reason. I'll take the ledger.
+  (if the player picks a wrong answer)
+[REFUSE.bea.wrong[0]] COOK BEA: Foolish to ignore. Yes.
+[REFUSE.bea.wrong[1]] COOK BEA: Bea stirs the chowder and doesn't look up.
+
+--- Iva the Smith (iva) ---
+  (fog 1 in Iva the Smith's head: clear it and they join your crew)
+  (topic: What the Guild Master said · trick: authority)
+[NPCS#iva.expert.fog[0].intro[0]] IVA THE SMITH: You want me to forge the great lamp for a lighthouse? No.
+[NPCS#iva.expert.fog[0].intro[1]] IVA THE SMITH: The Guild Master himself says a lamp that bright will crack in the sea wind.
+[NPCS#iva.expert.fog[0].intro[2]] IVA THE SMITH: He is the Guild Master. He wears the gold chain. He must be right.
+[NPCS#iva.expert.fog[0].options[0].text] (PLAYER ANSWER ✓ RIGHT) A gold chain isn't a reason. Has any bright lamp cracked?
+[NPCS#iva.expert.fog[0].options[1].text] (PLAYER ANSWER ✗ WRONG) The Guild Master would know better than us. Best not risk it, the sea wind is fierce.
+[NPCS#iva.expert.fog[0].options[2].text] (PLAYER ANSWER ✗ WRONG) The Guild Master is an old fool.
+  (if the player picks the right answer)
+[NPCS#iva.expert.fog[0].right[0]] IVA THE SMITH: Has any lamp cracked? He has never built a lamp. He only inspects ledgers.
+[NPCS#iva.expert.fog[0].right[1].text] IVA THE SMITH: I have built a hundred lamps. Not one of them cracked.
+[NPCS#iva.expert.fog[0].right[2]] IVA THE SMITH: I charge 80 coins a job. Let me forge the biggest lamp yet.
+  (if the player picks a wrong answer)
+[NPCS#iva.expert.fog[0].wrong[0]] IVA THE SMITH: Yes. Best not.
+[NPCS#iva.expert.fog[0].wrong[1].text] IVA THE SMITH: Iva bangs a horseshoe flat and thinks about gold chains.
+  (fog 2 in Iva the Smith's head)
+  (topic: One lamp leads to ruin · trick: slipperySlope)
+[NPCS#iva.expert.fog[1].intro[0]] IVA THE SMITH: If I forge one giant lamp, every harbour will want one. Then I'll never sleep. The forge will burn out. Then I'll lose everything.
+[NPCS#iva.expert.fog[1].intro[1]] IVA THE SMITH: One lamp leads to ruin. So I'll make no lamp.
+[NPCS#iva.expert.fog[1].options[0].text] (PLAYER ANSWER ✓ RIGHT) One lamp doesn't force the next. You can say no later.
+[NPCS#iva.expert.fog[1].options[1].text] (PLAYER ANSWER ✗ WRONG) True, one lamp really could ruin you in the end. Better not start down that road.
+[NPCS#iva.expert.fog[1].options[2].text] (PLAYER ANSWER ✗ WRONG) You are just lazy.
+  (if the player picks the right answer)
+[NPCS#iva.expert.fog[1].right[0]] IVA THE SMITH: I can say no to the second lamp. Ha! I can.
+[NPCS#iva.expert.fog[1].right[1]] IVA THE SMITH: One step isn't a slide. My head is as clear as a bell.
+  (if the player picks a wrong answer)
+[NPCS#iva.expert.fog[1].wrong[0]] IVA THE SMITH: Then I'll make no lamp. It's safer.
+[NPCS#iva.expert.fog[1].wrong[1]] IVA THE SMITH: The slide was never real. One step is only one step.
+[NPCS#iva.expert.crew[0]] IVA THE SMITH: Iron listens if you speak to it firmly.
+  (a Grey Order preacher fogs Iva the Smith again, hard fog 1)
+  (topic: The builder from nowhere · trick: adHominem)
+[HARD.iva[0].intro[0]] IVA THE SMITH: The preacher asked me where you come from. I didn't know. Nobody does.
+[HARD.iva[0].intro[1]] IVA THE SMITH: A builder with no home, he said, has no one to answer to. Such a person will leave the lamp half made and disappear.
+[HARD.iva[0].intro[2]] IVA THE SMITH: I won't start a lamp for someone who might disappear.
+[HARD.iva[0].options[0].text] (PLAYER ANSWER ✓ RIGHT) Where I come from says nothing about the lamp. Look at what I have built here.
+[HARD.iva[0].options[1].text] (PLAYER ANSWER ✗ WRONG) People with no home are often unreliable, that is just true, so it is fair for Iva to want some proof.
+[HARD.iva[0].options[2].text] (PLAYER ANSWER ✗ WRONG) The preacher has no home either, he wanders from lodge to lodge, so he shouldn't talk.
+[HARD.iva[0].options[3].text] (PLAYER ANSWER ✗ WRONG) I'll tell you exactly where I was born, and then you will see that I'm reliable.
+  (if the player picks the right answer)
+[HARD.iva[0].right[0]] IVA THE SMITH: What you have built here. A well. A bridge. A school. A mill.
+[HARD.iva[0].right[1]] IVA THE SMITH: Where you come from was never the question. What you do is the question.
+  (if the player picks a wrong answer)
+[HARD.iva[0].wrong[0]] IVA THE SMITH: Some proof. Yes. Bring me proof.
+[HARD.iva[0].wrong[1].text] IVA THE SMITH: Iva bangs a horseshoe flat. The lamp stays unmade.
+  (a Grey Order preacher fogs Iva the Smith again, hard fog 2)
+  (topic: Bonfires, as always · trick: tradition)
+[HARD.iva[1].intro[0]] IVA THE SMITH: The preacher says the cliff bonfires are holy. Every captain for two hundred years lit them.
+[HARD.iva[1].intro[1]] IVA THE SMITH: A lamp of iron and glass would put out a holy flame. Who am I to put out two hundred years of fire?
+[HARD.iva[1].intro[2]] IVA THE SMITH: I forge horseshoes. Horseshoes are old too.
+[HARD.iva[1].options[0].text] (PLAYER ANSWER ✓ RIGHT) Two hundred years isn't a reason. Did the bonfires stop the wrecks?
+[HARD.iva[1].options[1].text] (PLAYER ANSWER ✗ WRONG) A thing that people kept doing for two centuries must have worked, or they would have stopped.
+[HARD.iva[1].options[2].text] (PLAYER ANSWER ✗ WRONG) The captains lit fires because they had nothing better, and now we do, so they were simply foolish.
+[HARD.iva[1].options[3].text] (PLAYER ANSWER ✗ WRONG) Light the lamp only on nights without a bonfire, so the holy fire is never put out.
+  (if the player picks the right answer)
+[HARD.iva[1].right[0]] IVA THE SMITH: Did they stop the wrecks? Captain Hale counted twelve last winter.
+[HARD.iva[1].right[1]] IVA THE SMITH: Old isn't the same as right. I forge new things every day.
+  (if the player picks a wrong answer)
+[HARD.iva[1].wrong[0]] IVA THE SMITH: Who am I. Yes.
+[HARD.iva[1].wrong[1]] IVA THE SMITH: Iva goes back to horseshoes. The ships keep hitting the rocks.
+
+==============================================================================
+LEVEL 6 · THE GREY CITY   (tricks here: bandwagon, falseDilemma, emotion, postHoc, gambler, sunkCost, hastyGen, authority, slipperySlope, strawMan, redHerring, tradition, adHominem)
+==============================================================================
+
+--- The Simurgh arrives (as this level opens) ---
+[SIMURGH.levels.5.say[0]] SIMURGH: {name}, look where the beam points. Those grey walls in the east are the Grey City.
+[SIMURGH.levels.5.say[1]] SIMURGH: The monster lives there. Its shadow hangs over the palace, and the throne waits beneath it.
+[SIMURGH.levels.5.say[2]] SIMURGH: I can't fly into that city. The fog is too thick for my wings. You must go alone.
+[SIMURGH.levels.5.say[3]] SIMURGH: Everyone in the city breathes the monster's fog. The whole city will be against you.
+[SIMURGH.levels.5.say[4]] SIMURGH: They won't listen easily. If you give one wrong answer, they laugh, and you must start over.
+[SIMURGH.levels.5.say[5]] SIMURGH: But you only need one of them. One clear head in the Grey City is enough.
+[SIMURGH.levels.5.steps[0].goal] (GOAL shown on screen) Walk east along the quay to the Grey City. Convince one person there.
+
+--- Walking into The Grey City ---
+[LEVELS[5].intro[0]] NARRATOR: You walk along the quay and through the grey gate.
+[LEVELS[5].intro[1]] NARRATOR: Everything here is grey. The walls are grey, the roofs are grey, and even the faces are grey.
+[LEVELS[5].intro[2]] NARRATOR: A huge dark shadow hangs over the palace. Two red eyes glow inside it.
+
+--- Gate Warden Morn (morn) ---
+[NPCS#morn.city.intro[0]] GATE WARDEN MORN: Stop right there, person you don't know. Nobody comes to the Grey City to change it.
+[NPCS#morn.city.intro[1]] GATE WARDEN MORN: Everyone here knows the truth. Builders feed the monster. Every new thing makes it stronger.
+  (question 1 of 3: one wrong answer and the player starts again)
+  (topic: The High Preacher said so · trick: authority)
+[NPCS#morn.city.gauntlet[0].intro[0]] GATE WARDEN MORN: The High Preacher himself says it. He has the tallest hat in the city. He must know.
+[NPCS#morn.city.gauntlet[0].options[0].text] (PLAYER ANSWER ✓ RIGHT) A tall hat isn't a reason. How does building feed a monster?
+[NPCS#morn.city.gauntlet[0].options[1].text] (PLAYER ANSWER ✗ WRONG) He is the High Preacher, so he has studied the monster far longer than a young builder like me.
+[NPCS#morn.city.gauntlet[0].options[2].text] (PLAYER ANSWER ✗ WRONG) The High Preacher is a liar, and liars like him should be locked up in the palace cellar.
+[NPCS#morn.city.gauntlet[0].options[3].text] (PLAYER ANSWER ✗ WRONG) Maybe he is right, so from now on I'll only build small things that the monster won't notice.
+  (if the player picks the right answer)
+[NPCS#morn.city.gauntlet[0].right[0]] GATE WARDEN MORN: How does it feed it? He never said. Nobody ever asked him.
+  (if the player picks a wrong answer)
+[NPCS#morn.city.gauntlet[0].wrong[0]] GATE WARDEN MORN: You see? Even you agree with him.
+[NPCS#morn.city.gauntlet[0].wrong[1].text] NARRATOR: Morn laughs. The gate guards laugh too. You will have to start over.
+  (question 2 of 3: one wrong answer and the player starts again)
+  (topic: Five hundred years of grey · trick: tradition)
+[NPCS#morn.city.gauntlet[1].intro[0]] GATE WARDEN MORN: But this city has always been grey. For five hundred years, nobody built anything new.
+[NPCS#morn.city.gauntlet[1].intro[1]] GATE WARDEN MORN: Five hundred years of grey. That's our way.
+[NPCS#morn.city.gauntlet[1].options[0].text] (PLAYER ANSWER ✓ RIGHT) Old isn't the same as right. Has the grey made anyone happy?
+[NPCS#morn.city.gauntlet[1].options[1].text] (PLAYER ANSWER ✗ WRONG) Five hundred years is a very long time, so the grey way must have something good hidden in it somewhere.
+[NPCS#morn.city.gauntlet[1].options[2].text] (PLAYER ANSWER ✗ WRONG) Your grandparents were fools, and their grandparents were even bigger fools than they were.
+[NPCS#morn.city.gauntlet[1].options[3].text] (PLAYER ANSWER ✗ WRONG) Then I'll build only grey things, so that nothing in this city changes very much at all.
+  (if the player picks the right answer)
+[NPCS#morn.city.gauntlet[1].right[0]] GATE WARDEN MORN: Happy? No. Nobody here is happy. I never thought about it before.
+  (if the player picks a wrong answer)
+[NPCS#morn.city.gauntlet[1].wrong[0]] GATE WARDEN MORN: Grey it is, then. As always.
+[NPCS#morn.city.gauntlet[1].wrong[1].text] NARRATOR: Morn laughs and folds his arms. You will have to start over.
+  (question 3 of 3: one wrong answer and the player starts again)
+  (topic: A child from a goat village · trick: adHominem)
+[NPCS#morn.city.gauntlet[2].intro[0]] GATE WARDEN MORN: Still, look at you. You are a child from a village full of goats.
+[NPCS#morn.city.gauntlet[2].intro[1]] GATE WARDEN MORN: What does a goat child know about monsters?
+[NPCS#morn.city.gauntlet[2].options[0].text] (PLAYER ANSWER ✓ RIGHT) Where I come from isn't an answer. Look at what I built.
+[NPCS#morn.city.gauntlet[2].options[1].text] (PLAYER ANSWER ✗ WRONG) I'm much older than I look, and I have faced far scarier things than goats on my way here.
+[NPCS#morn.city.gauntlet[2].options[2].text] (PLAYER ANSWER ✗ WRONG) You are an old man with a silly hat, so you know even less about monsters than I do.
+[NPCS#morn.city.gauntlet[2].options[3].text] (PLAYER ANSWER ✗ WRONG) You are right, I'm only a child, but surely children are allowed to try as well, are they not?
+  (if the player picks the right answer)
+[NPCS#morn.city.gauntlet[2].right[0]] GATE WARDEN MORN: What you built. A well, a bridge, a school, a mill and a lighthouse.
+[NPCS#morn.city.gauntlet[2].right[1]] GATE WARDEN MORN: And I have built nothing but a wall of words.
+  (if the player picks a wrong answer)
+[NPCS#morn.city.gauntlet[2].wrong[0]] GATE WARDEN MORN: A goat child. Exactly.
+[NPCS#morn.city.gauntlet[2].wrong[1].text] NARRATOR: Morn laughs so hard his hat falls off. You will have to start over.
+  (convinced: this starts the ending)
+[NPCS#morn.city.convinced[0]] GATE WARDEN MORN: Wait. The fog in my head is getting thinner.
+[NPCS#morn.city.convinced[1]] GATE WARDEN MORN: You are right. We never asked why. Not once in five hundred years.
+  (after the monster is gone)
+[NPCS#morn.city.after[0]] GATE WARDEN MORN: I opened the gate wide this morning. Everybody is welcome now.
+
+--- Crier Vesna (vesna) ---
+[NPCS#vesna.city.intro[0]] CRIER VESNA: Hear ye! Hear ye! A builder is in the city! Everybody, shut your windows!
+[NPCS#vesna.city.intro[1]] CRIER VESNA: Everybody agrees you are unsafe. I have yelled it on every corner.
+  (question 1 of 3: one wrong answer and the player starts again)
+  (topic: The whole city agrees · trick: bandwagon)
+[NPCS#vesna.city.gauntlet[0].intro[0]] CRIER VESNA: The whole city agrees about you. Every single person. When everybody agrees, it must be true.
+[NPCS#vesna.city.gauntlet[0].options[0].text] (PLAYER ANSWER ✓ RIGHT) Everybody agreeing isn't proof. What have I done wrong?
+[NPCS#vesna.city.gauntlet[0].options[1].text] (PLAYER ANSWER ✗ WRONG) If the whole city agrees, then I must have done something bad, so I should leave before it gets worse.
+[NPCS#vesna.city.gauntlet[0].options[2].text] (PLAYER ANSWER ✗ WRONG) Everybody in this city is a sheep, so it doesn't matter one bit what any of them think.
+[NPCS#vesna.city.gauntlet[0].options[3].text] (PLAYER ANSWER ✗ WRONG) Not everybody agrees, I'm sure a few people secretly like me, so the crowd must be wrong.
+  (if the player picks the right answer)
+[NPCS#vesna.city.gauntlet[0].right[0]] CRIER VESNA: What have you done wrong? Hmm. Nobody said. They only said that everybody knew.
+  (if the player picks a wrong answer)
+[NPCS#vesna.city.gauntlet[0].wrong[0]] CRIER VESNA: Everybody knows it! Even you!
+[NPCS#vesna.city.gauntlet[0].wrong[1].text] NARRATOR: Vesna rings her bell and laughs. You will have to start over.
+  (question 2 of 3: one wrong answer and the player starts again)
+  (topic: One builder wakes the monster · trick: slipperySlope)
+[NPCS#vesna.city.gauntlet[1].intro[0]] CRIER VESNA: If we let one builder in, more will come. Then they will build towers. The towers will wake the monster. Then the monster will eat us all!
+[NPCS#vesna.city.gauntlet[1].options[0].text] (PLAYER ANSWER ✓ RIGHT) Each step needs its own proof. Does one builder wake a monster?
+[NPCS#vesna.city.gauntlet[1].options[1].text] (PLAYER ANSWER ✗ WRONG) That does sound awful, so maybe I should only build at night, while the monster is asleep.
+[NPCS#vesna.city.gauntlet[1].options[2].text] (PLAYER ANSWER ✗ WRONG) Towers are ugly anyway, so nobody in the whole city should ever build one, not even me.
+[NPCS#vesna.city.gauntlet[1].options[3].text] (PLAYER ANSWER ✗ WRONG) The monster only eats people who shout a lot, so you should really be worried about yourself.
+  (if the player picks the right answer)
+[NPCS#vesna.city.gauntlet[1].right[0]] CRIER VESNA: Does one builder wake a monster? I just yelled all the steps together. I do that a lot.
+  (if the player picks a wrong answer)
+[NPCS#vesna.city.gauntlet[1].wrong[0]] CRIER VESNA: Eaten! All of us!
+[NPCS#vesna.city.gauntlet[1].wrong[1].text] NARRATOR: Vesna shouts it down the street and laughs. You will have to start over.
+  (question 3 of 3: one wrong answer and the player starts again)
+  (topic: The crying children · trick: emotion)
+[NPCS#vesna.city.gauntlet[2].intro[0]] CRIER VESNA: Think of the poor children, builder! They are so scared of you. They cry at night!
+[NPCS#vesna.city.gauntlet[2].intro[1]] CRIER VESNA: How can you do this to crying children?
+[NPCS#vesna.city.gauntlet[2].options[0].text] (PLAYER ANSWER ✓ RIGHT) Tears are real, but they aren't a reason. What scares them?
+[NPCS#vesna.city.gauntlet[2].options[1].text] (PLAYER ANSWER ✗ WRONG) I would never want to make a child cry, so I'll leave the city right now and never come back.
+[NPCS#vesna.city.gauntlet[2].options[2].text] (PLAYER ANSWER ✗ WRONG) Children cry about everything, so their tears don't count for anything at all.
+[NPCS#vesna.city.gauntlet[2].options[3].text] (PLAYER ANSWER ✗ WRONG) Then please tell the children that I'm nice, and give them a bag of sweets from me.
+  (if the player picks the right answer)
+[NPCS#vesna.city.gauntlet[2].right[0]] CRIER VESNA: What scares them? The stories. My stories. I told them that builders were monsters.
+  (if the player picks a wrong answer)
+[NPCS#vesna.city.gauntlet[2].wrong[0]] CRIER VESNA: The poor little things!
+[NPCS#vesna.city.gauntlet[2].wrong[1].text] NARRATOR: Vesna wipes a fake tear and laughs. You will have to start over.
+  (convinced: this starts the ending)
+[NPCS#vesna.city.convinced[0]] CRIER VESNA: Oh. Oh no. I have been yelling fog all over this city.
+[NPCS#vesna.city.convinced[1]] CRIER VESNA: Hear ye! Hear ye! Maybe we should all ask why!
+  (after the monster is gone)
+[NPCS#vesna.city.after[0]] CRIER VESNA: Hear ye! Hear ye! The fog is gone! Ask questions, everybody!
+
+--- Scribe Hollis (hollis) ---
+[NPCS#hollis.city.intro[0]] SCRIBE HOLLIS: I write everything down. And I wrote down what happened after the last builder came here.
+  (question 1 of 3: one wrong answer and the player starts again)
+  (topic: The coldest winter · trick: postHoc)
+[NPCS#hollis.city.gauntlet[0].intro[0]] SCRIBE HOLLIS: A builder came here fifty years ago. The next winter was the coldest ever.
+[NPCS#hollis.city.gauntlet[0].intro[1]] SCRIBE HOLLIS: The builder came first. So the builder caused it. It's in my book.
+[NPCS#hollis.city.gauntlet[0].options[0].text] (PLAYER ANSWER ✓ RIGHT) Coming first isn't causing. What else happened that winter?
+[NPCS#hollis.city.gauntlet[0].options[1].text] (PLAYER ANSWER ✗ WRONG) If it is written in your book, you must have checked it very carefully, so it is probably true.
+[NPCS#hollis.city.gauntlet[0].options[2].text] (PLAYER ANSWER ✗ WRONG) Winters are always cold in this place, so that builder did nothing at all to anybody.
+[NPCS#hollis.city.gauntlet[0].options[3].text] (PLAYER ANSWER ✗ WRONG) Then I'll leave the city before winter comes, so nobody can blame me for the snow.
+  (if the player picks the right answer)
+[NPCS#hollis.city.gauntlet[0].right[0]] SCRIBE HOLLIS: What else happened? That winter froze the whole kingdom. Even places with no builders at all.
+  (if the player picks a wrong answer)
+[NPCS#hollis.city.gauntlet[0].wrong[0]] SCRIBE HOLLIS: It's in the book, so it is true.
+[NPCS#hollis.city.gauntlet[0].wrong[1].text] NARRATOR: Hollis taps his book and laughs. You will have to start over.
+  (question 2 of 3: one wrong answer and the player starts again)
+  (topic: The builder who cheated · trick: hastyGen)
+[NPCS#hollis.city.gauntlet[1].intro[0]] SCRIBE HOLLIS: That builder also cheated the baker. One builder cheated. So all builders cheat.
+[NPCS#hollis.city.gauntlet[1].options[0].text] (PLAYER ANSWER ✓ RIGHT) One person isn't everyone. Judge me by what I do.
+[NPCS#hollis.city.gauntlet[1].options[1].text] (PLAYER ANSWER ✗ WRONG) That builder sounds awful, and I'm sorry, so I'll pay the baker back for him myself.
+[NPCS#hollis.city.gauntlet[1].options[2].text] (PLAYER ANSWER ✗ WRONG) The baker probably cheated the builder first, so the builder was only being fair.
+[NPCS#hollis.city.gauntlet[1].options[3].text] (PLAYER ANSWER ✗ WRONG) Most builders are very honest people, and I'm quite sure you knew that already.
+  (if the player picks the right answer)
+[NPCS#hollis.city.gauntlet[1].right[0]] SCRIBE HOLLIS: Judge you by what you do. Hmm. I haven't written a single word about what you do.
+  (if the player picks a wrong answer)
+[NPCS#hollis.city.gauntlet[1].wrong[0]] SCRIBE HOLLIS: All builders. It's written.
+[NPCS#hollis.city.gauntlet[1].wrong[1].text] NARRATOR: Hollis writes "cheat" next to your name and laughs. You will have to start over.
+  (question 3 of 3: one wrong answer and the player starts again)
+  (topic: Two kinds of people · trick: falseDilemma)
+[NPCS#hollis.city.gauntlet[2].intro[0]] SCRIBE HOLLIS: So there are two kinds of people. Grey City people are safe. People from outside are unsafe.
+[NPCS#hollis.city.gauntlet[2].intro[1]] SCRIBE HOLLIS: You are an outsider. So you are unsafe.
+[NPCS#hollis.city.gauntlet[2].options[0].text] (PLAYER ANSWER ✓ RIGHT) Why only two kinds? People from far away can be kind.
+[NPCS#hollis.city.gauntlet[2].options[1].text] (PLAYER ANSWER ✗ WRONG) Then let me become a Grey City person, and I'll stop being unsafe straight away.
+[NPCS#hollis.city.gauntlet[2].options[2].text] (PLAYER ANSWER ✗ WRONG) Grey City people are the unsafe ones, and people from outside are the safe ones, not the other way round.
+[NPCS#hollis.city.gauntlet[2].options[3].text] (PLAYER ANSWER ✗ WRONG) There are three kinds, because children are neither safe nor unsafe, they are just children.
+  (if the player picks the right answer)
+[NPCS#hollis.city.gauntlet[2].right[0]] SCRIBE HOLLIS: Two kinds. I wrote that on the first page of my book. I never checked it.
+  (if the player picks a wrong answer)
+[NPCS#hollis.city.gauntlet[2].wrong[0]] SCRIBE HOLLIS: Two kinds. Page one.
+[NPCS#hollis.city.gauntlet[2].wrong[1].text] NARRATOR: Hollis closes his book with a snap and laughs. You will have to start over.
+  (convinced: this starts the ending)
+[NPCS#hollis.city.convinced[0]] SCRIBE HOLLIS: I'll need a new book. This one is full of fog.
+[NPCS#hollis.city.convinced[1]] SCRIBE HOLLIS: Thank you. My head feels like a clean page.
+  (after the monster is gone)
+[NPCS#hollis.city.after[0]] SCRIBE HOLLIS: I started a new book today. The first page says: ask why.
+
+--- Mother Rue (rue) ---
+[NPCS#rue.city.intro[0]] MOTHER RUE: Sit down, dear. Have some grey bread. Everything in this city is grey. Even the bread.
+  (question 1 of 3: one wrong answer and the player starts again)
+  (topic: Three hundred years of tax · trick: sunkCost)
+[NPCS#rue.city.gauntlet[0].intro[0]] MOTHER RUE: We have paid the Grey Order a tax for three hundred years, to keep the monster calm.
+[NPCS#rue.city.gauntlet[0].intro[1]] MOTHER RUE: Three hundred years of coins! If we stop now, all those coins were for nothing.
+[NPCS#rue.city.gauntlet[0].options[0].text] (PLAYER ANSWER ✓ RIGHT) The old coins are gone either way. Does the next coin help?
+[NPCS#rue.city.gauntlet[0].options[1].text] (PLAYER ANSWER ✗ WRONG) Three hundred years of coins is a lot, so you should keep paying until you get your money's worth.
+[NPCS#rue.city.gauntlet[0].options[2].text] (PLAYER ANSWER ✗ WRONG) Stop paying today, and make the Order give back every single coin since the very start.
+[NPCS#rue.city.gauntlet[0].options[3].text] (PLAYER ANSWER ✗ WRONG) The Order is full of thieves, so of course every one of those coins was for nothing.
+  (if the player picks the right answer)
+[NPCS#rue.city.gauntlet[0].right[0]] MOTHER RUE: Does the next coin help? The monster isn't calm. It never was.
+  (if the player picks a wrong answer)
+[NPCS#rue.city.gauntlet[0].wrong[0]] MOTHER RUE: Keep paying. Yes, dear.
+[NPCS#rue.city.gauntlet[0].wrong[1].text] NARRATOR: Mother Rue pats your hand and chuckles. You will have to start over.
+  (question 2 of 3: one wrong answer and the player starts again)
+  (topic: Tearing the city down · trick: strawMan)
+[NPCS#rue.city.gauntlet[1].intro[0].text] MOTHER RUE: The preachers say you want to tear down the city and build a castle for yourself.
+[NPCS#rue.city.gauntlet[1].intro[1].text] PLAYER: I never said that. I want to clear the fog.
+[NPCS#rue.city.gauntlet[1].intro[2].text] MOTHER RUE: Oh, but that is what clearing the fog means, dear. It means tearing it all down!
+[NPCS#rue.city.gauntlet[1].options[0].text] (PLAYER ANSWER ✓ RIGHT) That isn't what I said. Clearing fog tears nothing down.
+[NPCS#rue.city.gauntlet[1].options[1].text] (PLAYER ANSWER ✗ WRONG) I would only tear down the ugly parts of the city, and all the nice parts could stay.
+[NPCS#rue.city.gauntlet[1].options[2].text] (PLAYER ANSWER ✗ WRONG) The preachers are liars, so whatever they say, the opposite must always be true.
+[NPCS#rue.city.gauntlet[1].options[3].text] (PLAYER ANSWER ✗ WRONG) Even if I did build a castle, it would be a very nice castle, and everybody could visit it.
+  (if the player picks the right answer)
+[NPCS#rue.city.gauntlet[1].right[0]] MOTHER RUE: Tears nothing down. No. They said it for you, and I believed them.
+  (if the player picks a wrong answer)
+[NPCS#rue.city.gauntlet[1].wrong[0]] MOTHER RUE: Tearing it down! I knew it.
+[NPCS#rue.city.gauntlet[1].wrong[1].text] NARRATOR: Mother Rue shakes her head and chuckles. You will have to start over.
+  (question 3 of 3: one wrong answer and the player starts again)
+  (topic: Albert the pigeon · trick: redHerring)
+[NPCS#rue.city.gauntlet[2].intro[0].text] PLAYER: Mother Rue, why is the city afraid of me?
+[NPCS#rue.city.gauntlet[2].intro[1].text] MOTHER RUE: Afraid? Oh, look at the pigeons! Grey pigeons, grey roofs. Do you like pigeons, dear?
+[NPCS#rue.city.gauntlet[2].intro[2].text] MOTHER RUE: I had a pigeon once. His name was Albert.
+[NPCS#rue.city.gauntlet[2].options[0].text] (PLAYER ANSWER ✓ RIGHT) Albert can wait. Why is the city afraid of me?
+[NPCS#rue.city.gauntlet[2].options[1].text] (PLAYER ANSWER ✗ WRONG) I do like pigeons, actually, and I would love to hear the whole story about Albert.
+[NPCS#rue.city.gauntlet[2].options[2].text] (PLAYER ANSWER ✗ WRONG) Pigeons are dirty birds, and nobody should keep one in the house.
+[NPCS#rue.city.gauntlet[2].options[3].text] (PLAYER ANSWER ✗ WRONG) If the city likes pigeons, then maybe I can win everyone over with a big bag of birdseed.
+  (if the player picks the right answer)
+[NPCS#rue.city.gauntlet[2].right[0]] MOTHER RUE: Why is it afraid? Because the preachers said so. I have no other reason. Not one.
+  (if the player picks a wrong answer)
+[NPCS#rue.city.gauntlet[2].wrong[0]] MOTHER RUE: Albert was a lovely bird. Let me tell you all about him.
+[NPCS#rue.city.gauntlet[2].wrong[1].text] NARRATOR: An hour later, you still have no answer. You will have to start over.
+  (convinced: this starts the ending)
+[NPCS#rue.city.convinced[0]] MOTHER RUE: Three hundred years, and nobody ever asked me a straight question.
+[NPCS#rue.city.convinced[1]] MOTHER RUE: Thank you, dear. Go on. The palace is waiting for you.
+  (after the monster is gone)
+[NPCS#rue.city.after[0]] MOTHER RUE: Have some bread, dear. It's brown now. It tastes much better.
+
+--- Grey Citizen (grey1) ---
+[NPCS#grey1.talk[0]] GREY CITIZEN: Go away, builder. Everybody knows builders feed the monster.
+  (after the monster is gone)
+[NPCS#grey1.city.after[0]] GREY CITIZEN: The fog is gone! I can see the sea from my window!
+
+--- Grey Citizen (grey2) ---
+[NPCS#grey2.talk[0]] GREY CITIZEN: If you were any good, the preachers would like you. They don't like you. So you are bad.
+  (after the monster is gone)
+[NPCS#grey2.city.after[0]] GREY CITIZEN: I asked the preachers why. They had no answer, so they left.
+
+--- Grey Child (grey3) ---
+[NPCS#grey3.talk[0]] GREY CHILD: My mum says the monster eats questions. So I never ask any.
+  (after the monster is gone)
+[NPCS#grey3.city.after[0]] GREY CHILD: Why is the sky blue? Why do cats purr? I have so many questions now!
+
+--- The ending ---
+[CITY.lift[0]] NARRATOR: All over the city, people stop and blink. They look as if they just woke up.
+[CITY.lift[1]] NARRATOR: The dark shadow over the palace shivers. Then it breaks apart like smoke in the wind.
+[CITY.lift[2]] NARRATOR: There's nothing inside it. There never was.
+[SIMURGH.ending[0]] SIMURGH: I'm here, {name}. I could fly into the city at last. The fog is breaking.
+[SIMURGH.ending[1]] SIMURGH: Now you know the secret. There never was a beast.
+[SIMURGH.ending[2]] SIMURGH: The monster was stupidity. It lived in every head that stopped asking why.
+[SIMURGH.ending[3]] SIMURGH: It grew fat on every bad argument that nobody questioned. That was its only food.
+[SIMURGH.ending[4]] SIMURGH: You fought it all along. Every trick you spotted cut it. Every head you cleared made it smaller.
+[SIMURGH.ending[5]] SIMURGH: Today one person in the Grey City asked why. That was enough. The monster is gone.
+[SIMURGH.ending[6]] SIMURGH: The throne is yours. Rule this land well, and never stop asking why.
+[CITY.sit[0]] NARRATOR: You climb the palace steps and sit on the throne.
+[CITY.sit[1]] NARRATOR: Below you, the Grey City turns green. The whole valley shines in the sun.
+
+==============================================================================
+ANY TIME IN THE GAME
+==============================================================================
+
+--- The Simurgh, the first time something happens ---
+  (ally)
+[SIMURGH.events.ally[0]] SIMURGH: {name}, look! Your friend has a clear head now. Every fog is gone. That makes them a true ally.
+[SIMURGH.events.ally[1]] SIMURGH: Nobody can fog a true ally again. Not a trickster, and not a preacher.
+[SIMURGH.events.ally[2]] SIMURGH: True allies help you, too. They walk to your buildings and collect the coins for you.
+[SIMURGH.events.ally[3]] SIMURGH: They keep one coin in every five for their trouble. That's fair, is it not?
+  (fogged)
+[SIMURGH.events.fogged[0]] SIMURGH: Oh no, {name}. A preacher reached one of your friends.
+[SIMURGH.events.fogged[1]] SIMURGH: Their head is foggy again, so they left your crew. The Crew panel shows who it was.
+[SIMURGH.events.fogged[2]] SIMURGH: Go and talk to them. A good reason clears the fog, just like before.
+  (refused)
+[SIMURGH.events.refused[0]] SIMURGH: A preacher turned somebody against you. A red ✗ floats over their head.
+[SIMURGH.events.refused[1]] SIMURGH: Talk to them and answer the preacher's argument. Then they will work with you again.
+  (fooled)
+[SIMURGH.events.fooled[0]] SIMURGH: Don't worry, {name}. Everybody gets fooled sometimes. It happened to me once, a long time ago.
+[SIMURGH.events.fooled[1]] SIMURGH: Read the card. It shows the trick and the better answer. Then try again.
+
+--- Experts in your crew, when asked "Why aren't you working yet?" ---
+[LINES.why.building[0]] EXPERT: We ARE working. Look, it is going up right now.
+[LINES.why.built[0]] EXPERT: We finished it. Tell me when the next job opens.
+[LINES.why.notNeeded[0]] EXPERT: This job doesn't need my craft. Call me when something does.
+[LINES.why.lowLevel[0]] EXPERT: I'm not skilled enough for this job yet.
+[LINES.why.lowLevel[1]] EXPERT: More building will teach me. So would a lesson at the school.
+[LINES.why.missing[0]] EXPERT: I can't build it alone. We still need more experts.
+[LINES.why.missing[1]] EXPERT: Look at the site to see who's missing. Find them and clear their heads.
+[LINES.why.coins[0]] EXPERT: We are ready. We only need more coins.
+[LINES.why.coins[1]] EXPERT: Look at the top of the screen to see how many. Then press A at the site.
+[LINES.why.ready[0]] EXPERT: Everything is ready! Go to the site and press A. I'll be right behind you.
+
+--- Narrator ---
+[LINES.cooldown] NARRATOR: Nothing more to do here yet. Come back in a little while.
+[LINES.handsFull] NARRATOR: Your hands are full. Deliver what you are carrying first.
+[LINES.crewLearned] NARRATOR: Your crew learned a lot from the work. Open the Crew panel to see how much.
+[FLAVOR.goat] NARRATOR: A goat. It looks at you. You look at it.
+[FLAVOR.apples] NARRATOR: A basket of apples under the trees.
+[FLAVOR.scarecrow] NARRATOR: A scarecrow, face down in the mud.
+[FLAVOR.brokenfence] NARRATOR: A fence rail hangs loose.
+[FLAVOR.lamp] NARRATOR: A street lamp.
+[FLAVOR.lostsign] NARRATOR: A wooden sign lying in the grass.
+[FLAVOR.cart] NARRATOR: An ore cart with a missing wheel. It wobbles when you touch it.
+[FLAVOR.canary] NARRATOR: A small yellow bird, singing.
+[FLAVOR.oar] NARRATOR: An oar, half buried in sand.
+[FLAVOR.bucket] NARRATOR: Two buckets by the river.
+[FLAVOR.broom] NARRATOR: A broom leaning on a stall.
+[FLAVOR.orepile] NARRATOR: A heap of rock with glints of ore.
+[FLAVOR.ropes] NARRATOR: Coils of wet rope.
+[FLAVOR.milk] NARRATOR: The goats need milking.
+[FLAVOR.boat] NARRATOR: A boat. It bobs.
+[FLAVOR.stall] NARRATOR: A market stall. Bright things, high prices.
+[FLAVOR.fountain] NARRATOR: Cool water splashes.
+[FLAVOR.cards] NARRATOR: A card table. The cards look tired.
+[FLAVOR.sign] NARRATOR: A signpost.
+[FLAVOR.bench] NARRATOR: A bench. Nobody is sitting.
+[FLAVOR.logs] NARRATOR: Freshly cut timber.
+[FLAVOR.tripod] NARRATOR: A surveyor's tripod.
+[FLAVOR.crate] NARRATOR: A crate. Heavy.
+[FLAVOR.pot2] NARRATOR: A flower pot.
+[FLAVOR.tollbox] NARRATOR: The bridge toll box.
+[FLAVOR.nothing] NARRATOR: Nothing to do here.
+[FLAVOR.throne] NARRATOR: A tall stone throne. It's empty, and it is waiting.
+[FLAVOR.dryfountain] NARRATOR: The fountain is dry. Grey dust fills the bowl.
+[FLAVOR.stones] NARRATOR: Flat stones by the water. They are good for skipping.
+[FLAVOR.rod] NARRATOR: A fishing rod leans on a post. The line is already in the water.
+
+--- Mini-games (captions read by the narrator; the game itself is played on screen) ---
+  (game "cups", teaches bandwagon)
+[GAMES.cups.lines.watch] NARRATOR: Watch the pea. Watch the cups.
+[GAMES.cups.lines.shuffle] NARRATOR: The cups move faster and faster.
+[GAMES.cups.lines.pick] NARRATOR: Which cup hides the pea? Pick one.
+[GAMES.cups.lines.empty] NARRATOR: Empty. Dodge lifts the other cups. They are empty too.
+[GAMES.cups.lines.palm] NARRATOR: Look at his other hand. The pea was there the whole time.
+[GAMES.cups.lines.show] NARRATOR: Watch his left hand this time. Slowly.
+[GAMES.cups.lines.fair] NARRATOR: This time the pea stays under a cup. Find it.
+[GAMES.cups.lines.fairWin] NARRATOR: You found it! A fair game is a different game.
+[GAMES.cups.lines.fairLose] NARRATOR: Not that one. But this time the pea was really there.
+  (game "streak", teaches gambler, pays up to 10 coins)
+[GAMES.streak.lines.title] NARRATOR: Red or black
+[GAMES.streak.lines.intro] NARRATOR: Six cards. Guess the colour of each one. There's nothing to pay.
+[GAMES.streak.lines.prompt] NARRATOR: Red or black?
+[GAMES.streak.lines.red] NARRATOR: Red
+[GAMES.streak.lines.black] NARRATOR: Black
+[GAMES.streak.lines.run] NARRATOR: The same colour again! Is the other one due now?
+[GAMES.streak.lines.question] NARRATOR: Red came up four times in a row. What about the next card?
+[GAMES.streak.lines.options[0].text] (PLAYER ANSWER ✓ RIGHT) Red or black. One in two, like always.
+[GAMES.streak.lines.options[1].text] (PLAYER ANSWER ✗ WRONG) Black is due now. Black is much more likely.
+[GAMES.streak.lines.options[2].text] (PLAYER ANSWER ✗ WRONG) Red is hot now. Red is much more likely.
+[GAMES.streak.lines.right] NARRATOR: Cards don't remember. Every card starts fresh. Take 10 coins for a clear head.
+[GAMES.streak.lines.wrong] NARRATOR: The cards don't know what came before. Every card is a fresh one in two.
+  (game "stones", pays up to 12 coins)
+[GAMES.stones.lines.title] NARRATOR: Skipping stones
+[GAMES.stones.lines.intro] NARRATOR: Press when the marker is in the green. You have three stones.
+[GAMES.stones.lines.done] NARRATOR: Three good throws! A coin for every skip.
+[GAMES.stones.lines.none] NARRATOR: Plop. Plop. Plop. Try a flatter stone next time.
+  (game "crows", pays up to 12 coins)
+[GAMES.crows.lines.title] NARRATOR: Shoo the crows
+[GAMES.crows.lines.intro] NARRATOR: The crows are back! Tap them before they eat the seeds.
+[GAMES.crows.lines.done] NARRATOR: The crows fly off in a huff. A coin for every crow.
+[GAMES.crows.lines.none] NARRATOR: The crows ate every seed. They look very pleased.
+  (game "fish", pays up to 15 coins)
+[GAMES.fish.lines.title] NARRATOR: Fishing
+[GAMES.fish.lines.intro] NARRATOR: Wait for the float to dip. Then press!
+[GAMES.fish.lines.herring] NARRATOR: A red herring! It looks tasty, but it isn't what you were fishing for.
+[GAMES.fish.lines.done] NARRATOR: You pack up the rod. Bigger fish pay more.
+[GAMES.fish.lines.none] NARRATOR: Nothing bit. The fish are laughing at you.
+
+--- The Grey Order and the statues ---
+[ORDER.lines.out] NARRATOR: A preacher of the Grey Order has left the lodge. Watch the map.
+[ORDER.lines.silent] NARRATOR: The preacher looks through you and says nothing.
+[ORDER.lines.protectedStop] NARRATOR: The preacher stops at the edge of the circle and turns away.
+[ORDER.lines.refogged] NARRATOR: The preacher leaves. A grey fog settles over a cleared head.
+[ORDER.lines.refuses] NARRATOR: The preacher leaves. Someone won't work with you any more.
+[STATUE.blurb] NARRATOR: Aristotle wrote down the tricks of bad arguments long ago. Nobody inside the circle of his statue can be fooled by a preacher.
+[STATUE.quote] NARRATOR: "It's the mark of an educated mind to entertain a thought without accepting it."
+[STATUE.start] NARRATOR: Your mason sets the plinth. The statue goes up.
+[STATUE.built] NARRATOR: The statue stands. Clear heads gather around it.
+[STATUE.flavor] NARRATOR: A stone plinth with nothing on it. Somebody should build a statue here.
+[STATUE.inspect] NARRATOR: Aristotle looks down at you from his plinth. Nobody inside his circle can be fooled by a preacher.
+
+--- Engine lines (in js/game.js) ---
+[game.js "Yes, I'll do it."] (PLAYER ANSWER) Yes, I'll do it.
+[game.js "Not right now."] (PLAYER ANSWER) Not right now.
+[game.js "Come back when you have time."] (ANYONE) Come back when you have time.
+[game.js "Right you are."] (EXPERT) Right you are.
+[game.js "Ask about: {topic}"] (PLAYER ANSWER) Ask about: {topic}
+[game.js "Why aren't you working yet?"] (PLAYER ANSWER) Why aren't you working yet?
+[game.js "Tell me about your craft."] (PLAYER ANSWER) Tell me about your craft.
+[game.js "Never mind."] (PLAYER ANSWER) Never mind.
+[game.js "What do you want to talk about?"] (PROMPT) What do you want to talk about?
+[game.js "What do you say?"] (PROMPT) What do you say?
+[game.js "Name-calling is not an answer."] (CARD) Name-calling is not an answer.
+[game.js "Say why the argument is wrong instead. Insults give the other person a reason to stop listening."] (CARD) Say why the argument is wrong instead. Insults give the other person a reason to stop listening.
+
+--- Trick cards (shown after every argument) ---
+[FALLACIES#bandwagon.nick] (CARD TITLE) Everyone's Doing It
+[FALLACIES#bandwagon.one] (CARD: the trick) Somebody says a thing is right because everybody does it.
+[FALLACIES#bandwagon.spot] (CARD: how to spot it) Lots of people can be wrong together. Ask for the real reason.
+[FALLACIES#falseDilemma.nick] (CARD TITLE) Only Two Doors
+[FALLACIES#falseDilemma.one] (CARD: the trick) Somebody says you must pick this or that, and nothing else.
+[FALLACIES#falseDilemma.spot] (CARD: how to spot it) Look for a third door. There almost always is one.
+[FALLACIES#emotion.nick] (CARD TITLE) The Tear Trick
+[FALLACIES#emotion.one] (CARD: the trick) Somebody uses sad or scary feelings to push you.
+[FALLACIES#emotion.spot] (CARD: how to spot it) Feelings are real, but they are not reasons. Ask what is true.
+[FALLACIES#postHoc.nick] (CARD TITLE) The Lucky Socks
+[FALLACIES#postHoc.one] (CARD: the trick) Somebody says one thing caused another only because it came first.
+[FALLACIES#postHoc.spot] (CARD: how to spot it) Coming first does not mean causing. Ask what else changed.
+[FALLACIES#gambler.nick] (CARD TITLE) The Hot Streak
+[FALLACIES#gambler.one] (CARD: the trick) Somebody says a win must come soon because they lost many times.
+[FALLACIES#gambler.spot] (CARD: how to spot it) Dice and cards do not remember. Every roll starts fresh.
+[FALLACIES#sunkCost.nick] (CARD TITLE) Already Paid
+[FALLACIES#sunkCost.one] (CARD: the trick) Somebody says you must keep paying because you already paid a lot.
+[FALLACIES#sunkCost.spot] (CARD: how to spot it) Money you spent is gone. Only ask if the next coin is worth it.
+[FALLACIES#hastyGen.nick] (CARD TITLE) The Big Jump
+[FALLACIES#hastyGen.one] (CARD: the trick) Somebody meets one person and decides everybody like them is the same.
+[FALLACIES#hastyGen.spot] (CARD: how to spot it) One person is not everyone. Judge each person by what they do.
+[FALLACIES#adHominem.nick] (CARD TITLE) The Insult Trick
+[FALLACIES#adHominem.one] (CARD: the trick) Somebody attacks the person instead of answering what they said.
+[FALLACIES#adHominem.spot] (CARD: how to spot it) Who says something does not make it right or wrong. Look at the idea.
+[FALLACIES#strawMan.nick] (CARD TITLE) The Scarecrow
+[FALLACIES#strawMan.one] (CARD: the trick) Somebody twists what you said into something silly, then knocks it down.
+[FALLACIES#strawMan.spot] (CARD: how to spot it) Ask yourself: is that really what I said?
+[FALLACIES#redHerring.nick] (CARD TITLE) Look Over There!
+[FALLACIES#redHerring.one] (CARD: the trick) Somebody changes the subject so they do not have to answer.
+[FALLACIES#redHerring.spot] (CARD: how to spot it) Ask yourself: did they answer my question?
+[FALLACIES#authority.nick] (CARD TITLE) Big Hat Says
+[FALLACIES#authority.one] (CARD: the trick) Somebody says a thing is true because an important person said it.
+[FALLACIES#authority.spot] (CARD: how to spot it) Important people need reasons too. Ask for the proof.
+[FALLACIES#slipperySlope.nick] (CARD TITLE) The Big Slide
+[FALLACIES#slipperySlope.one] (CARD: the trick) Somebody says one small step will surely lead to something terrible.
+[FALLACIES#slipperySlope.spot] (CARD: how to spot it) Every step needs its own proof. One step is not a slide.
+[FALLACIES#tradition.nick] (CARD TITLE) Always Done It
+[FALLACIES#tradition.one] (CARD: the trick) Somebody says the old way is best because it is the old way.
+[FALLACIES#tradition.spot] (CARD: how to spot it) Old does not mean right. Ask if it still works.

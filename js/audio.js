@@ -54,7 +54,8 @@ window.Audio2 = (function () {
     work: t => { for (let i = 0; i < 3; i++) { noise(t + i * 0.25, 0.08, { vol: 0.08, hp: 600, lp: 3000 }); } },
     splash: t => { noise(t, 0.4, { vol: 0.1, hp: 400, lp: 4000 }); tone(300, t, 0.3, { type: 'sine', vol: 0.05, slide: -200 }); },
     goat: t => { tone(440, t, 0.25, { type: 'sawtooth', vol: 0.05, slide: 60 }); tone(440, t + 0.3, 0.2, { type: 'sawtooth', vol: 0.05, slide: -60 }); },
-    bird: t => { tone(2200, t, 0.08, { vol: 0.05, slide: 600 }); tone(2600, t + 0.12, 0.1, { vol: 0.05, slide: -400 }); tone(2400, t + 0.26, 0.08, { vol: 0.05, slide: 500 }); }
+    bird: t => { tone(2200, t, 0.08, { vol: 0.05, slide: 600 }); tone(2600, t + 0.12, 0.1, { vol: 0.05, slide: -400 }); tone(2400, t + 0.26, 0.08, { vol: 0.05, slide: 500 }); },
+    simurgh: t => { [1046, 1318, 1568, 2093, 2637].forEach((f, i) => tone(f, t + i * 0.07, 0.55, { vol: 0.05 })); noise(t, 0.7, { vol: 0.02, hp: 5000, lp: 12000 }); }
   };
 
   function play(kind) {
@@ -66,7 +67,7 @@ window.Audio2 = (function () {
   /* Voice profiles: pitch and rate for the browser synthesiser. */
   const PROFILES = {
     kid: { pitch: 1.5, rate: 1.05 }, woman: { pitch: 1.15, rate: 1.0 }, man: { pitch: 0.8, rate: 0.95 },
-    old: { pitch: 0.7, rate: 0.85 }, narrator: { pitch: 1.0, rate: 0.92 }, you: { pitch: 1.25, rate: 1.0 }
+    old: { pitch: 0.7, rate: 0.85 }, narrator: { pitch: 1.0, rate: 0.92 }, you: { pitch: 1.25, rate: 1.0 }, bird: { pitch: 1.35, rate: 0.9 }
   };
   let serverVoice = null;     // null = unknown, false = server has no voice, true = ask the server
   let current = null;         // current HTMLAudio clip

@@ -13,6 +13,8 @@ global.localStorage = { getItem: () => null, setItem() { } };
 require(path.join(ROOT, 'js', 'i18n.js'));
 require(path.join(ROOT, 'js', 'data.js'));
 require(path.join(ROOT, 'js', 'data-order.js'));
+require(path.join(ROOT, 'js', 'data-story.js'));
+require(path.join(ROOT, 'js', 'data-games.js'));
 require(path.join(ROOT, 'js', 'world.js'));
 
 const seen = new Set(), out = [];
@@ -20,10 +22,9 @@ const add = s => { if (typeof s === 'string' && s.trim() && !seen.has(s)) { seen
 
 window.I18N.collect(window.FOG, window.World).forEach(add);
 
-const game = fs.readFileSync(path.join(ROOT, 'js', 'game.js'), 'utf8');
 const re = /\bT\((['"])((?:\\.|(?!\1).)*)\1/g;
 let m;
-while ((m = re.exec(game))) add(m[2].replace(/\\(['"\\])/g, '$1'));
+['game.js', 'scenes.js'].forEach(f => { const src = fs.readFileSync(path.join(ROOT, 'js', f), 'utf8'); re.lastIndex = 0; while ((m = re.exec(src))) add(m[2].replace(/\\(['"\\])/g, '$1')); });
 
 // canvas labels: tl('...') literals in world.js, plus the "<KIND> SITE" labels built from the mission kinds
 const world = fs.readFileSync(path.join(ROOT, 'js', 'world.js'), 'utf8');

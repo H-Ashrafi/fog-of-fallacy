@@ -70,6 +70,13 @@ small { display: block; font-size: .82rem; color: var(--ink-soft); line-height: 
 .objective { display: flex; gap: 10px; align-items: baseline; font-size: .9rem; color: #D6DEDA; background: var(--pine-2); border-radius: 12px; padding: 6px 12px; min-height: 2em; }
 .objective .region { font-family: "Baloo 2", system-ui, sans-serif; font-weight: 700; color: var(--lantern); white-space: nowrap; }
 .stage { position: relative; width: 100%; aspect-ratio: 13 / 11; border-radius: 16px; overflow: hidden; background: var(--pine-2); box-shadow: 0 0 0 3px var(--pine-3); }
+/* While playing, the page fills the window and the stage takes every pixel the HUD and pad leave,
+   so the camera can show the whole level. */
+body.playing #app { max-width: 1480px; height: 100dvh; box-sizing: border-box; display: flex; flex-direction: column; padding-block: 8px calc(8px + env(safe-area-inset-bottom, 0px)); }
+body.playing #play { flex: 1 1 auto; min-height: 0; gap: 8px; }
+body.playing .stage { flex: 1 1 0; min-height: 240px; aspect-ratio: auto; }
+@media (hover: hover) and (pointer: fine) { body.playing .controls { display: none; } }
+.iconbtn.on { background: var(--pine-4); border-color: var(--lantern); }
 #game { width: 100%; height: 100%; display: block; image-rendering: auto; }
 
 .toasts { position: absolute; top: 10px; left: 0; right: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; pointer-events: none; }
@@ -90,9 +97,9 @@ small { display: block; font-size: .82rem; color: var(--ink-soft); line-height: 
 .preview small { display: block; color: var(--ink-soft); font-size: .78rem; line-height: 1.25; }
 .mprev { width: 100%; aspect-ratio: 3 / 2; object-fit: cover; border-radius: 14px; display: block; margin: 4px 0; }
 .minimap { position: absolute; top: 8px; inset-inline-end: 8px; background: rgba(20, 38, 43, .9); border-radius: 10px; padding: 4px; box-shadow: 0 4px 12px rgba(0, 0, 0, .35); }
-.minimap canvas { display: block; width: 96px; height: auto; image-rendering: pixelated; border-radius: 6px; }
+.minimap canvas { display: block; width: 138px; height: auto; image-rendering: pixelated; border-radius: 6px; }
 
-.dlg { position: absolute; left: 8px; right: 8px; bottom: 8px; display: flex; gap: 10px; align-items: flex-start; background: var(--paper); color: var(--ink); border-radius: 16px; padding: 10px 12px; box-shadow: 0 6px 18px rgba(0, 0, 0, .35); animation: dlgIn .2s ease-out both; max-height: 78%; overflow-y: auto; }
+.dlg { position: absolute; inset-inline: max(8px, calc(50% - 420px)); bottom: 8px; display: flex; gap: 10px; align-items: flex-start; background: var(--paper); color: var(--ink); border-radius: 16px; padding: 10px 12px; box-shadow: 0 6px 18px rgba(0, 0, 0, .35); animation: dlgIn .2s ease-out both; max-height: 78%; overflow-y: auto; }
 @keyframes dlgIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 .dlg.narrator { background: rgba(20, 38, 43, .93); color: var(--paper); font-style: italic; }
 #dlg-portrait { width: 78px; height: 88px; border-radius: 14px; flex: none; background: var(--paper-2); }
@@ -141,6 +148,19 @@ small { display: block; font-size: .82rem; color: var(--ink-soft); line-height: 
 .mini .bicon { display: grid; place-items: center; font-size: 2rem; background: var(--paper-2); }
 .mini span { display: block; font-size: .7rem; font-weight: 700; line-height: 1.1; margin-top: 3px; }
 
+/* ---------- scenes: a framed storybook picture with a caption plate under it ---------- */
+.vig .box { width: min(520px, 100%); gap: 0; padding: 10px 10px 12px; }
+.vig-frame { position: relative; border-radius: 16px; padding: 6px; background: linear-gradient(135deg, var(--lantern), var(--lantern-deep)); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .35), 0 8px 24px rgba(0, 0, 0, .25); }
+#vig-canvas { display: block; width: 100%; aspect-ratio: 18 / 11; border-radius: 10px; background: #BFE3EC; touch-action: none; cursor: pointer; }
+.vig-caption { position: relative; margin: -18px 14px 0; background: rgba(20, 38, 43, .94); color: var(--paper); font-style: italic; font-size: 1.02rem; line-height: 1.35; border-radius: 12px; padding: 8px 14px; min-height: 2.5em; text-align: center; box-shadow: 0 6px 16px rgba(0, 0, 0, .3); }
+.vig-caption:empty { visibility: hidden; }
+.vig-ui { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 10px; }
+.vig-ui:empty { display: none; }
+.vig-ui .choice { flex: 1 1 150px; justify-content: center; text-align: center; }
+.vig-close { margin: 10px auto 0; min-width: 150px; }
+html[dir="rtl"] .vig-caption { font-style: normal; }
+@media (max-width: 420px) { .vig .box { padding: 6px 6px 10px; } .vig-caption { margin-inline: 8px; font-size: .95rem; } }
+
 /* ---------- panels: missions, crew, goals ---------- */
 .needs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .needs li { display: flex; gap: 10px; align-items: center; background: #fff; border-radius: 12px; padding: 8px 10px; border: 2px solid var(--paper-2); }
@@ -148,6 +168,8 @@ small { display: block; font-size: .82rem; color: var(--ink-soft); line-height: 
 .needs li.ok { border-color: var(--fair); }
 .needs li.missing { border-color: rgba(228, 87, 79, .55); background: #FFF4F2; }
 .needs .ri { font-size: 1.4rem; flex: none; }
+.needs li.ally { border-color: var(--lantern); background: #FFF8E6; }
+.needs .tag { font-size: .72rem; font-weight: 700; color: var(--lantern-deep); white-space: nowrap; }
 .costrow { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px 12px; font-size: .95rem; background: var(--paper-2); border-radius: 12px; padding: 8px 12px; }
 .costrow span { display: flex; justify-content: space-between; gap: 8px; }
 .bar { height: 10px; background: var(--paper-2); border-radius: 999px; overflow: hidden; margin: 4px 0; }

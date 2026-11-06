@@ -50,13 +50,20 @@
     let h = 2166136261; for (const ch of name) { h ^= ch.codePointAt(0); h = Math.imul(h, 16777619) >>> 0; }
     return 'p' + h.toString(36);
   };
+  /* The server answers 401 once the gate cookie is gone (the secret word changed, or a year passed):
+     reload, and the gate page takes over. Once per page, so a flapping server cannot loop. */
+  let reloadedForGate = false;
+  function signedOut(r) {
+    if (r && r.status === 401 && !reloadedForGate) { reloadedForGate = true; location.reload(); }
+  }
   async function pushSave() {
     if (!S.name) return;
-    try { await fetch('/api/saves/' + encodeURIComponent(slug()), { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(S) }); } catch (e) { }
+    try { const r = await fetch('/api/saves/' + encodeURIComponent(slug()), { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(S) }); signedOut(r); } catch (e) { }
   }
   async function pullSave() {
     try {
       const r = await fetch('/api/saves/' + encodeURIComponent(slug()), { cache: 'no-store' });
+      signedOut(r);
       if (r.status !== 200) return false;
       const remote = await r.json();
       if (remote && remote.savedAt > (S.savedAt || 0)) { S = migrate(Object.assign(DEFAULT(), remote)); return true; }

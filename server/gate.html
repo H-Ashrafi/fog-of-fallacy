@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fog of Fallacy</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect width=%2764%27 height=%2764%27 rx=%2714%27 fill=%27%2314262B%27/%3E%3Ccircle cx=%2732%27 cy=%2734%27 r=%2718%27 fill=%27%23F6B544%27/%3E%3Ccircle cx=%2732%27 cy=%2734%27 r=%278%27 fill=%27%2314262B%27/%3E%3C/svg%3E">
+<style>
+  /* The gate is served before anything else, so it carries its own styles and no fonts from outside. */
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
+  body {
+    display: grid; place-items: center; padding: 24px 16px;
+    background: #14262B radial-gradient(ellipse at 50% 30%, #1e3a40 0%, #14262B 65%);
+    color: #F4E8CC; font-family: Andika, Verdana, system-ui, sans-serif;
+  }
+  form { width: min(100%, 380px); text-align: center; }
+  .moon { width: 72px; height: 72px; margin: 0 auto 10px; border-radius: 50%; background: #F6B544; position: relative; }
+  .moon::after { content: ""; position: absolute; inset: 22px; border-radius: 50%; background: #14262B; }
+  h1 { font: 800 2rem/1.1 "Baloo 2", system-ui, sans-serif; margin: 0 0 6px; }
+  p  { margin: 0 0 18px; color: #8FB3B0; font-size: 1.05rem; }
+  input {
+    width: 100%; font: inherit; font-size: 1.4rem; text-align: center; letter-spacing: .05em;
+    padding: 12px 14px; border-radius: 14px; border: 2px solid #8FB3B0; background: #F4E8CC; color: #2A2420;
+  }
+  input:focus { outline: 3px solid #F6B544; outline-offset: 2px; }
+  button {
+    width: 100%; margin-top: 12px; font: 700 1.3rem "Baloo 2", system-ui, sans-serif;
+    padding: 12px; border-radius: 14px; border: 0; background: #F6B544; color: #2A2420; cursor: pointer;
+  }
+  button:disabled { opacity: .6; cursor: wait; }
+  .msg { min-height: 1.6em; margin-top: 12px; color: #FF7B6B; font-weight: 700; }
+  .msg.ok { color: #63C48F; }
+</style>
+</head>
+<body>
+<form id="gate" autocomplete="off">
+  <div class="moon" aria-hidden="true"></div>
+  <h1>Fog of Fallacy</h1>
+  <p>Say the secret word to come into the Valley.</p>
+  <input id="word" type="password" inputmode="text" autocapitalize="off" spellcheck="false" placeholder="secret word" aria-label="Secret word" autofocus>
+  <button id="go" type="submit">Come in</button>
+  <div id="msg" class="msg" role="status" aria-live="polite"></div>
+</form>
+<script>
+  (function () {
+    var form = document.getElementById('gate'), word = document.getElementById('word'),
+        go = document.getElementById('go'), msg = document.getElementById('msg');
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      var value = word.value.trim();
+      if (!value) { word.focus(); return; }
+      go.disabled = true; msg.className = 'msg'; msg.textContent = '';
+      try {
+        var r = await fetch('/api/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ passphrase: value }) });
+        if (r.ok) { msg.className = 'msg ok'; msg.textContent = 'Welcome!'; location.reload(); return; }
+        msg.textContent = r.status === 429 ? 'Too many tries. Wait a minute.' :
+                          r.status === 503 ? 'The Valley is closed: no secret word is set on the server.' :
+                          'That is not the secret word.';
+      } catch (err) { msg.textContent = 'Could not reach the Valley.'; }
+      go.disabled = false; word.select();
+    });
+  })();
+</script>
+</body>
+</html>

@@ -139,6 +139,7 @@ in `i18n/NAMES.md`). Pick a language on the title screen or open `?lang=fa`.
 | `GET /api/health` | `{ ok, voice }` |
 | `GET /api/saves/{slug}` · `PUT /api/saves/{slug}` | JSON save per player name |
 | `GET /api/voice?who=&profile=&text=` | recorded voice line, cached as MP3 on disk |
+| `POST /api/login` · `POST /api/logout` | `{ "passphrase": "..." }` sets the year-long cookie that every other route needs; logout clears it |
 
 Environment variables:
 
@@ -150,6 +151,17 @@ Environment variables:
 | `FOG_DATA_DIR` | `%LOCALAPPDATA%\FogOfFallacy` | saves and voice cache |
 | `FOG_VOICES` | `voice/voices.json`, then built-in copy | character → voice id mapping for the live route |
 | `ELEVENLABS_API_KEY` | unset | when set, `/api/voice` fetches lines from ElevenLabs once and caches them |
+| `FOG_PASSPHRASE` | unset | the family's secret word. Every page and API call needs the cookie `POST /api/login` sets; without the word a visitor only ever sees the gate page. Unset and not `FOG_OPEN`: the server is closed |
+| `FOG_OPEN` | unset | `1` opens the server to everyone. `run.ps1` sets it for local play when no passphrase is given; never set it in production |
+
+### The gate
+
+The game, its voices and the APIs behind it cost money to run, so the site is for one
+family. `FOG_PASSPHRASE` on the server is the secret word; `server/gate.html` is the page
+everyone sees until they type it. The right word sets a cookie for a year (`nonce.hmac`,
+signed with the word, so the server keeps no session list and changing the word signs
+every device out). Wrong answers wait a second and are capped at 20 a minute. `/api/health`
+stays open for the deploy check. To change the word, change the variable and restart.
 
 ## Caching (read before deploying)
 

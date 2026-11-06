@@ -5,6 +5,8 @@ $ErrorActionPreference = 'Stop'
 $root = $PSScriptRoot
 $env:FOG_WEB_DIR = $root
 if (-not $env:PORT) { $env:PORT = '8787' }
+# Local play: open the gate unless a secret word was given (production always sets FOG_PASSPHRASE).
+if (-not $env:FOG_PASSPHRASE -and -not $env:FOG_OPEN) { $env:FOG_OPEN = '1' }
 Push-Location (Join-Path $root 'server')
 try {
     cargo build --release

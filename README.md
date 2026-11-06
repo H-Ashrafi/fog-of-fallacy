@@ -113,6 +113,21 @@ fogs and the refusals in `js/data-order.js`; the scenes' captions and the mini-g
 engine in `js/game.js`; sound and voice in `js/audio.js`; languages in `js/i18n.js` and
 `js/lang/`.
 
+## Inside the buildings
+
+Press A at a building's door and you step inside: the roof lifts off and the room is drawn
+from a corner in three-quarter view (`js/inside.js`), on the same canvas as the Valley. The
+two far walls stand, the two near walls are cut away. You walk with the same keys and pad,
+screen-wise: up walks away, down walks towards you. Press A facing a thing and the narrator
+says its line; a few things hide a coin or two, once a day. Walk out through the door (or
+press A on it) to go back outside. The Grey Lodges and the palace are shut.
+
+Every room lives in `js/data-rooms.js`: a base room per building kind (house, shop, hall,
+barn, mine) and a room of its own for the named ones (Elder's, the Bakery, the Inn, the
+Library, the Tavern, the miners' Camp, Gus's Ferry hut). A thing on the floor has a
+footprint; a thing on a wall sits just outside the floor. The same writing rules as the
+story apply, and the lines go through the voice pipeline like everything else.
+
 ## Languages
 
 English is the source text. Persian (`fa`) and Arabic (`ar`) are text only for now

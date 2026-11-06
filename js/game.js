@@ -143,7 +143,9 @@
   }
 
   /* ================= title ================= */
-  let mode = 'title';   // title | world | dialog | panel | action | modal | end
+  let mode = 'title';   // title | world | inside | dialog | panel | action | modal | end
+  /* Where a dialogue, card or panel returns to: the Valley, or the room the player is standing in. */
+  const baseMode = () => (window.Inside && Inside.active() ? 'inside' : 'world');
   function renderTitle() {
     mode = 'title'; A.stop();
     document.body.classList.remove('playing');
@@ -184,7 +186,7 @@
     syncWorld(); applyNpcPos(); placeCrew(false); restorePreachers();
     $('title').hidden = true; $('play').hidden = false;
     document.body.classList.add('playing'); resizeCanvas(); camNow = null;
-    mode = 'world';
+    mode = baseMode();
     updateHud(); updateAlert();
     checkRegionIntro();
   }
@@ -199,8 +201,8 @@
     $('hud-voice').hidden = !voiceAvailable();
     $('hud-zoom').classList.toggle('on', !!S.zoom);
     const r = Wd.regionAt(player.x, player.y);
-    $('hud-region').textContent = r >= 0 ? regionName(r) : T('The Valley');
-    $('objective').textContent = objectiveText();
+    $('hud-region').textContent = Inside.active() ? T(Inside.label()) : r >= 0 ? regionName(r) : T('The Valley');
+    $('objective').textContent = Inside.active() ? T('Walk out through the door to go back outside.') : objectiveText();
     updateTracker();
   }
   function objectiveText() {
@@ -260,6 +262,7 @@
 
   function update(dt, t) {
     tickMissions(t); tickStatues(); moveNpcs(dt); tickPreachers(dt); tickAction(t); tickAllies(t); tickLesson(t);
+    if (mode === 'inside') { Inside.tick(dt, held); return; }
     if (mode !== 'world') return;
     if (player.moving) {
       player.t += dt / 140;
@@ -300,6 +303,26 @@
     if (site) { openMission(site); return; }
     const d = Wd.decorAt(fx, fy);
     if (d) { useDecor(d); return; }
+    const s = Wd.structureAt(fx, fy);
+    if (s) { atBuilding(s, fx, fy); return; }
+  }
+
+  /* ---- going indoors (js/inside.js, rooms in js/data-rooms.js) ---- */
+  function atBuilding(s, fx, fy) {
+    const R = D.ROOMS, [doorX, doorY] = Wd.doorOf(s);
+    if (R.locked[s.kind]) { runSteps(nar(R.locked[s.kind].text), null); return; }
+    if (!Inside.enterable(s)) return;
+    if (fx !== doorX || fy !== doorY) { runSteps(nar(R.hint), null); return; }
+    hidePreview(); mode = 'inside';
+    Inside.enter(s, {
+      Wd, A, T, spec: mySpec,
+      say: (lines, after) => runSteps(nar(lines).concat(after ? [{ fn: after }] : []), null),
+      coins: n => { changeMoney(n); A.play('coins'); },
+      flag: k => { S.flags[k] = true; save(); },
+      hasFlag: k => !!S.flags[k],
+      leave: () => { mode = 'world'; updateHud(); }
+    });
+    updateHud();
   }
 
   /* ================= player actions (chores with real animations) ================= */
@@ -314,7 +337,7 @@
     const p = (t - action.t0) / action.dur;
     const every = { hammer: 380, forge: 380, dig: 480, sweep: 600, pick: 520, sort: 420, milk: 700, coil: 700, lift: 900, light: 1200, call: 900 }[action.kind] || 600;
     if (t - action.lastSfx > every && p < 0.9) { action.lastSfx = t; A.play(action.kind === 'call' && follower() === 'goat' ? 'goat' : ACTION_SFX[action.kind] || 'work'); }
-    if (p >= 1) { const cb = action.cb; action = null; mode = 'world'; cb(); }
+    if (p >= 1) { const cb = action.cb; action = null; mode = baseMode(); cb(); }
   }
 
   /* ================= camera =================
@@ -356,6 +379,7 @@
   let npcAnim = null;  // { id, kind } while an expert acts out a line
   let throneAnim = 0;  // when the monster's shadow started to fade
   function render(t, dt) {
+    if (Inside.active()) { Inside.render(ctx, canvas, t); return; }
     aimCamera(dt || 16);
     const camX = cam.x, camY = cam.y;
     /* Markers, arrows and labels keep a readable size on screen however far the camera zooms out. */
@@ -602,7 +626,7 @@
     if (st.who) { if (st.anim && st.who !== 'n' && st.who !== 'you') npcAnim = { id: st.who, kind: st.anim }; showLine(st.who, fill(st.text), st.text); return; }
     if (st.choice) { showChoice(st.choice, st.menu, st.prompt, st.speaker); return; }
     if (st.scene) { showScene(st.scene, fill(st.text), st.text); return; }
-    if (st.end) { const c = script.ctx; script = null; $('dlg').hidden = true; $('scene').hidden = true; if (c && c.finish) c.finish(st.end); else { mode = 'world'; } return; }
+    if (st.end) { const c = script.ctx; script = null; $('dlg').hidden = true; $('scene').hidden = true; if (c && c.finish) c.finish(st.end); else { mode = baseMode(); } return; }
     if (st.fn) { st.fn(); if (!st.stop) next(); return; }
     next();
   }
@@ -668,7 +692,7 @@
     A.say(text, 'n', 'narrator', raw || text);
   }
 
-  function endDialog() { $('dlg').hidden = true; $('scene').hidden = true; script = null; npcAnim = null; mode = 'world'; A.stop(); if (bird && !bird.out) bird.out = performance.now(); updateHud(); }
+  function endDialog() { $('dlg').hidden = true; $('scene').hidden = true; script = null; npcAnim = null; mode = baseMode(); A.stop(); if (bird && !bird.out) bird.out = performance.now(); updateHud(); }
 
   /* ================= cards (lesson pop-ups) ================= */
   function card(opts) {
@@ -685,7 +709,7 @@
   }
   let cardAfter = null;
   function closeCard() {
-    $('card').hidden = true; mode = 'world';
+    $('card').hidden = true; mode = baseMode();
     const f = cardAfter; cardAfter = null;
     if (f) f();
   }
@@ -760,9 +784,9 @@
     $('dlg').hidden = false; $('scene').hidden = true;
     return Talk.run(seed, {
       line: (who, text) => showLine(who, text, text),
-      finish: (verdict, heard, lastSay) => { $('dlg').hidden = true; mode = 'world'; A.stop(); settle(verdict, heard); },
-      abort: () => { $('dlg').hidden = true; mode = 'world'; A.stop(); toast(T('{name} has nothing more to say right now.', { name: seed.name }), 'warn'); }
-    }).then(ok => { if (!ok) { $('dlg').hidden = true; mode = 'world'; } return ok; });
+      finish: (verdict, heard, lastSay) => { $('dlg').hidden = true; mode = baseMode(); A.stop(); settle(verdict, heard); },
+      abort: () => { $('dlg').hidden = true; mode = baseMode(); A.stop(); toast(T('{name} has nothing more to say right now.', { name: seed.name }), 'warn'); }
+    }).then(ok => { if (!ok) { $('dlg').hidden = true; mode = baseMode(); } return ok; });
   }
 
   /* ---- tricks ---- */
@@ -788,7 +812,7 @@
   function finishTrick(id, kind, c) {
     const tr = D.TRICKS[id];
     const { chosen, correct } = answerTexts(c, o => /^right/.test(o.key));
-    mode = 'world';
+    mode = baseMode();
     if (kind === 'win') { S.tricks[id] = 'won'; save(); lessonWin(tr.fallacy, null, null, chosen); }
     else if (kind === 'fail') { lessonFail(tr.fallacy, null, null, chosen, correct); simEvent('fooled'); }
     else lessonOops(null, chosen, correct);
@@ -846,7 +870,7 @@
   }
   function settleFog(n, idx, result, chosen, correct) {
     const e = ex(n.id), fog = n.expert.fog[idx];
-    mode = 'world';
+    mode = baseMode();
     if (result === 'oops') { lessonOops(null, chosen, correct); return; }
     if (result === 'win') {
       e.cleared = idx + 1;
@@ -867,7 +891,7 @@
     const fog = list[r.idx % list.length];
     if (!fog) { delete S.refog[n.id]; ex(n.id).crew = true; save(); talkExpert(n); return; }
     const settle = (result, chosen, correct) => {
-      mode = 'world';
+      mode = baseMode();
       if (result === 'oops') { lessonOops(null, chosen, correct); return; }
       if (result === 'win') {
         delete S.refog[n.id]; const e = ex(n.id); e.crew = true; e.xp += 30; S.orderStats.cleared++; save();
@@ -888,7 +912,7 @@
   async function runRefuse(n) {
     const r = D.REFUSE[n.id];
     const settle = (result, chosen, correct) => {
-      mode = 'world';
+      mode = baseMode();
       if (result === 'oops') { lessonOops(null, chosen, correct); return; }
       if (result === 'win') { delete S.refuse[n.id]; S.orderStats.cleared++; save(); lessonWin(r.fallacy, T('{name} will work with you again', { name: n.name }), () => updateHud(), chosen); }
       else lessonFail(r.fallacy, T('{name} still refuses', { name: n.name }), null, chosen, correct);
@@ -920,7 +944,7 @@
         branch: o => o.key === 'yes'
           ? [{ who: n.id, text: t.accept }, { fn: () => { S.tasks[t.id] = 'active'; if (t.kind === 'deliver' && t.item) S.carry = { kind: 'task', id: t.id, item: t.item }; save(); toast('📋 ' + t.title, 'good'); A.play('open'); updateHud(); } }]
           : [{ who: n.id, text: T('Come back when you have time.') }],
-        finish: () => { mode = 'world'; }
+        finish: () => { mode = baseMode(); }
       });
       return;
     }
@@ -1344,7 +1368,7 @@
       branch: o => { result = o.right ? 'win' : 'fail'; return normalize(o.right ? q.right : q.wrong, n.id).concat([{ end: 'x' }]); },
       finish: () => {
         const { chosen, correct } = answerTexts(cx, o => !!o.right);
-        mode = 'world';
+        mode = baseMode();
         if (result === 'win') {
           st.step++; save();
           if (st.step >= c.gauntlet.length) lessonWin(q.fallacy, T('{name} is convinced!', { name: n.name }), () => crowned(n), chosen);
@@ -1529,7 +1553,7 @@
     A.play('open'); hidePreview();
     $('panel-box').innerHTML = html; $('panel').hidden = false; mode = 'panel';
   }
-  function closePanel() { if ($('panel').hidden) return; $('panel').hidden = true; mode = 'world'; A.play('close'); updateHud(); }
+  function closePanel() { if ($('panel').hidden) return; $('panel').hidden = true; mode = baseMode(); A.play('close'); updateHud(); }
 
   function showBook() {
     const items = D.FALLACIES.map(f => {
@@ -1584,7 +1608,7 @@
   }
 
   function showEnd() {
-    if (!S.ended) { mode = 'world'; return; }
+    if (!S.ended) { mode = baseMode(); return; }
     mode = 'end'; $('end').hidden = false;
     const allies = crew().filter(isAlly).map(n => n.name).join(', ');
     $('end-stats').innerHTML = `<p class="big">${esc(T('Coins earned: {a} · lost to tricks: {b}', { a: S.stats.earned, b: S.stats.lost }))}</p><p>${esc(T('Fallacies spotted: {a} of {b}. Crew: {list}.', { a: spottedCount(), b: D.FALLACIES.length, list: crew().map(n => n.name).join(', ') }))}</p>${allies ? `<p>${esc(T('True allies: {list}.', { list: allies }))}</p>` : ''}<p>${esc(T('Heads fogged by the Grey Order: {a} · cleared again: {b}', { a: S.orderStats.fogged, b: S.orderStats.cleared }))}</p>`;
@@ -1595,13 +1619,14 @@
   function pressA() {
     if (mode === 'modal') { modalPress(); return; }
     if (mode === 'world') interact();
+    else if (mode === 'inside') Inside.press();
     else if (mode === 'dialog') { if (window.Talk && Talk.active()) { Talk.press(); return; } if (!$('dlg-choices').hidden) return; if ($('scene').hidden) next(); else { $('scene').hidden = true; next(); } }
     else if (mode === 'panel' && !$('card').hidden) closeCard();
   }
 
   document.querySelectorAll('.dpad [data-dir]').forEach(b => {
     const dir = b.dataset.dir;
-    const down = e => { e.preventDefault(); A.unlock(); held = dir; if (mode === 'world') tryMove(dir); };
+    const down = e => { e.preventDefault(); A.unlock(); held = dir; if (mode === 'world') tryMove(dir); else if (mode === 'inside') Inside.move(dir); };
     const up = () => { if (held === dir) held = null; };
     b.addEventListener('pointerdown', down); b.addEventListener('pointerup', up); b.addEventListener('pointercancel', up); b.addEventListener('pointerleave', up);
   });
@@ -1629,7 +1654,7 @@
   $('hud-sound').addEventListener('click', () => { S.sound = !S.sound; A.settings.sfx = S.sound; save(); updateHud(); A.play('good'); });
   $('hud-voice').addEventListener('click', () => { S.voice = !S.voice; A.settings.voice = S.voice && voiceAvailable(); if (!S.voice) A.stop(); save(); updateHud(); });
   $('hud-home').addEventListener('click', () => { if (mode === 'world') renderTitle(); });
-  $('end-close').addEventListener('click', () => { $('end').hidden = true; mode = 'world'; });
+  $('end-close').addEventListener('click', () => { $('end').hidden = true; mode = baseMode(); });
   $('panel').addEventListener('click', e => { if (e.target === $('panel')) closePanel(); });
 
   const KEYS = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', w: 'up', s: 'down', a: 'left', d: 'right' };
@@ -1643,7 +1668,7 @@
       else if (modal.scene.key && !modal.result) modal.scene.key(e.key, modalT());
       return;
     }
-    if (KEYS[e.key]) { e.preventDefault(); A.unlock(); held = KEYS[e.key]; if (mode === 'world') tryMove(held); }
+    if (KEYS[e.key]) { e.preventDefault(); A.unlock(); held = KEYS[e.key]; if (mode === 'world') tryMove(held); else if (mode === 'inside') Inside.move(held); }
     if (e.key === 'Enter' || e.key === ' ' || e.key === 'e') { e.preventDefault(); A.unlock(); pressA(); }
     if (e.key === 'Escape') { if (mode === 'panel' && !$('card').hidden) closeCard(); else if (mode === 'panel') closePanel(); else hidePreview(); }
     if (mode === 'world') { if (e.key === 'b') showBook(); if (e.key === 'c') showCrew(); if (e.key === 'g') showGoals(); if (e.key === 'm') $('hud-map').click(); if (e.key === 'z') toggleZoom(); }
@@ -1665,6 +1690,7 @@
     lesson: () => ({ lesson: S.lesson, goal: lessonGoal(), queued: simQueue.length, bird: !!bird }), sim: key => simEvent(key), isAlly: id => isAlly(npcById(id)),
     allies: () => ({ errands: S.errands, shares: S.allyShares, log: S.allyLog }), errandNow: () => { S.lastErrand = 0; allyAt = 0; },
     city: () => ({ city: S.city, throne: S.throne, ended: S.ended }), cam: () => Object.assign({ dpr, canvas: [canvas.width, canvas.height], region: lastRegion }, cam), zoom: toggleZoom,
+    inside: () => Inside.state(), insideMove: d => Inside.move(d),
     vignette: (kind, text) => showVignette({ kind, text }, D.FLAVOR[kind] || kind), game: (id, extra) => startMiniGame(Object.assign({ id }, D.GAMES[id]), null, extra), games: () => S.games,
     modal: () => modal ? { result: modal.result, caption: $('vig-text').textContent, buttons: [...$('vig-ui').querySelectorAll('button')].map(b => b.textContent), close: $('vig-close').textContent, t: modalT() } : null,
     tap: (x, y) => { if (modal && modal.scene.pointer) modal.scene.pointer(x, y, modalT()); }, mkey: k => { if (modal && modal.scene.key) modal.scene.key(k, modalT()); }, mbutton: i => { const b = $('vig-ui').querySelectorAll('button')[i]; if (b) b.click(); }, closeScene, flag: k => { S.flags[k] = true; save(); syncWorld(); }

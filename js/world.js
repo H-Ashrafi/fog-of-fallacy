@@ -185,6 +185,10 @@ window.World = (function () {
     return WALK.includes(at(x, y));
   }
 
+  /* The building standing on a tile, and the tile its door is drawn on (the bottom row, middle column). */
+  function structureAt(x, y) { return structures.find(s => x >= s.x && x < s.x + s.w && y >= s.y && y < s.y + s.h) || null; }
+  function doorOf(s) { return s.door ? [s.door[0], s.door[1] - 1] : [s.x + Math.floor(s.w / 2), s.y + s.h - 1]; }
+
   /* Mission sites come from the story data so the two files agree. */
   function sites() { return (window.FOG && window.FOG.MISSIONS) || []; }
   function siteAt(x, y) {
@@ -1038,5 +1042,5 @@ window.World = (function () {
 
   const decorAt = (x, y) => decor.find(d => d.x === x && d.y === y && decorBlocked(d));
   const lodges = () => structures.filter(s => s.kind === 'lodge');
-  return { TS, W, H, at, walkable, regions, regionAt, locked, siteAt, setState, structures, decor, decorAt, lodges, drawTile, drawFace, findPath, drawAction, drawItem, drawFollower, drawGlow, drawStructure, drawDecor, drawMission, drawPerson, drawRing, drawSermon, drawSimurgh, drawSparkles, drawBirdFace, drawMonster, rr, circ, shade };
+  return { TS, W, H, at, walkable, regions, regionAt, locked, siteAt, setState, structures, decor, decorAt, lodges, drawTile, drawFace, findPath, drawAction, drawItem, drawFollower, drawGlow, drawStructure, drawDecor, drawMission, drawPerson, drawRing, drawSermon, drawSimurgh, drawSparkles, drawBirdFace, drawMonster, rr, circ, shade, structureAt, doorOf };
 })();

@@ -20,6 +20,7 @@ require(path.join(ROOT, 'js', 'data.js'));
 require(path.join(ROOT, 'js', 'data-order.js'));
 require(path.join(ROOT, 'js', 'data-story.js'));
 require(path.join(ROOT, 'js', 'data-games.js'));
+require(path.join(ROOT, 'js', 'data-rooms.js'));
 const D = window.FOG;
 const dict = (window.FOG_LANG || {})[code] || {};
 const en = JSON.parse(fs.readFileSync(path.join(ROOT, 'i18n', 'en.json'), 'utf8'));

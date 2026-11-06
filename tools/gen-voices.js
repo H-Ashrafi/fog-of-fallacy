@@ -21,6 +21,7 @@ require(path.join(ROOT, 'js', 'data.js'));
 require(path.join(ROOT, 'js', 'data-order.js'));
 require(path.join(ROOT, 'js', 'data-story.js'));
 require(path.join(ROOT, 'js', 'data-games.js'));
+require(path.join(ROOT, 'js', 'data-rooms.js'));
 const D = window.FOG;
 const VOICES = JSON.parse(fs.readFileSync(path.join(OUT, 'voices.json'), 'utf8'));
 const MODEL = VOICES._model || 'eleven_v3';
@@ -56,6 +57,9 @@ Object.entries(D.REFUSE).forEach(([id, r]) => { steps(r.intro, id); steps(r.righ
 Object.values(D.SIMURGH.levels).forEach(l => { steps(l.say, 'simurgh'); l.steps.forEach(s => { steps(s.say, 'simurgh'); steps(s.praise, 'simurgh'); }); });
 Object.values(D.SIMURGH.events).forEach(e => steps(e, 'simurgh')); steps(D.SIMURGH.ending, 'simurgh');
 steps(D.CITY.lift, 'n'); steps(D.CITY.sit, 'n'); add('n', D.STATUE.flavor);
+// inside the buildings: every room's welcome and every thing's line, the shut doors, the hints (js/data-rooms.js)
+[...Object.values(D.ROOMS.kinds), ...Object.values(D.ROOMS.labels)].forEach(r => { steps(r.intro, 'n'); (r.items || []).forEach(it => steps([].concat(it.text || []), 'n')); });
+Object.values(D.ROOMS.locked).forEach(l => steps(l.text, 'n')); steps(D.ROOMS.hint, 'n'); add('n', 'Nothing more in there today.');
 D.NPCS.filter(n => n.city).forEach(n => { const c = n.city; steps(c.intro, n.id); steps(c.convinced, n.id); steps(c.after, n.id); (c.gauntlet || []).forEach(q => { steps(q.intro, n.id); steps(q.right, n.id); steps(q.wrong, n.id); }); });
 
 /* ---------- hashing identical to server/src/main.rs ---------- */

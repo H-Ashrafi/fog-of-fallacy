@@ -46,7 +46,7 @@ window.I18N = (function () {
   const TEXT_KEYS = new Set(['name', 'nick', 'one', 'spot', 'intro', 'done', 'start', 'lift', 'blurb', 'title', 'offer', 'accept', 'active', 'deliver', 'found', 'reward', 'steps', 'thanks',
     'talk', 'after', 'topic', 'text', 'right', 'wrong', 'ok', 'oops', 'stage2', 'ok2', 'right2', 'crew', 'quote', 'needs', 'built', 'flavor', 'inspect', 'out', 'silent', 'protectedStop', 'refogged', 'refuses',
     'cooldown', 'handsFull', 'crewLearned', 'building', 'notNeeded', 'lowLevel', 'missing', 'coins', 'ready', 'prompt', 'label',
-    'say', 'goal', 'praise', 'ending', 'convinced', 'sit']);
+    'say', 'goal', 'praise', 'ending', 'convinced', 'sit', 'hint']);
   /* Containers where every string value is text, whatever its key. */
   const ALL_STRINGS = new Set(['FLAVOR', 'LINES', 'lines', 'why', 'events']);
 
@@ -62,7 +62,7 @@ window.I18N = (function () {
     }
     return node;
   }
-  const DATA_KEYS = ['FALLACIES', 'ROLES', 'LEVELS', 'MISSIONS', 'TASKS', 'JOBS', 'LINES', 'FLAVOR', 'NPCS', 'TRICKS', 'ORDER', 'STATUE', 'HARD', 'REFUSE', 'SIMURGH', 'CITY', 'GAMES'];
+  const DATA_KEYS = ['FALLACIES', 'ROLES', 'LEVELS', 'MISSIONS', 'TASKS', 'JOBS', 'LINES', 'FLAVOR', 'NPCS', 'TRICKS', 'ORDER', 'STATUE', 'HARD', 'REFUSE', 'SIMURGH', 'CITY', 'GAMES', 'ROOMS'];
   function walkAll(D, Wd, fn) {
     DATA_KEYS.forEach(k => { if (D[k]) walk(D[k], ALL_STRINGS.has(k), fn); });
     if (Wd) { Wd.regions.forEach(r => { r.name = fn(r.name); }); Wd.structures.forEach(s => { s.label = fn(s.label); }); Wd.decor.forEach(d => { if (d.text) d.text = fn(d.text); }); }

@@ -14,36 +14,78 @@
 //!   FOG_DATA_DIR       where saves and voice clips live (default: %LOCALAPPDATA%/FogOfFallacy)
 //!   FOG_VOICES         optional path to a voices.json (default: <web>/voice/voices.json, then built-in)
 //!   ELEVENLABS_API_KEY optional; enables recorded voices
+//!   FOG_PASSPHRASE     the family's secret word. Every request except /api/health and
+//!                      /api/login needs the cookie that POST /api/login sets after the
+//!                      right word. Unset: the server is CLOSED (every page is the gate),
+//!                      unless FOG_OPEN=1, which is for local play only.
+//!   FOG_OPEN           "1" opens the server to everyone (no passphrase). Never in production.
+//!   OPENAI_API_KEY     with ELEVENLABS_API_KEY, turns the scripted encounters into live
+//!                      conversations (POST /api/talk, see talk.rs)
+//!   FOG_OPENAI_MODEL   the model that plays the characters (default gpt-4.1-nano)
+//!   FOG_TALK_DAILY_LIMIT  model calls allowed per UTC day (default 150), then the game
+//!                      falls back to the scripted answers until tomorrow
+//!   FOG_TALK_MAX_TURNS answers the child gets per conversation (default 4)
+//!   FOG_ELEVEN_MODEL   the ElevenLabs model for live lines in Latin script (default eleven_flash_v2_5,
+//!                      fast; Persian and Arabic lines always use eleven_v3)
+//!   OPENAI_BASE_URL, ELEVENLABS_BASE_URL  override the API hosts (tests)
 
-use std::{collections::HashMap, net::SocketAddr, path::PathBuf, sync::Arc};
+use std::{
+    collections::HashMap,
+    net::SocketAddr,
+    path::PathBuf,
+    sync::{Arc, Mutex},
+    time::{Duration, Instant},
+};
 
 use axum::{
     body::Bytes,
     extract::{DefaultBodyLimit, Path, Query, Request, State},
     http::{header, HeaderValue, StatusCode},
     middleware::{self, Next},
-    response::{IntoResponse, Response},
-    routing::get,
+    response::{Html, IntoResponse, Response},
+    routing::{get, post},
     Json, Router,
 };
+use hmac::{Hmac, Mac};
 use serde::Deserialize;
+use sha2::Sha256;
+use subtle::ConstantTimeEq;
 use tower_http::services::{ServeDir, ServeFile};
 
-struct App {
+mod talk;
+
+pub struct App {
     data: PathBuf,
+    /// ELEVENLABS_API_KEY: recorded voices, and the listening half of conversations.
     key: Option<String>,
     voices: HashMap<String, String>,
     http: reqwest::Client,
+    gate: Gate,
+    talk: talk::Talk,
 }
-type Shared = Arc<App>;
+pub type Shared = Arc<App>;
+
+/// Who may come in. See the `gate` section at the bottom.
+struct Gate {
+    passphrase: Option<String>,
+    open: bool,
+    /// Times of the recent wrong answers, for the throttle in `login`.
+    failures: Mutex<Vec<Instant>>,
+}
 
 const BUILTIN_VOICES: &str = include_str!("../voices.json");
+const GATE_PAGE: &str = include_str!("../gate.html");
 
 #[tokio::main]
 async fn main() {
     let web = env_path("FOG_WEB_DIR").unwrap_or_else(|| PathBuf::from("."));
     let data = env_path("FOG_DATA_DIR").unwrap_or_else(default_data_dir);
     let key = std::env::var("ELEVENLABS_API_KEY").ok().filter(|k| !k.trim().is_empty());
+    let gate_config = Gate {
+        passphrase: std::env::var("FOG_PASSPHRASE").ok().map(|p| p.trim().to_string()).filter(|p| !p.is_empty()),
+        open: std::env::var("FOG_OPEN").map(|v| v.trim() == "1").unwrap_or(false),
+        failures: Mutex::new(Vec::new()),
+    };
     let voices = load_voices(&web);
     for sub in ["saves", "voice"] {
         if let Err(e) = std::fs::create_dir_all(data.join(sub)) {
@@ -56,18 +98,27 @@ async fn main() {
         eprintln!("warning: {} not found. Run from the repo root or set FOG_WEB_DIR.", index.display());
     }
 
+    let talk = talk::Talk::from_env(&data);
     let app: Shared = Arc::new(App {
         data,
         key,
         voices,
         http: reqwest::Client::builder().user_agent("fog-of-fallacy/0.2").build().expect("http client"),
+        gate: gate_config,
+        talk,
     });
 
     let router = Router::new()
         .route("/api/health", get(health))
         .route("/api/saves/:slug", get(get_save).put(put_save))
         .route("/api/voice", get(voice))
+        .route("/api/login", post(login))
+        .route("/api/logout", post(logout))
+        .route("/api/talk", post(talk::start))
+        .route("/api/talk/:id", post(talk::reply))
         .fallback_service(ServeDir::new(&web).not_found_service(ServeFile::new(index)))
+        // The gate runs inside cache_headers, so its answers get the no-store below.
+        .layer(middleware::from_fn_with_state(app.clone(), gate))
         .layer(middleware::from_fn(cache_headers))
         .layer(DefaultBodyLimit::max(2 * 1024 * 1024))
         .with_state(app.clone());
@@ -80,6 +131,12 @@ async fn main() {
     println!("  web dir : {}", web.display());
     println!("  data dir: {}", app.data.display());
     println!("  voices  : {}", if app.key.is_some() { "ElevenLabs (cached on disk)" } else { "browser speech synthesis (set ELEVENLABS_API_KEY for recorded voices)" });
+    println!("  talk    : {}", if app.talk.enabled(app.key.is_some()) { format!("live conversations with {} ({} model calls a day, {} answers each)", app.talk.model, app.talk.daily_limit, app.talk.max_turns) } else { "scripted answers only (set OPENAI_API_KEY and ELEVENLABS_API_KEY for live conversations)".to_string() });
+    println!("  gate    : {}", match (&app.gate.passphrase, app.gate.open) {
+        (_, true) => "OPEN to everyone (FOG_OPEN=1; local play only)",
+        (Some(_), false) => "locked; the secret word in FOG_PASSPHRASE lets players in",
+        (None, false) => "CLOSED: no FOG_PASSPHRASE set, every page is the gate (set it, or FOG_OPEN=1 for local play)",
+    });
     axum::serve(listener, router).await.expect("server");
 }
 
@@ -99,6 +156,11 @@ async fn cache_headers(req: Request, next: Next) -> Response {
     let mut res = next.run(req).await;
 
     if path.starts_with("/api/") {
+        return res;
+    }
+    // A gate page or a refusal must never be kept as if it were the asset that was asked for.
+    if res.status() == StatusCode::UNAUTHORIZED {
+        res.headers_mut().insert(header::CACHE_CONTROL, HeaderValue::from_static("no-store"));
         return res;
     }
     let value = if path == "/" || path.ends_with(".html") || path == "/voice/index.json" {
@@ -153,7 +215,131 @@ fn load_voices(web: &std::path::Path) -> HashMap<String, String> {
 /* ------------------------------------------------------------------ health */
 
 async fn health(State(app): State<Shared>) -> Json<serde_json::Value> {
-    Json(serde_json::json!({ "ok": true, "voice": app.key.is_some() }))
+    let mut v = serde_json::json!({ "ok": true, "voice": app.key.is_some(), "locked": app.gate.passphrase.is_some() && !app.gate.open });
+    if let (Some(obj), Some(talk)) = (v.as_object_mut(), app.talk.status(app.key.is_some()).as_object()) {
+        obj.extend(talk.clone());
+    }
+    Json(v)
+}
+
+/* -------------------------------------------------------------------- gate */
+
+// The whole site is for one family. One secret word (FOG_PASSPHRASE) lets a device in;
+// the device then carries a cookie for a year. The cookie is `nonce.signature` where the
+// signature is an HMAC of the nonce under the passphrase, so the server keeps no session
+// list, a cookie cannot be forged without the word, and changing the word signs every
+// device out at once. Wrong answers are slowed down and capped, which is all the brute
+// force protection a word this site needs.
+
+const COOKIE: &str = "fog_session";
+const COOKIE_MAX_AGE: u64 = 365 * 24 * 60 * 60;
+/// Wrong answers allowed per minute, across everyone.
+const MAX_FAILURES_PER_MINUTE: usize = 20;
+
+type HmacSha256 = Hmac<Sha256>;
+
+pub fn hex(bytes: &[u8]) -> String {
+    bytes.iter().map(|b| format!("{b:02x}")).collect()
+}
+
+fn sign(passphrase: &str, nonce: &str) -> String {
+    let mut mac = HmacSha256::new_from_slice(passphrase.as_bytes()).expect("hmac accepts any key length");
+    mac.update(b"fog-session-v1:");
+    mac.update(nonce.as_bytes());
+    hex(&mac.finalize().into_bytes())
+}
+
+fn cookie_value(req: &Request) -> Option<String> {
+    let header = req.headers().get(header::COOKIE)?.to_str().ok()?;
+    header
+        .split(';')
+        .map(str::trim)
+        .find_map(|pair| pair.strip_prefix(COOKIE).and_then(|rest| rest.strip_prefix('=')))
+        .map(str::to_owned)
+}
+
+fn session_ok(gate: &Gate, req: &Request) -> bool {
+    let Some(passphrase) = gate.passphrase.as_deref() else { return false };
+    let Some(cookie) = cookie_value(req) else { return false };
+    let Some((nonce, sig)) = cookie.split_once('.') else { return false };
+    if nonce.len() != 32 || !nonce.bytes().all(|b| b.is_ascii_hexdigit()) {
+        return false;
+    }
+    let expected = sign(passphrase, nonce);
+    expected.as_bytes().ct_eq(sig.as_bytes()).into()
+}
+
+fn wants_https(req: &Request) -> bool {
+    req.headers()
+        .get("x-forwarded-proto")
+        .and_then(|v| v.to_str().ok())
+        .map(|v| v.eq_ignore_ascii_case("https"))
+        .unwrap_or(false)
+}
+
+fn set_cookie(value: &str, max_age: u64, secure: bool) -> HeaderValue {
+    let mut cookie = format!("{COOKIE}={value}; Path=/; Max-Age={max_age}; HttpOnly; SameSite=Lax");
+    if secure {
+        cookie.push_str("; Secure");
+    }
+    HeaderValue::from_str(&cookie).expect("cookie is ascii")
+}
+
+/// Every request but the health check and the login itself needs a valid cookie.
+/// An API call without one gets 401 JSON; a page gets the gate instead of the game.
+async fn gate(State(app): State<Shared>, req: Request, next: Next) -> Response {
+    let path = req.uri().path();
+    if path == "/api/health" || path == "/api/login" || app.gate.open || session_ok(&app.gate, &req) {
+        return next.run(req).await;
+    }
+    if path.starts_with("/api/") {
+        return (StatusCode::UNAUTHORIZED, Json(serde_json::json!({ "error": "sign in first" }))).into_response();
+    }
+    (StatusCode::UNAUTHORIZED, Html(GATE_PAGE)).into_response()
+}
+
+#[derive(Deserialize)]
+struct Login {
+    passphrase: String,
+}
+
+async fn login(State(app): State<Shared>, req: Request) -> Response {
+    let secure = wants_https(&req);
+    let Some(passphrase) = app.gate.passphrase.as_deref() else {
+        // Nothing to compare against: say so rather than refuse every word as wrong.
+        return StatusCode::SERVICE_UNAVAILABLE.into_response();
+    };
+    let body = match axum::body::to_bytes(req.into_body(), 4096).await {
+        Ok(b) => b,
+        Err(_) => return StatusCode::BAD_REQUEST.into_response(),
+    };
+    let Ok(Login { passphrase: given }) = serde_json::from_slice::<Login>(&body) else {
+        return StatusCode::BAD_REQUEST.into_response();
+    };
+
+    {
+        let mut failures = app.gate.failures.lock().expect("failures lock");
+        failures.retain(|t| t.elapsed() < Duration::from_secs(60));
+        if failures.len() >= MAX_FAILURES_PER_MINUTE {
+            return StatusCode::TOO_MANY_REQUESTS.into_response();
+        }
+    }
+
+    let right: bool = given.trim().as_bytes().ct_eq(passphrase.as_bytes()).into();
+    if !right {
+        app.gate.failures.lock().expect("failures lock").push(Instant::now());
+        tokio::time::sleep(Duration::from_secs(1)).await;
+        return StatusCode::UNAUTHORIZED.into_response();
+    }
+
+    let nonce = hex(&rand::random::<[u8; 16]>());
+    let value = format!("{nonce}.{}", sign(passphrase, &nonce));
+    ([(header::SET_COOKIE, set_cookie(&value, COOKIE_MAX_AGE, secure))], StatusCode::NO_CONTENT).into_response()
+}
+
+async fn logout(req: Request) -> Response {
+    let secure = wants_https(&req);
+    ([(header::SET_COOKIE, set_cookie("", 0, secure))], StatusCode::NO_CONTENT).into_response()
 }
 
 /* ------------------------------------------------------------------- saves */
@@ -240,10 +426,14 @@ async fn voice(State(app): State<Shared>, Query(q): Query<VoiceQuery>) -> Respon
         return audio(Bytes::from(bytes));
     }
 
-    let url = format!("https://api.elevenlabs.io/v1/text-to-speech/{voice_id}?output_format=mp3_44100_64");
+    let url = format!("{}/v1/text-to-speech/{voice_id}?output_format=mp3_44100_64", app.talk.eleven_base);
+    // Live lines must come back fast: Flash answers in well under a second where v3 takes several.
+    // Flash v2.5 does not cover Persian, so text outside the Latin script keeps the slower model.
+    let latin = text.chars().all(|c| (c as u32) < 0x250);
+    let model = if latin { app.talk.eleven_model.as_str() } else { "eleven_v3" };
     let body = serde_json::json!({
         "text": text,
-        "model_id": "eleven_v3",
+        "model_id": model,
         "voice_settings": { "stability": 0.5, "similarity_boost": 0.75 }
     });
     let resp = app.http.post(&url).header("xi-api-key", key).header(header::ACCEPT, "audio/mpeg").json(&body).send().await;

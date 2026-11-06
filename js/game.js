@@ -50,13 +50,20 @@
     let h = 2166136261; for (const ch of name) { h ^= ch.codePointAt(0); h = Math.imul(h, 16777619) >>> 0; }
     return 'p' + h.toString(36);
   };
+  /* The server answers 401 once the gate cookie is gone (the secret word changed, or a year passed):
+     reload, and the gate page takes over. Once per page, so a flapping server cannot loop. */
+  let reloadedForGate = false;
+  function signedOut(r) {
+    if (r && r.status === 401 && !reloadedForGate) { reloadedForGate = true; location.reload(); }
+  }
   async function pushSave() {
     if (!S.name) return;
-    try { await fetch('/api/saves/' + encodeURIComponent(slug()), { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(S) }); } catch (e) { }
+    try { const r = await fetch('/api/saves/' + encodeURIComponent(slug()), { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(S) }); signedOut(r); } catch (e) { }
   }
   async function pullSave() {
     try {
       const r = await fetch('/api/saves/' + encodeURIComponent(slug()), { cache: 'no-store' });
+      signedOut(r);
       if (r.status !== 200) return false;
       const remote = await r.json();
       if (remote && remote.savedAt > (S.savedAt || 0)) { S = migrate(Object.assign(DEFAULT(), remote)); return true; }
@@ -136,7 +143,9 @@
   }
 
   /* ================= title ================= */
-  let mode = 'title';   // title | world | dialog | panel | action | modal | end
+  let mode = 'title';   // title | world | inside | dialog | panel | action | modal | end
+  /* Where a dialogue, card or panel returns to: the Valley, or the room the player is standing in. */
+  const baseMode = () => (window.Inside && Inside.active() ? 'inside' : 'world');
   function renderTitle() {
     mode = 'title'; A.stop();
     document.body.classList.remove('playing');
@@ -177,7 +186,7 @@
     syncWorld(); applyNpcPos(); placeCrew(false); restorePreachers();
     $('title').hidden = true; $('play').hidden = false;
     document.body.classList.add('playing'); resizeCanvas(); camNow = null;
-    mode = 'world';
+    mode = baseMode();
     updateHud(); updateAlert();
     checkRegionIntro();
   }
@@ -192,8 +201,8 @@
     $('hud-voice').hidden = !voiceAvailable();
     $('hud-zoom').classList.toggle('on', !!S.zoom);
     const r = Wd.regionAt(player.x, player.y);
-    $('hud-region').textContent = r >= 0 ? regionName(r) : T('The Valley');
-    $('objective').textContent = objectiveText();
+    $('hud-region').textContent = Inside.active() ? T(Inside.label()) : r >= 0 ? regionName(r) : T('The Valley');
+    $('objective').textContent = Inside.active() ? T('Walk out through the door to go back outside.') : objectiveText();
     updateTracker();
   }
   function objectiveText() {
@@ -253,6 +262,7 @@
 
   function update(dt, t) {
     tickMissions(t); tickStatues(); moveNpcs(dt); tickPreachers(dt); tickAction(t); tickAllies(t); tickLesson(t);
+    if (mode === 'inside') { Inside.tick(dt, held); return; }
     if (mode !== 'world') return;
     if (player.moving) {
       player.t += dt / 140;
@@ -293,6 +303,26 @@
     if (site) { openMission(site); return; }
     const d = Wd.decorAt(fx, fy);
     if (d) { useDecor(d); return; }
+    const s = Wd.structureAt(fx, fy);
+    if (s) { atBuilding(s, fx, fy); return; }
+  }
+
+  /* ---- going indoors (js/inside.js, rooms in js/data-rooms.js) ---- */
+  function atBuilding(s, fx, fy) {
+    const R = D.ROOMS, [doorX, doorY] = Wd.doorOf(s);
+    if (R.locked[s.kind]) { runSteps(nar(R.locked[s.kind].text), null); return; }
+    if (!Inside.enterable(s)) return;
+    if (fx !== doorX || fy !== doorY) { runSteps(nar(R.hint), null); return; }
+    hidePreview(); mode = 'inside';
+    Inside.enter(s, {
+      Wd, A, T, spec: mySpec,
+      say: (lines, after) => runSteps(nar(lines).concat(after ? [{ fn: after }] : []), null),
+      coins: n => { changeMoney(n); A.play('coins'); },
+      flag: k => { S.flags[k] = true; save(); },
+      hasFlag: k => !!S.flags[k],
+      leave: () => { mode = 'world'; updateHud(); }
+    });
+    updateHud();
   }
 
   /* ================= player actions (chores with real animations) ================= */
@@ -307,7 +337,7 @@
     const p = (t - action.t0) / action.dur;
     const every = { hammer: 380, forge: 380, dig: 480, sweep: 600, pick: 520, sort: 420, milk: 700, coil: 700, lift: 900, light: 1200, call: 900 }[action.kind] || 600;
     if (t - action.lastSfx > every && p < 0.9) { action.lastSfx = t; A.play(action.kind === 'call' && follower() === 'goat' ? 'goat' : ACTION_SFX[action.kind] || 'work'); }
-    if (p >= 1) { const cb = action.cb; action = null; mode = 'world'; cb(); }
+    if (p >= 1) { const cb = action.cb; action = null; mode = baseMode(); cb(); }
   }
 
   /* ================= camera =================
@@ -349,6 +379,7 @@
   let npcAnim = null;  // { id, kind } while an expert acts out a line
   let throneAnim = 0;  // when the monster's shadow started to fade
   function render(t, dt) {
+    if (Inside.active()) { Inside.render(ctx, canvas, t); return; }
     aimCamera(dt || 16);
     const camX = cam.x, camY = cam.y;
     /* Markers, arrows and labels keep a readable size on screen however far the camera zooms out. */
@@ -360,11 +391,11 @@
     const x1 = Math.min(Wd.W - 1, Math.floor((camX + cam.w) / TS)), y1 = Math.min(Wd.H - 1, Math.floor((camY + cam.h) / TS));
     for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) Wd.drawTile(ctx, Wd.at(x, y), x, y, x * TS - camX, y * TS - camY, t);
     const inView = (x, y, w, h) => x + w >= x0 - 1 && x <= x1 + 1 && y + h >= y0 - 1 && y <= y1 + 1;
-    // statue circles sit on the ground, under everything that stands
+    // a built statue guards its whole level: a golden edge round the region, on the ground under everything that stands
     D.STATUE.sites.forEach((s, i) => {
       const st = S.statues[i]; if (!st || st.status !== 'built') return;
-      const r = D.STATUE.radius;
-      if (inView(s.x - r, s.y - r, r * 2 + 1, r * 2 + 1)) Wd.drawRing(ctx, s.x * TS - camX + TS / 2, s.y * TS - camY + TS / 2, r * TS, t);
+      const r = Wd.regions[s.region];
+      if (inView(r.x0, r.y0, r.x1 - r.x0 + 1, r.y1 - r.y0 + 1)) Wd.drawGuard(ctx, r.x0 * TS - camX, r.y0 * TS - camY, (r.x1 - r.x0 + 1) * TS, (r.y1 - r.y0 + 1) * TS, t);
     });
     Wd.structures.forEach(s => { if (inView(s.x, s.y, s.w, s.h)) Wd.drawStructure(ctx, s, camX, camY, t); });
     D.MISSIONS.forEach(m => {
@@ -541,7 +572,7 @@
     Wd.structures.forEach(s => { mctx.fillStyle = s.roof; mctx.fillRect(s.x * 2, s.y * 2, s.w * 2, s.h * 2); });
     D.STATUE.sites.forEach((s, i) => {
       const st = S.statues[i]; if (!st || st.status !== 'built') return;
-      mctx.fillStyle = 'rgba(246,181,68,.22)'; mctx.beginPath(); mctx.arc(s.x * 2 + 1, s.y * 2 + 1, D.STATUE.radius * 2, 0, Math.PI * 2); mctx.fill();
+      const r = Wd.regions[s.region]; mctx.fillStyle = 'rgba(246,181,68,.22)'; mctx.fillRect(r.x0 * 2, r.y0 * 2, (r.x1 - r.x0 + 1) * 2, (r.y1 - r.y0 + 1) * 2);
       mctx.fillStyle = '#F6B544'; mctx.fillRect(s.x * 2 - 1, s.y * 2 - 1, 4, 4);
     });
     Wd.regions.forEach((r, i) => { if (i >= S.unlocked) { mctx.fillStyle = 'rgba(190,205,205,.9)'; mctx.fillRect(r.x0 * 2, r.y0 * 2, (r.x1 - r.x0 + 1) * 2, (r.y1 - r.y0 + 1) * 2); } });
@@ -595,7 +626,7 @@
     if (st.who) { if (st.anim && st.who !== 'n' && st.who !== 'you') npcAnim = { id: st.who, kind: st.anim }; showLine(st.who, fill(st.text), st.text); return; }
     if (st.choice) { showChoice(st.choice, st.menu, st.prompt, st.speaker); return; }
     if (st.scene) { showScene(st.scene, fill(st.text), st.text); return; }
-    if (st.end) { const c = script.ctx; script = null; $('dlg').hidden = true; $('scene').hidden = true; if (c && c.finish) c.finish(st.end); else { mode = 'world'; } return; }
+    if (st.end) { const c = script.ctx; script = null; $('dlg').hidden = true; $('scene').hidden = true; if (c && c.finish) c.finish(st.end); else { mode = baseMode(); } return; }
     if (st.fn) { st.fn(); if (!st.stop) next(); return; }
     next();
   }
@@ -661,7 +692,7 @@
     A.say(text, 'n', 'narrator', raw || text);
   }
 
-  function endDialog() { $('dlg').hidden = true; $('scene').hidden = true; script = null; npcAnim = null; mode = 'world'; A.stop(); if (bird && !bird.out) bird.out = performance.now(); updateHud(); }
+  function endDialog() { $('dlg').hidden = true; $('scene').hidden = true; script = null; npcAnim = null; mode = baseMode(); A.stop(); if (bird && !bird.out) bird.out = performance.now(); updateHud(); }
 
   /* ================= cards (lesson pop-ups) ================= */
   function card(opts) {
@@ -678,7 +709,7 @@
   }
   let cardAfter = null;
   function closeCard() {
-    $('card').hidden = true; mode = 'world';
+    $('card').hidden = true; mode = baseMode();
     const f = cardAfter; cardAfter = null;
     if (f) f();
   }
@@ -729,9 +760,46 @@
     runSteps(normalize(lines, n.id), null);
   }
 
+  /* ---- live conversations (js/talk.js) ----
+     Every scripted scene (trick, expert fog, harder fog, refusal) first offers itself to Talk
+     as a seed: the character, the fallacy, the scripted lines and answers. When the server
+     can talk, the child answers out loud and `settle` gets the verdict; otherwise the scripted
+     scene runs exactly as before. */
+  const stepText = st => typeof st === 'string' ? st : (st && st.text) || '';
+  const stepMoney = steps => (steps || []).reduce((sum, st) => sum + (st && st.money > 0 ? st.money : 0), 0);
+  function seedFor(kind, who, fid, scene, extra) {
+    const f = fallacy(fid), opts = scene.options || [];
+    const isRight = o => !!o.right || /^right/.test(o.key || '');
+    return Object.assign({
+      who, name: speakerName(who), fallacy: fid, nick: f.nick, one: f.one, spot: f.spot,
+      lang: I ? I.lang : 'en', player: S.name, kind, topic: scene.topic || null,
+      intro: (scene.intro || []).map(stepText).filter(Boolean).map(fill),
+      right: opts.filter(isRight).map(o => fill(o.text)), wrong: opts.filter(o => !isRight(o)).map(o => fill(o.text))
+    }, extra || {});
+  }
+  /* Resolves true when the live conversation took over the dialogue box. */
+  function tryTalk(seed, settle) {
+    if (!window.Talk || !Talk.available()) return Promise.resolve(false);
+    A.stop(); hidePreview(); script = null; mode = 'dialog';
+    $('dlg').hidden = false; $('scene').hidden = true;
+    return Talk.run(seed, {
+      line: (who, text) => showLine(who, text, text),
+      finish: (verdict, heard, lastSay) => { $('dlg').hidden = true; mode = baseMode(); A.stop(); settle(verdict, heard); },
+      abort: () => { $('dlg').hidden = true; mode = baseMode(); A.stop(); toast(T('{name} has nothing more to say right now.', { name: seed.name }), 'warn'); }
+    }).then(ok => { if (!ok) { $('dlg').hidden = true; mode = baseMode(); } return ok; });
+  }
+
   /* ---- tricks ---- */
-  function runTrick(id) {
+  async function runTrick(id) {
     const tr = D.TRICKS[id];
+    const seed = seedFor('trick', tr.npc, tr.fallacy, tr, { cost: tr.cost || 0 });
+    const tip = stepMoney(tr.right);
+    if (await tryTalk(seed, (verdict, heard) => {
+      const correct = seed.right[0] || null;
+      if (verdict === 'spotted') { if (tip) changeMoney(tip); A.play('coins'); S.tricks[id] = 'won'; save(); lessonWin(tr.fallacy, null, null, heard); }
+      else if (verdict === 'fooled') { if (tr.cost) { changeMoney(-tr.cost); A.play('lose'); } lessonFail(tr.fallacy, null, null, heard, correct); simEvent('fooled'); }
+      else lessonOops(null, heard, correct);
+    })) return;
     const steps = normalize(tr.intro, tr.npc).concat([{ choice: tr.options }]);
     const c = { branch: o => normalize(tr[o.key] || [], tr.npc), finish: kind => finishTrick(id, kind, c) };
     runSteps(steps, c);
@@ -744,7 +812,7 @@
   function finishTrick(id, kind, c) {
     const tr = D.TRICKS[id];
     const { chosen, correct } = answerTexts(c, o => /^right/.test(o.key));
-    mode = 'world';
+    mode = baseMode();
     if (kind === 'win') { S.tricks[id] = 'won'; save(); lessonWin(tr.fallacy, null, null, chosen); }
     else if (kind === 'fail') { lessonFail(tr.fallacy, null, null, chosen, correct); simEvent('fooled'); }
     else lessonOops(null, chosen, correct);
@@ -785,8 +853,10 @@
     if (S.money < totalCost(m)) return L.coins;
     return L.ready;
   }
-  function runFog(n, idx) {
+  async function runFog(n, idx) {
     const fog = n.expert.fog[idx];
+    const seed = seedFor('fog', n.id, fog.fallacy, fog);
+    if (await tryTalk(seed, (verdict, heard) => settleFog(n, idx, verdict === 'spotted' ? 'win' : verdict === 'fooled' ? 'fail' : 'oops', heard, seed.right[0] || null))) return;
     let result = 'fail';
     const c = {
       branch: o => { result = o.right ? 'win' : 'fail'; return normalize(o.right ? fog.right : fog.wrong, n.id).concat([{ end: 'x' }]); },
@@ -795,9 +865,13 @@
     runSteps(normalize(fog.intro, n.id).concat([{ choice: fog.options }]), c);
   }
   function finishFog(n, idx, result, c) {
-    const e = ex(n.id), fog = n.expert.fog[idx];
     const { chosen, correct } = answerTexts(c, o => !!o.right);
-    mode = 'world';
+    settleFog(n, idx, result, chosen, correct);
+  }
+  function settleFog(n, idx, result, chosen, correct) {
+    const e = ex(n.id), fog = n.expert.fog[idx];
+    mode = baseMode();
+    if (result === 'oops') { lessonOops(null, chosen, correct); return; }
     if (result === 'win') {
       e.cleared = idx + 1;
       const joined = !e.crew; e.crew = true; save();
@@ -812,37 +886,43 @@
   }
 
   /* ---- the harder fog a preacher leaves behind: clear it and the expert rejoins the crew ---- */
-  function runHardFog(n) {
+  async function runHardFog(n) {
     const list = D.HARD[n.id] || [], r = S.refog[n.id];
     const fog = list[r.idx % list.length];
     if (!fog) { delete S.refog[n.id]; ex(n.id).crew = true; save(); talkExpert(n); return; }
+    const settle = (result, chosen, correct) => {
+      mode = baseMode();
+      if (result === 'oops') { lessonOops(null, chosen, correct); return; }
+      if (result === 'win') {
+        delete S.refog[n.id]; const e = ex(n.id); e.crew = true; e.xp += 30; S.orderStats.cleared++; save();
+        lessonWin(fog.fallacy, T('{name} is back on your crew!', { name: n.name }), () => { toast(T('👷 {name} is back', { name: n.name }), 'good'); updateHud(); placeCrew(true); }, chosen);
+      } else lessonFail(fog.fallacy, T('{name} is still foggy', { name: n.name }), null, chosen, correct);
+    };
+    const seed = seedFor('hard', n.id, fog.fallacy, fog);
+    if (await tryTalk(seed, (verdict, heard) => settle(verdict === 'spotted' ? 'win' : verdict === 'fooled' ? 'fail' : 'oops', heard, seed.right[0] || null))) return;
     let result = 'fail';
     const c = {
       branch: o => { result = o.right ? 'win' : 'fail'; return normalize(o.right ? fog.right : fog.wrong, n.id).concat([{ end: 'x' }]); },
-      finish: () => {
-        const { chosen, correct } = answerTexts(c, o => !!o.right);
-        mode = 'world';
-        if (result === 'win') {
-          delete S.refog[n.id]; const e = ex(n.id); e.crew = true; e.xp += 30; S.orderStats.cleared++; save();
-          lessonWin(fog.fallacy, T('{name} is back on your crew!', { name: n.name }), () => { toast(T('👷 {name} is back', { name: n.name }), 'good'); updateHud(); placeCrew(true); }, chosen);
-        } else lessonFail(fog.fallacy, T('{name} is still foggy', { name: n.name }), null, chosen, correct);
-      }
+      finish: () => { const { chosen, correct } = answerTexts(c, o => !!o.right); settle(result, chosen, correct); }
     };
     runSteps(normalize(fog.intro, n.id).concat([{ choice: fog.options }]), c);
   }
 
   /* ---- somebody the preacher turned against you: answer the argument and they work with you again ---- */
-  function runRefuse(n) {
+  async function runRefuse(n) {
     const r = D.REFUSE[n.id];
+    const settle = (result, chosen, correct) => {
+      mode = baseMode();
+      if (result === 'oops') { lessonOops(null, chosen, correct); return; }
+      if (result === 'win') { delete S.refuse[n.id]; S.orderStats.cleared++; save(); lessonWin(r.fallacy, T('{name} will work with you again', { name: n.name }), () => updateHud(), chosen); }
+      else lessonFail(r.fallacy, T('{name} still refuses', { name: n.name }), null, chosen, correct);
+    };
+    const seed = seedFor('refuse', n.id, r.fallacy, r);
+    if (await tryTalk(seed, (verdict, heard) => settle(verdict === 'spotted' ? 'win' : verdict === 'fooled' ? 'fail' : 'oops', heard, seed.right[0] || null))) return;
     let result = 'fail';
     const c = {
       branch: o => { result = o.right ? 'win' : 'fail'; return normalize(o.right ? r.right : r.wrong, n.id).concat([{ end: 'x' }]); },
-      finish: () => {
-        const { chosen, correct } = answerTexts(c, o => !!o.right);
-        mode = 'world';
-        if (result === 'win') { delete S.refuse[n.id]; S.orderStats.cleared++; save(); lessonWin(r.fallacy, T('{name} will work with you again', { name: n.name }), () => updateHud(), chosen); }
-        else lessonFail(r.fallacy, T('{name} still refuses', { name: n.name }), null, chosen, correct);
-      }
+      finish: () => { const { chosen, correct } = answerTexts(c, o => !!o.right); settle(result, chosen, correct); }
     };
     runSteps(normalize(r.intro, n.id).concat([{ choice: r.options }]), c);
   }
@@ -864,7 +944,7 @@
         branch: o => o.key === 'yes'
           ? [{ who: n.id, text: t.accept }, { fn: () => { S.tasks[t.id] = 'active'; if (t.kind === 'deliver' && t.item) S.carry = { kind: 'task', id: t.id, item: t.item }; save(); toast('📋 ' + t.title, 'good'); A.play('open'); updateHud(); } }]
           : [{ who: n.id, text: T('Come back when you have time.') }],
-        finish: () => { mode = 'world'; }
+        finish: () => { mode = baseMode(); }
       });
       return;
     }
@@ -1061,12 +1141,13 @@
      A preacher walks out of the lodge in a region, goes to somebody you convinced, preaches
      for a few seconds, and leaves a fog behind: experts leave your crew until you clear a
      harder fog; task givers refuse you until you answer the preacher's argument. Nobody
-     inside a statue's circle can be reached. You cannot talk to a preacher. */
+     inside a level a statue guards can be reached. You cannot talk to a preacher. */
   const preachers = [];
   const preacherAt = (x, y) => preachers.find(p => p.phase !== 'gone' && ((p.x === x && p.y === y) || (p.path && p.path.length && p.path[0][0] === x && p.path[0][1] === y)));
   const orderCfg = () => D.ORDER.byLevel[Math.min(S.unlocked, 6)] || null;
   const isDeliverTarget = n => Object.values(D.JOBS).some(j => j.deliverTo === n.id) || Object.values(D.TASKS).some(t => t.kind === 'deliver' && t.target === n.id);
-  const protectedAt = (x, y) => D.STATUE.sites.some((s, i) => S.statues[i] && S.statues[i].status === 'built' && dist(s.x, s.y, x, y) <= D.STATUE.radius);
+  /* A built statue guards every tile of the level it stands in. */
+  const protectedAt = (x, y) => { const r = Wd.regionAt(x, y); return r >= 0 && D.STATUE.sites.some((s, i) => s.region === r && S.statues[i] && S.statues[i].status === 'built'); };
   function canTarget(n) {
     if (n.region >= S.unlocked || protectedAt(n.x, n.y)) return false;
     if (preachers.some(p => p.phase !== 'gone' && p.target === n.id)) return false;
@@ -1288,7 +1369,7 @@
       branch: o => { result = o.right ? 'win' : 'fail'; return normalize(o.right ? q.right : q.wrong, n.id).concat([{ end: 'x' }]); },
       finish: () => {
         const { chosen, correct } = answerTexts(cx, o => !!o.right);
-        mode = 'world';
+        mode = baseMode();
         if (result === 'win') {
           st.step++; save();
           if (st.step >= c.gauntlet.length) lessonWin(q.fallacy, T('{name} is convinced!', { name: n.name }), () => crowned(n), chosen);
@@ -1338,7 +1419,7 @@
       <h2>🗿 ${esc(D.STATUE.name)}</h2>
       <p>${esc(D.STATUE.blurb)}</p>
       <p class="spot">${esc(D.STATUE.quote)}</p>
-      <div class="costrow"><span>${esc(T('Cost'))} <b>${cost} 🪙</b></span><span>${esc(T('You have'))} <b>${S.money} 🪙</b></span><span>${esc(T('Circle'))} <b>${D.STATUE.radius}</b></span><span>${esc(T('Builder'))} <b>${esc(roleName('mason'))}</b></span></div>
+      <div class="costrow"><span>${esc(T('Cost'))} <b>${cost} 🪙</b></span><span>${esc(T('You have'))} <b>${S.money} 🪙</b></span><span>${esc(T('Guards'))} <b>${esc(regionName(site.region))}</b></span><span>${esc(T('Builder'))} <b>${esc(roleName('mason'))}</b></span></div>
       <p class="why">${esc(why)}</p>
       <div class="row"><button class="btn btn-big grow" id="p-build" ${ready ? '' : 'disabled'}>${esc(T('Build the statue'))}</button><button class="btn btn-ghost" id="p-close">${esc(T('Close'))}</button></div>`);
     $('p-close').onclick = closePanel;
@@ -1473,7 +1554,7 @@
     A.play('open'); hidePreview();
     $('panel-box').innerHTML = html; $('panel').hidden = false; mode = 'panel';
   }
-  function closePanel() { if ($('panel').hidden) return; $('panel').hidden = true; mode = 'world'; A.play('close'); updateHud(); }
+  function closePanel() { if ($('panel').hidden) return; $('panel').hidden = true; mode = baseMode(); A.play('close'); updateHud(); }
 
   function showBook() {
     const items = D.FALLACIES.map(f => {
@@ -1528,7 +1609,7 @@
   }
 
   function showEnd() {
-    if (!S.ended) { mode = 'world'; return; }
+    if (!S.ended) { mode = baseMode(); return; }
     mode = 'end'; $('end').hidden = false;
     const allies = crew().filter(isAlly).map(n => n.name).join(', ');
     $('end-stats').innerHTML = `<p class="big">${esc(T('Coins earned: {a} · lost to tricks: {b}', { a: S.stats.earned, b: S.stats.lost }))}</p><p>${esc(T('Fallacies spotted: {a} of {b}. Crew: {list}.', { a: spottedCount(), b: D.FALLACIES.length, list: crew().map(n => n.name).join(', ') }))}</p>${allies ? `<p>${esc(T('True allies: {list}.', { list: allies }))}</p>` : ''}<p>${esc(T('Heads fogged by the Grey Order: {a} · cleared again: {b}', { a: S.orderStats.fogged, b: S.orderStats.cleared }))}</p>`;
@@ -1539,13 +1620,14 @@
   function pressA() {
     if (mode === 'modal') { modalPress(); return; }
     if (mode === 'world') interact();
-    else if (mode === 'dialog') { if (!$('dlg-choices').hidden) return; if ($('scene').hidden) next(); else { $('scene').hidden = true; next(); } }
+    else if (mode === 'inside') Inside.press();
+    else if (mode === 'dialog') { if (window.Talk && Talk.active()) { Talk.press(); return; } if (!$('dlg-choices').hidden) return; if ($('scene').hidden) next(); else { $('scene').hidden = true; next(); } }
     else if (mode === 'panel' && !$('card').hidden) closeCard();
   }
 
   document.querySelectorAll('.dpad [data-dir]').forEach(b => {
     const dir = b.dataset.dir;
-    const down = e => { e.preventDefault(); A.unlock(); held = dir; if (mode === 'world') tryMove(dir); };
+    const down = e => { e.preventDefault(); A.unlock(); held = dir; if (mode === 'world') tryMove(dir); else if (mode === 'inside') Inside.move(dir); };
     const up = () => { if (held === dir) held = null; };
     b.addEventListener('pointerdown', down); b.addEventListener('pointerup', up); b.addEventListener('pointercancel', up); b.addEventListener('pointerleave', up);
   });
@@ -1573,7 +1655,7 @@
   $('hud-sound').addEventListener('click', () => { S.sound = !S.sound; A.settings.sfx = S.sound; save(); updateHud(); A.play('good'); });
   $('hud-voice').addEventListener('click', () => { S.voice = !S.voice; A.settings.voice = S.voice && voiceAvailable(); if (!S.voice) A.stop(); save(); updateHud(); });
   $('hud-home').addEventListener('click', () => { if (mode === 'world') renderTitle(); });
-  $('end-close').addEventListener('click', () => { $('end').hidden = true; mode = 'world'; });
+  $('end-close').addEventListener('click', () => { $('end').hidden = true; mode = baseMode(); });
   $('panel').addEventListener('click', e => { if (e.target === $('panel')) closePanel(); });
 
   const KEYS = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', w: 'up', s: 'down', a: 'left', d: 'right' };
@@ -1587,7 +1669,7 @@
       else if (modal.scene.key && !modal.result) modal.scene.key(e.key, modalT());
       return;
     }
-    if (KEYS[e.key]) { e.preventDefault(); A.unlock(); held = KEYS[e.key]; if (mode === 'world') tryMove(held); }
+    if (KEYS[e.key]) { e.preventDefault(); A.unlock(); held = KEYS[e.key]; if (mode === 'world') tryMove(held); else if (mode === 'inside') Inside.move(held); }
     if (e.key === 'Enter' || e.key === ' ' || e.key === 'e') { e.preventDefault(); A.unlock(); pressA(); }
     if (e.key === 'Escape') { if (mode === 'panel' && !$('card').hidden) closeCard(); else if (mode === 'panel') closePanel(); else hidePreview(); }
     if (mode === 'world') { if (e.key === 'b') showBook(); if (e.key === 'c') showCrew(); if (e.key === 'g') showGoals(); if (e.key === 'm') $('hud-map').click(); if (e.key === 'z') toggleZoom(); }
@@ -1609,6 +1691,7 @@
     lesson: () => ({ lesson: S.lesson, goal: lessonGoal(), queued: simQueue.length, bird: !!bird }), sim: key => simEvent(key), isAlly: id => isAlly(npcById(id)),
     allies: () => ({ errands: S.errands, shares: S.allyShares, log: S.allyLog }), errandNow: () => { S.lastErrand = 0; allyAt = 0; },
     city: () => ({ city: S.city, throne: S.throne, ended: S.ended }), cam: () => Object.assign({ dpr, canvas: [canvas.width, canvas.height], region: lastRegion }, cam), zoom: toggleZoom,
+    inside: () => Inside.state(), insideMove: d => Inside.move(d),
     vignette: (kind, text) => showVignette({ kind, text }, D.FLAVOR[kind] || kind), game: (id, extra) => startMiniGame(Object.assign({ id }, D.GAMES[id]), null, extra), games: () => S.games,
     modal: () => modal ? { result: modal.result, caption: $('vig-text').textContent, buttons: [...$('vig-ui').querySelectorAll('button')].map(b => b.textContent), close: $('vig-close').textContent, t: modalT() } : null,
     tap: (x, y) => { if (modal && modal.scene.pointer) modal.scene.pointer(x, y, modalT()); }, mkey: k => { if (modal && modal.scene.key) modal.scene.key(k, modalT()); }, mbutton: i => { const b = $('vig-ui').querySelectorAll('button')[i]; if (b) b.click(); }, closeScene, flag: k => { S.flags[k] = true; save(); syncWorld(); }

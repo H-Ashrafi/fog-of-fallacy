@@ -83,8 +83,8 @@ back with `node tools/apply-dialogue.js <edited.txt>` (add `--dry` to preview): 
   refuse work and deliveries until you answer the preacher's argument. Pressure grows
   with each level (more preachers, more often, more heads per outing).
 * **Statues of Aristotle.** Every region has an empty plinth. With a mason in your
-  crew and enough coins you can raise a statue there; nobody inside its circle can be
-  reached by a preacher. Statues cost more in later regions.
+  crew and enough coins you can raise a statue there; while it stands, nobody in that
+  whole region can be reached by a preacher. Statues cost more in later regions.
 * **Levels.** Each early region focuses on one fallacy, later ones mix several:
 
   | Region | Fallacies | Mission | Crew |
@@ -113,6 +113,21 @@ fogs and the refusals in `js/data-order.js`; the scenes' captions and the mini-g
 engine in `js/game.js`; sound and voice in `js/audio.js`; languages in `js/i18n.js` and
 `js/lang/`.
 
+## Inside the buildings
+
+Press A at a building's door and you step inside: the roof lifts off and the room is drawn
+from a corner in three-quarter view (`js/inside.js`), on the same canvas as the Valley. The
+two far walls stand, the two near walls are cut away. You walk with the same keys and pad,
+screen-wise: up walks away, down walks towards you. Press A facing a thing and the narrator
+says its line; a few things hide a coin or two, once a day. Walk out through the door (or
+press A on it) to go back outside. The Grey Lodges and the palace are shut.
+
+Every room lives in `js/data-rooms.js`: a base room per building kind (house, shop, hall,
+barn, mine) and a room of its own for the named ones (Elder's, the Bakery, the Inn, the
+Library, the Tavern, the miners' Camp, Gus's Ferry hut). A thing on the floor has a
+footprint; a thing on a wall sits just outside the floor. The same writing rules as the
+story apply, and the lines go through the voice pipeline like everything else.
+
 ## Languages
 
 English is the source text. Persian (`fa`) and Arabic (`ar`) are text only for now
@@ -139,6 +154,8 @@ in `i18n/NAMES.md`). Pick a language on the title screen or open `?lang=fa`.
 | `GET /api/health` | `{ ok, voice }` |
 | `GET /api/saves/{slug}` · `PUT /api/saves/{slug}` | JSON save per player name |
 | `GET /api/voice?who=&profile=&text=` | recorded voice line, cached as MP3 on disk |
+| `POST /api/login` · `POST /api/logout` | `{ "passphrase": "..." }` sets the year-long cookie that every other route needs; logout clears it |
+| `POST /api/talk` · `POST /api/talk/{id}` | a live conversation: the scripted scene in, the character's opening out; then each answer (recorded audio, or `?text=`) in, the reply and the verdict out |
 
 Environment variables:
 
@@ -150,6 +167,22 @@ Environment variables:
 | `FOG_DATA_DIR` | `%LOCALAPPDATA%\FogOfFallacy` | saves and voice cache |
 | `FOG_VOICES` | `voice/voices.json`, then built-in copy | character → voice id mapping for the live route |
 | `ELEVENLABS_API_KEY` | unset | when set, `/api/voice` fetches lines from ElevenLabs once and caches them |
+| `FOG_PASSPHRASE` | unset | the family's secret word. Every page and API call needs the cookie `POST /api/login` sets; without the word a visitor only ever sees the gate page. Unset and not `FOG_OPEN`: the server is closed |
+| `FOG_OPEN` | unset | `1` opens the server to everyone. `run.ps1` sets it for local play when no passphrase is given; never set it in production |
+| `OPENAI_API_KEY` | unset | with `ELEVENLABS_API_KEY`, turns the scripted encounters into live conversations (below) |
+| `FOG_OPENAI_MODEL` | `gpt-4.1-nano` | the model that plays the characters (the cheapest that writes well; any chat model name works, the gpt-5 family included) |
+| `FOG_ELEVEN_MODEL` | `eleven_flash_v2_5` | the ElevenLabs model for live lines in Latin script: fast, so the character answers in under a second. Persian and Arabic lines always use `eleven_v3`, which Flash does not cover |
+| `FOG_TALK_DAILY_LIMIT` | `150` | model calls allowed per UTC day; past it the game falls back to the scripted answers until tomorrow |
+| `FOG_TALK_MAX_TURNS` | `4` | answers the child gets per conversation before the character decides |
+
+### The gate
+
+The game, its voices and the APIs behind it cost money to run, so the site is for one
+family. `FOG_PASSPHRASE` on the server is the secret word; `server/gate.html` is the page
+everyone sees until they type it. The right word sets a cookie for a year (`nonce.hmac`,
+signed with the word, so the server keeps no session list and changing the word signs
+every device out). Wrong answers wait a second and are capped at 20 a minute. `/api/health`
+stays open for the deploy check. To change the word, change the variable and restart.
 
 ## Caching (read before deploying)
 
@@ -165,6 +198,35 @@ players keep running the JavaScript their browser cached; with a stale
 `voice/index.json` they lose the recorded voices and hear the robot fallback instead.
 On a plain static host (GitHub Pages) the `?v=` bump is the only thing that protects
 them, since the headers above come from the Rust server.
+
+## Live conversations
+
+The three fixed answers of a scripted scene can be learned by position without reading
+them. With `OPENAI_API_KEY` and `ELEVENLABS_API_KEY` set on the server, a trickster talks
+instead: the server has an OpenAI model play the character (same story, same fallacy,
+words for a six-year-old, in the chosen language), the child answers out loud (tap the
+microphone, speak, tap again; or type), ElevenLabs turns the recording into text, and the
+model answers and judges: *spotted* (the child questioned the reasoning in any way),
+*fooled* (went along), or *insult* (only called names). It is hands-free after the first
+tap: nothing can interrupt a line while the character speaks, the microphone opens by itself
+when the line ends, a pause of about a second and a half after she speaks sends the answer,
+and after the last line the scene moves on by itself. The game then pays out exactly as
+the scripted scene would: the tip or the lost coins, the lesson card, the expert joining
+the crew. Every spoken line goes through `/api/voice`, so it is in the character's voice.
+
+What keeps the bill small: opening lines are pooled per character, fallacy and language
+(`talk/openings/` under the data dir; after six, a random one is reused and the model is
+not called), voice clips are cached by text, a conversation is at most
+`FOG_TALK_MAX_TURNS` answers, and `FOG_TALK_DAILY_LIMIT` caps the model calls per day.
+When the cap is reached, the browser falls back to the scripted answers until tomorrow.
+`/api/health` shows `talk`, `talk_used` and `talk_limit`.
+
+Every exchange is appended to `talk/log/<day>.jsonl` under the data dir (who, player,
+fallacy, role, text, verdict), so a parent can read what was said and how it was judged.
+
+The OpenAI key is a platform API key from platform.openai.com, billed per call; a ChatGPT
+subscription does not cover it. The server is the only thing that holds either key: the
+browser never sees them.
 
 ## Voices
 

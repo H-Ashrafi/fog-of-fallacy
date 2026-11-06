@@ -114,11 +114,23 @@ window.Audio2 = (function () {
     } catch (e) { index = {}; }
     return index;
   }
-  function playUrl(url) { current = new window.Audio(url); current.play().catch(() => { }); }
+  /* `pending` is true from say() until the clip starts (or the fallback speaks), so isBusy() covers the
+     fetch of a clip from the server too: nothing should interrupt a line that is about to start. */
+  let pending = 0;
+  /* A clip that cannot play (bad bytes, autoplay refused) must not look like it is still speaking. */
+  function playUrl(url) {
+    const a = new window.Audio(url); current = a;
+    a.addEventListener('error', () => { if (current === a) current = null; });
+    a.play().catch(() => { if (current === a) current = null; });
+  }
 
   async function say(text, who, profile, raw) {
     if (!settings.voice || !text) return;
     stop();
+    const ticket = ++pending;
+    try { await speak(text, who, profile, raw); } finally { if (pending === ticket) pending = 0; }
+  }
+  async function speak(text, who, profile, raw) {
     const clean = text.replace(/[*_]/g, '');
     const idx = await clipIndex();
     const file = idx[who + '|' + (raw || text)];
@@ -142,6 +154,7 @@ window.Audio2 = (function () {
     try { speechSynthesis.speak(u); } catch (e) { }
   }
 
-  function isSpeaking() { try { if (current && !current.paused && !current.ended) return true; return !!(window.speechSynthesis && speechSynthesis.speaking); } catch (e) { return false; } }
-  return { play, say, stop, isSpeaking, settings, unlock: () => { try { ac(); } catch (e) { } } };
+  function isSpeaking() { try { if (current && !current.paused && !current.ended && !current.error) return true; return !!(window.speechSynthesis && speechSynthesis.speaking); } catch (e) { return false; } }
+  const isBusy = () => pending > 0 || isSpeaking();
+  return { play, say, stop, isSpeaking, isBusy, settings, unlock: () => { try { ac(); } catch (e) { } } };
 })();

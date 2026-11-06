@@ -5,38 +5,38 @@
    building that opens the next part of the map and pays you back over time.
 
    Writing rules for this file: short sentences, every sentence has a verb, words a
-   seven-year-old can read. The right answer must never be the longest option. */
+   six-year-old can understand. The right answer must never be the longest option. */
 
 window.FOG = (function () {
 
   /* ---------------- fallacies ---------------- */
   const FALLACIES = [
     { id: 'bandwagon', nick: "Everyone's Doing It", icon: '👣', img: 'img/trick-bandwagon.jpg',
-      one: 'Somebody says a thing is right because everybody does it.', spot: 'Lots of people can be wrong together. Ask for the real reason.' },
+      one: 'Someone says it is right just because everyone does it.', spot: 'Everyone can be wrong. Ask: why is it right?' },
     { id: 'falseDilemma', nick: 'Only Two Doors', icon: '🚪', img: 'img/trick-falseDilemma.jpg',
-      one: 'Somebody says you must pick this or that, and nothing else.', spot: 'Look for a third door. There almost always is one.' },
+      one: 'Someone says you can only pick this or that.', spot: 'There is nearly always another choice. Look for it.' },
     { id: 'emotion', nick: 'The Tear Trick', icon: '😢', img: 'img/trick-emotion.jpg',
-      one: 'Somebody uses sad or scary feelings to push you.', spot: 'Feelings are real, but they are not reasons. Ask what is true.' },
+      one: 'Someone makes you feel sad or scared so you say yes.', spot: 'A feeling is not a reason. Ask: is it true?' },
     { id: 'postHoc', nick: 'The Lucky Socks', icon: '🧦', img: 'img/trick-postHoc.jpg',
-      one: 'Somebody says one thing caused another only because it came first.', spot: 'Coming first does not mean causing. Ask what else changed.' },
+      one: 'Someone says one thing made another happen, just because it came first.', spot: 'First does not mean cause. Ask: what else happened?' },
     { id: 'gambler', nick: 'The Hot Streak', icon: '🎲', img: null,
-      one: 'Somebody says a win must come soon because they lost many times.', spot: 'Dice and cards do not remember. Every roll starts fresh.' },
+      one: 'Someone says a win must come now because they lost so many times.', spot: 'Dice do not remember. Every roll is new.' },
     { id: 'sunkCost', nick: 'Already Paid', icon: '🕳️', img: null,
-      one: 'Somebody says you must keep paying because you already paid a lot.', spot: 'Money you spent is gone. Only ask if the next coin is worth it.' },
+      one: 'Someone says you must pay more because you already paid a lot.', spot: 'The coins you paid are gone. Ask: is the next coin worth it?' },
     { id: 'hastyGen', nick: 'The Big Jump', icon: '🦘', img: 'img/trick-hastyGen.jpg',
-      one: 'Somebody meets one person and decides everybody like them is the same.', spot: 'One person is not everyone. Judge each person by what they do.' },
+      one: 'Someone meets one person and says everyone like them is the same.', spot: 'One person is not everyone. Look at what each person does.' },
     { id: 'adHominem', nick: 'The Insult Trick', icon: '🗯️', img: 'img/trick-adHominem.jpg',
-      one: 'Somebody attacks the person instead of answering what they said.', spot: 'Who says something does not make it right or wrong. Look at the idea.' },
+      one: 'Someone calls you names instead of answering you.', spot: 'Names are not answers. Look at the idea, not the person.' },
     { id: 'strawMan', nick: 'The Scarecrow', icon: '🌾', img: 'img/trick-strawMan.jpg',
-      one: 'Somebody twists what you said into something silly, then knocks it down.', spot: 'Ask yourself: is that really what I said?' },
+      one: 'Someone changes what you said into something silly, then says it is wrong.', spot: 'Ask: is that really what I said?' },
     { id: 'redHerring', nick: 'Look Over There!', icon: '👉', img: 'img/trick-redHerring.jpg',
-      one: 'Somebody changes the subject so they do not have to answer.', spot: 'Ask yourself: did they answer my question?' },
+      one: 'Someone talks about something else so they do not have to answer.', spot: 'Ask: did they answer my question?' },
     { id: 'authority', nick: 'Big Hat Says', icon: '🎩', img: null,
-      one: 'Somebody says a thing is true because an important person said it.', spot: 'Important people need reasons too. Ask for the proof.' },
+      one: 'Someone says it is true because a big important person said so.', spot: 'Big people need reasons too. Ask: how do you know?' },
     { id: 'slipperySlope', nick: 'The Big Slide', icon: '🛝', img: null,
-      one: 'Somebody says one small step will surely lead to something terrible.', spot: 'Every step needs its own proof. One step is not a slide.' },
+      one: 'Someone says one little step will end in something terrible.', spot: 'One step is just one step. Ask: why would that happen?' },
     { id: 'tradition', nick: 'Always Done It', icon: '🏺', img: null,
-      one: 'Somebody says the old way is best because it is the old way.', spot: 'Old does not mean right. Ask if it still works.' }
+      one: 'Someone says the old way is best just because it is old.', spot: 'Old does not mean right. Ask: does it still work?' }
   ];
 
   const LOOKS = [

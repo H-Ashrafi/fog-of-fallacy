@@ -21,10 +21,12 @@
 //!   FOG_OPEN           "1" opens the server to everyone (no passphrase). Never in production.
 //!   OPENAI_API_KEY     with ELEVENLABS_API_KEY, turns the scripted encounters into live
 //!                      conversations (POST /api/talk, see talk.rs)
-//!   FOG_OPENAI_MODEL   the model that plays the characters (default gpt-4o-mini)
+//!   FOG_OPENAI_MODEL   the model that plays the characters (default gpt-4.1-nano)
 //!   FOG_TALK_DAILY_LIMIT  model calls allowed per UTC day (default 150), then the game
 //!                      falls back to the scripted answers until tomorrow
 //!   FOG_TALK_MAX_TURNS answers the child gets per conversation (default 4)
+//!   FOG_ELEVEN_MODEL   the ElevenLabs model for live lines in Latin script (default eleven_flash_v2_5,
+//!                      fast; Persian and Arabic lines always use eleven_v3)
 //!   OPENAI_BASE_URL, ELEVENLABS_BASE_URL  override the API hosts (tests)
 
 use std::{
@@ -425,9 +427,13 @@ async fn voice(State(app): State<Shared>, Query(q): Query<VoiceQuery>) -> Respon
     }
 
     let url = format!("{}/v1/text-to-speech/{voice_id}?output_format=mp3_44100_64", app.talk.eleven_base);
+    // Live lines must come back fast: Flash answers in well under a second where v3 takes several.
+    // Flash v2.5 does not cover Persian, so text outside the Latin script keeps the slower model.
+    let latin = text.chars().all(|c| (c as u32) < 0x250);
+    let model = if latin { app.talk.eleven_model.as_str() } else { "eleven_v3" };
     let body = serde_json::json!({
         "text": text,
-        "model_id": "eleven_v3",
+        "model_id": model,
         "voice_settings": { "stability": 0.5, "similarity_boost": 0.75 }
     });
     let resp = app.http.post(&url).header("xi-api-key", key).header(header::ACCEPT, "audio/mpeg").json(&body).send().await;

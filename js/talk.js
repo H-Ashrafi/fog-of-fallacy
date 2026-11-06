@@ -11,6 +11,12 @@ window.Talk = (function () {
   const T = s => (window.I18N ? I18N.t(s) : s);
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
   const MAX_SECONDS = 10;
+  const SILENCE_MS = 1400;      // this long without speech after she has spoken ends the recording
+  const SILENCE_LEVEL = 0.015;  // RMS below this counts as quiet
+  const A2 = () => window.Audio2;
+  /* Once the browser has allowed the microphone, later turns open it without a tap. */
+  let micGranted = false;
+  (async () => { try { if (navigator.permissions && navigator.permissions.query) { const p = await navigator.permissions.query({ name: 'microphone' }); micGranted = p.state === 'granted'; p.onchange = () => { micGranted = p.state === 'granted'; }; } } catch (e) { } })();
 
   let serverTalk = false;
   async function prime() {
@@ -30,11 +36,11 @@ window.Talk = (function () {
     b.hidden = false; $('dlg-choices').hidden = true; $('dlg-next').hidden = true;
     const mic = $('talk-mic'), type = $('talk-type'), form = $('talk-form'), next = $('talk-next');
     mic.hidden = !hasMic() || state === 'done' || state === 'typing';
-    type.hidden = state === 'done' || state === 'typing' || state === 'recording' || state === 'busy';
+    type.hidden = state === 'done' || state === 'typing' || state === 'recording' || state === 'busy' || state === 'speaking';
     form.hidden = state !== 'typing';
     next.hidden = state !== 'done';
     mic.classList.toggle('rec', state === 'recording');
-    mic.disabled = state === 'busy';
+    mic.disabled = state === 'busy' || state === 'speaking';
     mic.setAttribute('aria-label', state === 'recording' ? T('Stop') : T('Say your answer'));
     mic.querySelector('.mic-label').textContent = state === 'recording' ? T('Tap when you are done') : T('Say your answer');
     if (state === 'typing') { const inp = $('talk-input'); inp.value = ''; setTimeout(() => inp.focus(), 50); }
@@ -47,10 +53,11 @@ window.Talk = (function () {
   }
 
   async function startRecording() {
-    if (!conv || conv.busy || conv.recorder) return;
+    if (!conv || conv.busy || conv.recorder || conv.verdict) return;
     let stream;
-    try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
-    catch (e) { status(T('I need the microphone to hear you. You can type instead.'), 'warn'); return; }
+    try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); micGranted = true; }
+    catch (e) { micGranted = false; render('idle'); status(T('I need the microphone to hear you. You can type instead.'), 'warn'); return; }
+    if (!conv || conv.recorder) { stream.getTracks().forEach(t => t.stop()); return; }
     const chunks = [];
     const type = mimeType();
     const rec = type ? new MediaRecorder(stream, { mimeType: type }) : new MediaRecorder(stream);
@@ -62,16 +69,54 @@ window.Talk = (function () {
       send(blob, null);
     });
     conv.recorder = rec; conv.stream = stream;
-    try { window.Audio2 && Audio2.stop(); } catch (e) { }
+    try { A2() && A2().stop(); } catch (e) { }
     rec.start();
     render('recording'); status(T('Listening…'), 'live');
-    let left = MAX_SECONDS;
-    conv.timer = setInterval(() => { left--; status(T('Listening…') + ' ' + left, 'live'); if (left <= 0) stopRecording(); }, 1000);
+    const t0 = performance.now();
+    let spoke = false, quietSince = 0;
+    const meter = levelMeter(stream);
+    conv.meterStop = meter ? meter.stop : null;
+    conv.timer = setInterval(() => {
+      const now = performance.now(), left = MAX_SECONDS - Math.floor((now - t0) / 1000);
+      status(T('Listening…') + ' ' + Math.max(0, left), 'live');
+      const level = meter ? meter() : 0;
+      if (level > SILENCE_LEVEL) { spoke = true; quietSince = 0; }
+      else if (spoke && !quietSince) quietSince = now;
+      /* She spoke and then went quiet: that is the end of her answer. No need to tap again. */
+      if ((spoke && quietSince && now - quietSince > SILENCE_MS) || left <= 0) stopRecording();
+    }, 100);
+  }
+  /* Microphone loudness, 0..1, from a tiny analyser on the stream. Null where WebAudio is missing. */
+  function levelMeter(stream) {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const src = ctx.createMediaStreamSource(stream), an = ctx.createAnalyser(); an.fftSize = 512; src.connect(an);
+      const buf = new Float32Array(an.fftSize);
+      const f = () => { an.getFloatTimeDomainData(buf); let sum = 0; for (let i = 0; i < buf.length; i++) sum += buf[i] * buf[i]; return Math.sqrt(sum / buf.length); };
+      f.stop = () => { try { src.disconnect(); ctx.close(); } catch (e) { } };
+      return f;
+    } catch (e) { return null; }
   }
   function stopRecording() {
     if (!conv || !conv.recorder) return;
     clearInterval(conv.timer); conv.timer = null;
+    if (conv.meterStop) { conv.meterStop(); conv.meterStop = null; }
     try { conv.recorder.stop(); } catch (e) { conv.recorder = null; }
+  }
+
+  /* The character is talking: nothing can interrupt the line. When it ends, `then` runs: listen by
+     itself (once the mic was allowed), or show Next after the last line, which also advances on its own. */
+  function afterSpeech(then) {
+    if (!conv) return;
+    const mine = conv;
+    render('speaking'); status(T('Listen…'), 'live');
+    const a = A2();
+    const wait = setInterval(() => {
+      if (conv !== mine) { clearInterval(wait); return; }
+      if (a && a.isBusy && a.isBusy() && performance.now() - mine.spokeAt < 20000) return;   // 20 s: longer than any line, in case a clip never ends
+      clearInterval(wait);
+      then();
+    }, 120);
   }
 
   async function send(blob, text) {
@@ -92,9 +137,13 @@ window.Talk = (function () {
     $('talk-heard').innerHTML = '<small>' + esc(T('You said')) + '</small>' + esc(j.heard);
     $('talk-heard').hidden = false;
     conv.turnsLeft = j.turns_left;
-    if (j.say) conv.hooks.line(conv.seed.who, j.say);
-    if (j.done) { conv.finalSay = j.say; conv.verdict = j.verdict; conv.heard = j.heard; render('done'); status(''); }
-    else { render('idle'); status(''); }
+    if (j.say) { conv.spokeAt = performance.now(); conv.hooks.line(conv.seed.who, j.say); }
+    if (j.done) {
+      conv.finalSay = j.say; conv.verdict = j.verdict; conv.heard = j.heard;
+      afterSpeech(() => { render('done'); status(''); conv.autoNext = setTimeout(() => { if (conv && conv.verdict) finish(); }, 1500); });
+    } else {
+      afterSpeech(() => { render('idle'); status(''); if (micGranted) startRecording(); });
+    }
   }
 
   /* The server dropped the conversation (over, or the day's budget ran out): no verdict, no
@@ -112,7 +161,8 @@ window.Talk = (function () {
   }
   function stop() {
     if (!conv) return;
-    clearInterval(conv.timer);
+    clearInterval(conv.timer); clearTimeout(conv.autoNext);
+    if (conv.meterStop) conv.meterStop();
     if (conv.recorder) { try { conv.recorder.stop(); } catch (e) { } }
     if (conv.stream) conv.stream.getTracks().forEach(t => t.stop());
     conv = null; hideBox();
@@ -130,9 +180,9 @@ window.Talk = (function () {
       j = await r.json();
     } catch (e) { return false; }
     if (!j || !j.id || !j.say) return false;
-    conv = { id: j.id, seed, hooks, turnsLeft: j.turns_left, recorder: null, stream: null, timer: null, busy: false };
+    conv = { id: j.id, seed, hooks, turnsLeft: j.turns_left, recorder: null, stream: null, timer: null, busy: false, spokeAt: performance.now() };
     hooks.line(seed.who, j.say);
-    render('idle'); status('');
+    afterSpeech(() => { render('idle'); status(''); if (micGranted) startRecording(); });
     return true;
   }
 
@@ -156,7 +206,7 @@ window.Talk = (function () {
     prime, available, run,
     active: () => !!conv,
     /* The A button / Enter while a conversation is on screen: advance when the scene is over, else toggle the microphone. */
-    press: () => { if (!conv) return; if (conv.verdict) finish(); else if (conv.recorder) stopRecording(); else if (!conv.busy && hasMic()) startRecording(); },
+    press: () => { if (!conv) return; if (conv.verdict) { if (!$('talk-next').hidden) finish(); } else if (conv.recorder) stopRecording(); else if (!conv.busy && !$('talk-mic').disabled && hasMic()) startRecording(); },
     stop
   };
 })();

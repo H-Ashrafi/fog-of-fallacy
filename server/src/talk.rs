@@ -42,6 +42,7 @@ pub struct Talk {
     pub openai_base: String,
     pub model: String,
     pub eleven_base: String,
+    pub eleven_model: String,
     pub dir: PathBuf,
     pub daily_limit: u32,
     pub max_turns: u32,
@@ -113,8 +114,9 @@ impl Talk {
         Talk {
             openai_key: env("OPENAI_API_KEY"),
             openai_base: env("OPENAI_BASE_URL").unwrap_or_else(|| "https://api.openai.com/v1".into()).trim_end_matches('/').to_string(),
-            model: env("FOG_OPENAI_MODEL").unwrap_or_else(|| "gpt-4o-mini".into()),
+            model: env("FOG_OPENAI_MODEL").unwrap_or_else(|| "gpt-4.1-nano".into()),
             eleven_base: env("ELEVENLABS_BASE_URL").unwrap_or_else(|| "https://api.elevenlabs.io".into()).trim_end_matches('/').to_string(),
+            eleven_model: env("FOG_ELEVEN_MODEL").unwrap_or_else(|| "eleven_flash_v2_5".into()),
             dir,
             daily_limit: env("FOG_TALK_DAILY_LIMIT").and_then(|v| v.parse().ok()).unwrap_or(150),
             max_turns: env("FOG_TALK_MAX_TURNS").and_then(|v| v.parse().ok()).unwrap_or(4),
@@ -225,11 +227,10 @@ Always answer with JSON: {{\"say\": \"...\", \"verdict\": \"none|spotted|fooled|
 
     async fn model_turn(&self, http: &reqwest::Client, messages: &[serde_json::Value]) -> Result<ModelTurn, String> {
         let key = self.openai_key.as_deref().ok_or("no OPENAI_API_KEY")?;
-        let body = serde_json::json!({
+        let mut body = serde_json::json!({
             "model": self.model,
             "messages": messages,
-            "temperature": 0.9,
-            "max_tokens": 220,
+            "max_completion_tokens": 220,
             "response_format": { "type": "json_schema", "json_schema": { "name": "turn", "strict": true, "schema": {
                 "type": "object", "additionalProperties": false,
                 "properties": {
@@ -239,6 +240,10 @@ Always answer with JSON: {{\"say\": \"...\", \"verdict\": \"none|spotted|fooled|
                 "required": ["say", "verdict"]
             } } }
         });
+        // The reasoning models (gpt-5 family, o-series) refuse a temperature; the others like some variety.
+        if !(self.model.starts_with("gpt-5") || self.model.starts_with('o')) {
+            body["temperature"] = serde_json::json!(0.9);
+        }
         let url = format!("{}/chat/completions", self.openai_base);
         let resp = http.post(&url).bearer_auth(key).json(&body).send().await.map_err(|e| format!("model unreachable: {e}"))?;
         let status = resp.status();

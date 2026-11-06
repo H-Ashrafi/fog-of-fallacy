@@ -170,7 +170,8 @@ Environment variables:
 | `FOG_PASSPHRASE` | unset | the family's secret word. Every page and API call needs the cookie `POST /api/login` sets; without the word a visitor only ever sees the gate page. Unset and not `FOG_OPEN`: the server is closed |
 | `FOG_OPEN` | unset | `1` opens the server to everyone. `run.ps1` sets it for local play when no passphrase is given; never set it in production |
 | `OPENAI_API_KEY` | unset | with `ELEVENLABS_API_KEY`, turns the scripted encounters into live conversations (below) |
-| `FOG_OPENAI_MODEL` | `gpt-4o-mini` | the model that plays the characters |
+| `FOG_OPENAI_MODEL` | `gpt-4.1-nano` | the model that plays the characters (the cheapest that writes well; any chat model name works, the gpt-5 family included) |
+| `FOG_ELEVEN_MODEL` | `eleven_flash_v2_5` | the ElevenLabs model for live lines in Latin script: fast, so the character answers in under a second. Persian and Arabic lines always use `eleven_v3`, which Flash does not cover |
 | `FOG_TALK_DAILY_LIMIT` | `150` | model calls allowed per UTC day; past it the game falls back to the scripted answers until tomorrow |
 | `FOG_TALK_MAX_TURNS` | `4` | answers the child gets per conversation before the character decides |
 
@@ -206,7 +207,10 @@ instead: the server has an OpenAI model play the character (same story, same fal
 words for a six-year-old, in the chosen language), the child answers out loud (tap the
 microphone, speak, tap again; or type), ElevenLabs turns the recording into text, and the
 model answers and judges: *spotted* (the child questioned the reasoning in any way),
-*fooled* (went along), or *insult* (only called names). The game then pays out exactly as
+*fooled* (went along), or *insult* (only called names). It is hands-free after the first
+tap: nothing can interrupt a line while the character speaks, the microphone opens by itself
+when the line ends, a pause of about a second and a half after she speaks sends the answer,
+and after the last line the scene moves on by itself. The game then pays out exactly as
 the scripted scene would: the tip or the lost coins, the lesson card, the expert joining
 the crew. Every spoken line goes through `/api/voice`, so it is in the character's voice.
 

@@ -3,7 +3,7 @@
    cleared, and fog them again with harder, sneakier arguments. Experts leave your
    crew until you clear the new fog. Task givers refuse to work with you until you
    answer the preacher's argument. A Statue of Aristotle protects everyone inside
-   its circle. You can never talk to a preacher.
+   its level. You can never talk to a preacher.
 
    Writing rules: short sentences, every sentence has a verb, words a seven-year-old
    can read. The right answer must never be the longest option. Hard fogs have four
@@ -29,7 +29,7 @@
     lines: {
       out: 'A preacher of the Grey Order has left the lodge. Watch the map.',
       silent: 'The preacher looks through you and says nothing.',
-      protectedStop: 'The preacher stops at the edge of the circle and turns away.',
+      protectedStop: 'The preacher stops at the edge of Aristotle\'s land and turns away.',
       refogged: 'The preacher leaves. A grey fog settles over a cleared head.',
       refuses: 'The preacher leaves. Someone won\'t work with you any more.'
     }
@@ -37,16 +37,16 @@
 
   /* ---------------- statues of Aristotle ---------------- */
   D.STATUE = {
-    name: 'Statue of Aristotle', radius: 8, buildSec: 10, fromLevel: 3,
+    name: 'Statue of Aristotle', buildSec: 10, fromLevel: 3,   // a built statue guards the whole level (region) it stands in
     costs: [50, 90, 140, 200, 280],
     sites: [{ region: 0, x: 10, y: 16 }, { region: 1, x: 16, y: 44 }, { region: 2, x: 49, y: 41 }, { region: 3, x: 44, y: 16 }, { region: 4, x: 40, y: 62 }],
-    blurb: 'Aristotle wrote down the tricks of bad arguments long ago. Nobody inside the circle of his statue can be fooled by a preacher.',
+    blurb: 'Aristotle wrote down the tricks of bad arguments long ago. While his statue stands, nobody in this whole part of the Valley can be fooled by a preacher.',
     quote: '"It\'s the mark of an educated mind to entertain a thought without accepting it."',
     needs: 'Needs a mason in your crew.',
     start: 'Your mason sets the plinth. The statue goes up.',
     built: 'The statue stands. Clear heads gather around it.',
     flavor: 'A stone plinth with nothing on it. Somebody should build a statue here.',
-    inspect: 'Aristotle looks down at you from his plinth. Nobody inside his circle can be fooled by a preacher.'
+    inspect: 'Aristotle looks down at you from his plinth. Nobody in this part of the Valley can be fooled by a preacher now.'
   };
 
   /* ---------------- harder fogs the preachers leave in experts' heads ---------------- */

@@ -63,10 +63,10 @@
           'They walk out of the grey lodges. They look for the people whose heads you cleared.',
           'They talk and talk, and when they leave, the fog is back. You can\'t talk to them. They won\'t listen.',
           'When a red banner appears at the top, a preacher is out. It tells you who he is walking to.',
-          'There\'s a way to stop them. Build a statue of Aristotle on a stone plinth. Nobody inside its circle can be fooled.'],
+          'There\'s a way to stop them. Build a statue of Aristotle on a stone plinth. Then nobody in that whole part of the Valley can be fooled.'],
         steps: [
           { goal: 'Build a Statue of Aristotle on a glowing stone plinth. You need a mason and some coins.', check: 'statue',
-            praise: ['Aristotle stands guard now. Keep your friends inside his circle.'] },
+            praise: ['Aristotle stands guard now. Everyone in this part of the Valley is safe from the preachers.'] },
           { goal: 'Build the Engineering School. Walk to its glowing site to see who you need.', check: 'built:school' }
         ]
       },

@@ -637,6 +637,14 @@ window.World = (function () {
     ctx.strokeStyle = 'rgba(246,181,68,' + (0.35 + 0.3 * pulse) + ')'; ctx.lineWidth = 2; ctx.setLineDash([8, 8]); ctx.lineDashOffset = -t / 60;
     ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
   }
+  /* The golden edge of a level that a statue of Aristotle guards: a soft glow inside the border, a slow dashed line along it. */
+  function drawGuard(ctx, px, py, w, h, t) {
+    const pulse = 0.5 + 0.5 * Math.sin(t / 900), m = 10;
+    ctx.save(); ctx.beginPath(); ctx.rect(px, py, w, h); ctx.clip();
+    ctx.lineWidth = 28; ctx.strokeStyle = 'rgba(246,181,68,' + (0.10 + 0.06 * pulse) + ')'; ctx.strokeRect(px, py, w, h);
+    ctx.lineWidth = 2.5; ctx.strokeStyle = 'rgba(246,181,68,' + (0.45 + 0.3 * pulse) + ')'; ctx.setLineDash([10, 8]); ctx.lineDashOffset = -t / 60;
+    ctx.strokeRect(px + m, py + m, w - 2 * m, h - 2 * m); ctx.setLineDash([]); ctx.restore();
+  }
   /* Grey fog puffs circling somebody's head while a preacher works on them. */
   function drawSermon(ctx, cx, feetY, t) {
     for (let i = 0; i < 6; i++) {
@@ -1042,5 +1050,5 @@ window.World = (function () {
 
   const decorAt = (x, y) => decor.find(d => d.x === x && d.y === y && decorBlocked(d));
   const lodges = () => structures.filter(s => s.kind === 'lodge');
-  return { TS, W, H, at, walkable, regions, regionAt, locked, siteAt, setState, structures, decor, decorAt, lodges, drawTile, drawFace, findPath, drawAction, drawItem, drawFollower, drawGlow, drawStructure, drawDecor, drawMission, drawPerson, drawRing, drawSermon, drawSimurgh, drawSparkles, drawBirdFace, drawMonster, rr, circ, shade, structureAt, doorOf };
+  return { TS, W, H, at, walkable, regions, regionAt, locked, siteAt, setState, structures, decor, decorAt, lodges, drawTile, drawFace, findPath, drawAction, drawItem, drawFollower, drawGlow, drawStructure, drawDecor, drawMission, drawPerson, drawRing, drawSermon, drawSimurgh, drawSparkles, drawBirdFace, drawMonster, rr, circ, shade, structureAt, doorOf, drawGuard };
 })();

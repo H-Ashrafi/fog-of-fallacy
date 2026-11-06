@@ -83,8 +83,8 @@ back with `node tools/apply-dialogue.js <edited.txt>` (add `--dry` to preview): 
   refuse work and deliveries until you answer the preacher's argument. Pressure grows
   with each level (more preachers, more often, more heads per outing).
 * **Statues of Aristotle.** Every region has an empty plinth. With a mason in your
-  crew and enough coins you can raise a statue there; nobody inside its circle can be
-  reached by a preacher. Statues cost more in later regions.
+  crew and enough coins you can raise a statue there; while it stands, nobody in that
+  whole region can be reached by a preacher. Statues cost more in later regions.
 * **Levels.** Each early region focuses on one fallacy, later ones mix several:
 
   | Region | Fallacies | Mission | Crew |

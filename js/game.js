@@ -391,11 +391,11 @@
     const x1 = Math.min(Wd.W - 1, Math.floor((camX + cam.w) / TS)), y1 = Math.min(Wd.H - 1, Math.floor((camY + cam.h) / TS));
     for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) Wd.drawTile(ctx, Wd.at(x, y), x, y, x * TS - camX, y * TS - camY, t);
     const inView = (x, y, w, h) => x + w >= x0 - 1 && x <= x1 + 1 && y + h >= y0 - 1 && y <= y1 + 1;
-    // statue circles sit on the ground, under everything that stands
+    // a built statue guards its whole level: a golden edge round the region, on the ground under everything that stands
     D.STATUE.sites.forEach((s, i) => {
       const st = S.statues[i]; if (!st || st.status !== 'built') return;
-      const r = D.STATUE.radius;
-      if (inView(s.x - r, s.y - r, r * 2 + 1, r * 2 + 1)) Wd.drawRing(ctx, s.x * TS - camX + TS / 2, s.y * TS - camY + TS / 2, r * TS, t);
+      const r = Wd.regions[s.region];
+      if (inView(r.x0, r.y0, r.x1 - r.x0 + 1, r.y1 - r.y0 + 1)) Wd.drawGuard(ctx, r.x0 * TS - camX, r.y0 * TS - camY, (r.x1 - r.x0 + 1) * TS, (r.y1 - r.y0 + 1) * TS, t);
     });
     Wd.structures.forEach(s => { if (inView(s.x, s.y, s.w, s.h)) Wd.drawStructure(ctx, s, camX, camY, t); });
     D.MISSIONS.forEach(m => {
@@ -572,7 +572,7 @@
     Wd.structures.forEach(s => { mctx.fillStyle = s.roof; mctx.fillRect(s.x * 2, s.y * 2, s.w * 2, s.h * 2); });
     D.STATUE.sites.forEach((s, i) => {
       const st = S.statues[i]; if (!st || st.status !== 'built') return;
-      mctx.fillStyle = 'rgba(246,181,68,.22)'; mctx.beginPath(); mctx.arc(s.x * 2 + 1, s.y * 2 + 1, D.STATUE.radius * 2, 0, Math.PI * 2); mctx.fill();
+      const r = Wd.regions[s.region]; mctx.fillStyle = 'rgba(246,181,68,.22)'; mctx.fillRect(r.x0 * 2, r.y0 * 2, (r.x1 - r.x0 + 1) * 2, (r.y1 - r.y0 + 1) * 2);
       mctx.fillStyle = '#F6B544'; mctx.fillRect(s.x * 2 - 1, s.y * 2 - 1, 4, 4);
     });
     Wd.regions.forEach((r, i) => { if (i >= S.unlocked) { mctx.fillStyle = 'rgba(190,205,205,.9)'; mctx.fillRect(r.x0 * 2, r.y0 * 2, (r.x1 - r.x0 + 1) * 2, (r.y1 - r.y0 + 1) * 2); } });
@@ -1141,12 +1141,13 @@
      A preacher walks out of the lodge in a region, goes to somebody you convinced, preaches
      for a few seconds, and leaves a fog behind: experts leave your crew until you clear a
      harder fog; task givers refuse you until you answer the preacher's argument. Nobody
-     inside a statue's circle can be reached. You cannot talk to a preacher. */
+     inside a level a statue guards can be reached. You cannot talk to a preacher. */
   const preachers = [];
   const preacherAt = (x, y) => preachers.find(p => p.phase !== 'gone' && ((p.x === x && p.y === y) || (p.path && p.path.length && p.path[0][0] === x && p.path[0][1] === y)));
   const orderCfg = () => D.ORDER.byLevel[Math.min(S.unlocked, 6)] || null;
   const isDeliverTarget = n => Object.values(D.JOBS).some(j => j.deliverTo === n.id) || Object.values(D.TASKS).some(t => t.kind === 'deliver' && t.target === n.id);
-  const protectedAt = (x, y) => D.STATUE.sites.some((s, i) => S.statues[i] && S.statues[i].status === 'built' && dist(s.x, s.y, x, y) <= D.STATUE.radius);
+  /* A built statue guards every tile of the level it stands in. */
+  const protectedAt = (x, y) => { const r = Wd.regionAt(x, y); return r >= 0 && D.STATUE.sites.some((s, i) => s.region === r && S.statues[i] && S.statues[i].status === 'built'); };
   function canTarget(n) {
     if (n.region >= S.unlocked || protectedAt(n.x, n.y)) return false;
     if (preachers.some(p => p.phase !== 'gone' && p.target === n.id)) return false;
@@ -1418,7 +1419,7 @@
       <h2>🗿 ${esc(D.STATUE.name)}</h2>
       <p>${esc(D.STATUE.blurb)}</p>
       <p class="spot">${esc(D.STATUE.quote)}</p>
-      <div class="costrow"><span>${esc(T('Cost'))} <b>${cost} 🪙</b></span><span>${esc(T('You have'))} <b>${S.money} 🪙</b></span><span>${esc(T('Circle'))} <b>${D.STATUE.radius}</b></span><span>${esc(T('Builder'))} <b>${esc(roleName('mason'))}</b></span></div>
+      <div class="costrow"><span>${esc(T('Cost'))} <b>${cost} 🪙</b></span><span>${esc(T('You have'))} <b>${S.money} 🪙</b></span><span>${esc(T('Guards'))} <b>${esc(regionName(site.region))}</b></span><span>${esc(T('Builder'))} <b>${esc(roleName('mason'))}</b></span></div>
       <p class="why">${esc(why)}</p>
       <div class="row"><button class="btn btn-big grow" id="p-build" ${ready ? '' : 'disabled'}>${esc(T('Build the statue'))}</button><button class="btn btn-ghost" id="p-close">${esc(T('Close'))}</button></div>`);
     $('p-close').onclick = closePanel;

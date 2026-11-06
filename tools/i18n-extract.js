@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /* Lists every English string the game can show, for translators and for tools/i18n-check.js.
    Sources: text fields in js/data.js, js/data-order.js and js/world.js (via I18N.collect),
-   T('...') calls in js/game.js, and data-i18n attributes in index.html.
+   T('...') calls in js/game.js, js/scenes.js and js/talk.js, and data-i18n attributes in index.html.
    Usage:  node tools/i18n-extract.js        -> writes i18n/en.json (unique, in order of appearance)
    Plain Node, no packages. */
 const fs = require('fs'), path = require('path');
@@ -24,7 +24,7 @@ window.I18N.collect(window.FOG, window.World).forEach(add);
 
 const re = /\bT\((['"])((?:\\.|(?!\1).)*)\1/g;
 let m;
-['game.js', 'scenes.js'].forEach(f => { const src = fs.readFileSync(path.join(ROOT, 'js', f), 'utf8'); re.lastIndex = 0; while ((m = re.exec(src))) add(m[2].replace(/\\(['"\\])/g, '$1')); });
+['game.js', 'scenes.js', 'talk.js'].forEach(f => { const src = fs.readFileSync(path.join(ROOT, 'js', f), 'utf8'); re.lastIndex = 0; while ((m = re.exec(src))) add(m[2].replace(/\\(['"\\])/g, '$1')); });
 
 // canvas labels: tl('...') literals in world.js, plus the "<KIND> SITE" labels built from the mission kinds
 const world = fs.readFileSync(path.join(ROOT, 'js', 'world.js'), 'utf8');

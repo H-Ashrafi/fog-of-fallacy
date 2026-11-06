@@ -1300,5 +1300,16 @@ window.FOG_LANG.fa = {
   "How to spot it": "چطور پیدایش کنی",
   "The fog is gone!": "مه رفت!",
   "The lighthouse burns bright. Every trick in the Valley met a clear head.": "فانوس دریایی روشن می‌درخشد. هر حقه‌ای در دره به یک سر روشن خورد.",
-  "Keep exploring": "به گشتن ادامه بده"
+  "Keep exploring": "به گشتن ادامه بده",
+  "Say your answer": "جوابت را بگو",
+  "Tap when you are done": "وقتی تمام شد، بزن",
+  "Stop": "بس",
+  "Listening…": "گوش می‌دهم…",
+  "Thinking…": "فکر می‌کنم…",
+  "I could not hear that. Try again.": "نشنیدم. دوباره بگو.",
+  "I need the microphone to hear you. You can type instead.": "برای شنیدن صدایت میکروفون لازم دارم. می‌توانی به جایش بنویسی.",
+  "Type instead": "به جایش بنویس",
+  "Type your answer": "جوابت را بنویس",
+  "Send": "بفرست",
+  "{name} has nothing more to say right now.": "{name} الان حرف دیگری ندارد."
 };

@@ -736,9 +736,46 @@
     runSteps(normalize(lines, n.id), null);
   }
 
+  /* ---- live conversations (js/talk.js) ----
+     Every scripted scene (trick, expert fog, harder fog, refusal) first offers itself to Talk
+     as a seed: the character, the fallacy, the scripted lines and answers. When the server
+     can talk, the child answers out loud and `settle` gets the verdict; otherwise the scripted
+     scene runs exactly as before. */
+  const stepText = st => typeof st === 'string' ? st : (st && st.text) || '';
+  const stepMoney = steps => (steps || []).reduce((sum, st) => sum + (st && st.money > 0 ? st.money : 0), 0);
+  function seedFor(kind, who, fid, scene, extra) {
+    const f = fallacy(fid), opts = scene.options || [];
+    const isRight = o => !!o.right || /^right/.test(o.key || '');
+    return Object.assign({
+      who, name: speakerName(who), fallacy: fid, nick: f.nick, one: f.one, spot: f.spot,
+      lang: I ? I.lang : 'en', player: S.name, kind, topic: scene.topic || null,
+      intro: (scene.intro || []).map(stepText).filter(Boolean).map(fill),
+      right: opts.filter(isRight).map(o => fill(o.text)), wrong: opts.filter(o => !isRight(o)).map(o => fill(o.text))
+    }, extra || {});
+  }
+  /* Resolves true when the live conversation took over the dialogue box. */
+  function tryTalk(seed, settle) {
+    if (!window.Talk || !Talk.available()) return Promise.resolve(false);
+    A.stop(); hidePreview(); script = null; mode = 'dialog';
+    $('dlg').hidden = false; $('scene').hidden = true;
+    return Talk.run(seed, {
+      line: (who, text) => showLine(who, text, text),
+      finish: (verdict, heard, lastSay) => { $('dlg').hidden = true; mode = 'world'; A.stop(); settle(verdict, heard); },
+      abort: () => { $('dlg').hidden = true; mode = 'world'; A.stop(); toast(T('{name} has nothing more to say right now.', { name: seed.name }), 'warn'); }
+    }).then(ok => { if (!ok) { $('dlg').hidden = true; mode = 'world'; } return ok; });
+  }
+
   /* ---- tricks ---- */
-  function runTrick(id) {
+  async function runTrick(id) {
     const tr = D.TRICKS[id];
+    const seed = seedFor('trick', tr.npc, tr.fallacy, tr, { cost: tr.cost || 0 });
+    const tip = stepMoney(tr.right);
+    if (await tryTalk(seed, (verdict, heard) => {
+      const correct = seed.right[0] || null;
+      if (verdict === 'spotted') { if (tip) changeMoney(tip); A.play('coins'); S.tricks[id] = 'won'; save(); lessonWin(tr.fallacy, null, null, heard); }
+      else if (verdict === 'fooled') { if (tr.cost) { changeMoney(-tr.cost); A.play('lose'); } lessonFail(tr.fallacy, null, null, heard, correct); simEvent('fooled'); }
+      else lessonOops(null, heard, correct);
+    })) return;
     const steps = normalize(tr.intro, tr.npc).concat([{ choice: tr.options }]);
     const c = { branch: o => normalize(tr[o.key] || [], tr.npc), finish: kind => finishTrick(id, kind, c) };
     runSteps(steps, c);
@@ -792,8 +829,10 @@
     if (S.money < totalCost(m)) return L.coins;
     return L.ready;
   }
-  function runFog(n, idx) {
+  async function runFog(n, idx) {
     const fog = n.expert.fog[idx];
+    const seed = seedFor('fog', n.id, fog.fallacy, fog);
+    if (await tryTalk(seed, (verdict, heard) => settleFog(n, idx, verdict === 'spotted' ? 'win' : verdict === 'fooled' ? 'fail' : 'oops', heard, seed.right[0] || null))) return;
     let result = 'fail';
     const c = {
       branch: o => { result = o.right ? 'win' : 'fail'; return normalize(o.right ? fog.right : fog.wrong, n.id).concat([{ end: 'x' }]); },
@@ -802,9 +841,13 @@
     runSteps(normalize(fog.intro, n.id).concat([{ choice: fog.options }]), c);
   }
   function finishFog(n, idx, result, c) {
-    const e = ex(n.id), fog = n.expert.fog[idx];
     const { chosen, correct } = answerTexts(c, o => !!o.right);
+    settleFog(n, idx, result, chosen, correct);
+  }
+  function settleFog(n, idx, result, chosen, correct) {
+    const e = ex(n.id), fog = n.expert.fog[idx];
     mode = 'world';
+    if (result === 'oops') { lessonOops(null, chosen, correct); return; }
     if (result === 'win') {
       e.cleared = idx + 1;
       const joined = !e.crew; e.crew = true; save();
@@ -819,37 +862,43 @@
   }
 
   /* ---- the harder fog a preacher leaves behind: clear it and the expert rejoins the crew ---- */
-  function runHardFog(n) {
+  async function runHardFog(n) {
     const list = D.HARD[n.id] || [], r = S.refog[n.id];
     const fog = list[r.idx % list.length];
     if (!fog) { delete S.refog[n.id]; ex(n.id).crew = true; save(); talkExpert(n); return; }
+    const settle = (result, chosen, correct) => {
+      mode = 'world';
+      if (result === 'oops') { lessonOops(null, chosen, correct); return; }
+      if (result === 'win') {
+        delete S.refog[n.id]; const e = ex(n.id); e.crew = true; e.xp += 30; S.orderStats.cleared++; save();
+        lessonWin(fog.fallacy, T('{name} is back on your crew!', { name: n.name }), () => { toast(T('👷 {name} is back', { name: n.name }), 'good'); updateHud(); placeCrew(true); }, chosen);
+      } else lessonFail(fog.fallacy, T('{name} is still foggy', { name: n.name }), null, chosen, correct);
+    };
+    const seed = seedFor('hard', n.id, fog.fallacy, fog);
+    if (await tryTalk(seed, (verdict, heard) => settle(verdict === 'spotted' ? 'win' : verdict === 'fooled' ? 'fail' : 'oops', heard, seed.right[0] || null))) return;
     let result = 'fail';
     const c = {
       branch: o => { result = o.right ? 'win' : 'fail'; return normalize(o.right ? fog.right : fog.wrong, n.id).concat([{ end: 'x' }]); },
-      finish: () => {
-        const { chosen, correct } = answerTexts(c, o => !!o.right);
-        mode = 'world';
-        if (result === 'win') {
-          delete S.refog[n.id]; const e = ex(n.id); e.crew = true; e.xp += 30; S.orderStats.cleared++; save();
-          lessonWin(fog.fallacy, T('{name} is back on your crew!', { name: n.name }), () => { toast(T('👷 {name} is back', { name: n.name }), 'good'); updateHud(); placeCrew(true); }, chosen);
-        } else lessonFail(fog.fallacy, T('{name} is still foggy', { name: n.name }), null, chosen, correct);
-      }
+      finish: () => { const { chosen, correct } = answerTexts(c, o => !!o.right); settle(result, chosen, correct); }
     };
     runSteps(normalize(fog.intro, n.id).concat([{ choice: fog.options }]), c);
   }
 
   /* ---- somebody the preacher turned against you: answer the argument and they work with you again ---- */
-  function runRefuse(n) {
+  async function runRefuse(n) {
     const r = D.REFUSE[n.id];
+    const settle = (result, chosen, correct) => {
+      mode = 'world';
+      if (result === 'oops') { lessonOops(null, chosen, correct); return; }
+      if (result === 'win') { delete S.refuse[n.id]; S.orderStats.cleared++; save(); lessonWin(r.fallacy, T('{name} will work with you again', { name: n.name }), () => updateHud(), chosen); }
+      else lessonFail(r.fallacy, T('{name} still refuses', { name: n.name }), null, chosen, correct);
+    };
+    const seed = seedFor('refuse', n.id, r.fallacy, r);
+    if (await tryTalk(seed, (verdict, heard) => settle(verdict === 'spotted' ? 'win' : verdict === 'fooled' ? 'fail' : 'oops', heard, seed.right[0] || null))) return;
     let result = 'fail';
     const c = {
       branch: o => { result = o.right ? 'win' : 'fail'; return normalize(o.right ? r.right : r.wrong, n.id).concat([{ end: 'x' }]); },
-      finish: () => {
-        const { chosen, correct } = answerTexts(c, o => !!o.right);
-        mode = 'world';
-        if (result === 'win') { delete S.refuse[n.id]; S.orderStats.cleared++; save(); lessonWin(r.fallacy, T('{name} will work with you again', { name: n.name }), () => updateHud(), chosen); }
-        else lessonFail(r.fallacy, T('{name} still refuses', { name: n.name }), null, chosen, correct);
-      }
+      finish: () => { const { chosen, correct } = answerTexts(c, o => !!o.right); settle(result, chosen, correct); }
     };
     runSteps(normalize(r.intro, n.id).concat([{ choice: r.options }]), c);
   }
@@ -1546,7 +1595,7 @@
   function pressA() {
     if (mode === 'modal') { modalPress(); return; }
     if (mode === 'world') interact();
-    else if (mode === 'dialog') { if (!$('dlg-choices').hidden) return; if ($('scene').hidden) next(); else { $('scene').hidden = true; next(); } }
+    else if (mode === 'dialog') { if (window.Talk && Talk.active()) { Talk.press(); return; } if (!$('dlg-choices').hidden) return; if ($('scene').hidden) next(); else { $('scene').hidden = true; next(); } }
     else if (mode === 'panel' && !$('card').hidden) closeCard();
   }
 

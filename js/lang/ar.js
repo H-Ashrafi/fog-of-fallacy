@@ -1300,5 +1300,16 @@ window.FOG_LANG.ar = {
   "How to spot it": "كيف تكتشفها",
   "The fog is gone!": "اختفى الضباب!",
   "The lighthouse burns bright. Every trick in the Valley met a clear head.": "المنارة تضيء بقوة. كل خدعة في الوادي قابلت رأسا صافيا.",
-  "Keep exploring": "تابع الاستكشاف"
+  "Keep exploring": "تابع الاستكشاف",
+  "Say your answer": "قل جوابك",
+  "Tap when you are done": "اضغط عندما تنتهي",
+  "Stop": "توقف",
+  "Listening…": "أسمعك…",
+  "Thinking…": "أفكر…",
+  "I could not hear that. Try again.": "لم أسمع ذلك. حاول مرة أخرى.",
+  "I need the microphone to hear you. You can type instead.": "أحتاج إلى الميكروفون لأسمعك. يمكنك الكتابة بدلا من ذلك.",
+  "Type instead": "اكتب بدلا من ذلك",
+  "Type your answer": "اكتب جوابك",
+  "Send": "أرسل",
+  "{name} has nothing more to say right now.": "{name} ليس لديه ما يقوله الآن."
 };

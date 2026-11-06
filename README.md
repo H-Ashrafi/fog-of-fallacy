@@ -140,6 +140,7 @@ in `i18n/NAMES.md`). Pick a language on the title screen or open `?lang=fa`.
 | `GET /api/saves/{slug}` · `PUT /api/saves/{slug}` | JSON save per player name |
 | `GET /api/voice?who=&profile=&text=` | recorded voice line, cached as MP3 on disk |
 | `POST /api/login` · `POST /api/logout` | `{ "passphrase": "..." }` sets the year-long cookie that every other route needs; logout clears it |
+| `POST /api/talk` · `POST /api/talk/{id}` | a live conversation: the scripted scene in, the character's opening out; then each answer (recorded audio, or `?text=`) in, the reply and the verdict out |
 
 Environment variables:
 
@@ -153,6 +154,10 @@ Environment variables:
 | `ELEVENLABS_API_KEY` | unset | when set, `/api/voice` fetches lines from ElevenLabs once and caches them |
 | `FOG_PASSPHRASE` | unset | the family's secret word. Every page and API call needs the cookie `POST /api/login` sets; without the word a visitor only ever sees the gate page. Unset and not `FOG_OPEN`: the server is closed |
 | `FOG_OPEN` | unset | `1` opens the server to everyone. `run.ps1` sets it for local play when no passphrase is given; never set it in production |
+| `OPENAI_API_KEY` | unset | with `ELEVENLABS_API_KEY`, turns the scripted encounters into live conversations (below) |
+| `FOG_OPENAI_MODEL` | `gpt-4o-mini` | the model that plays the characters |
+| `FOG_TALK_DAILY_LIMIT` | `150` | model calls allowed per UTC day; past it the game falls back to the scripted answers until tomorrow |
+| `FOG_TALK_MAX_TURNS` | `4` | answers the child gets per conversation before the character decides |
 
 ### The gate
 
@@ -177,6 +182,32 @@ players keep running the JavaScript their browser cached; with a stale
 `voice/index.json` they lose the recorded voices and hear the robot fallback instead.
 On a plain static host (GitHub Pages) the `?v=` bump is the only thing that protects
 them, since the headers above come from the Rust server.
+
+## Live conversations
+
+The three fixed answers of a scripted scene can be learned by position without reading
+them. With `OPENAI_API_KEY` and `ELEVENLABS_API_KEY` set on the server, a trickster talks
+instead: the server has an OpenAI model play the character (same story, same fallacy,
+words for a six-year-old, in the chosen language), the child answers out loud (tap the
+microphone, speak, tap again; or type), ElevenLabs turns the recording into text, and the
+model answers and judges: *spotted* (the child questioned the reasoning in any way),
+*fooled* (went along), or *insult* (only called names). The game then pays out exactly as
+the scripted scene would: the tip or the lost coins, the lesson card, the expert joining
+the crew. Every spoken line goes through `/api/voice`, so it is in the character's voice.
+
+What keeps the bill small: opening lines are pooled per character, fallacy and language
+(`talk/openings/` under the data dir; after six, a random one is reused and the model is
+not called), voice clips are cached by text, a conversation is at most
+`FOG_TALK_MAX_TURNS` answers, and `FOG_TALK_DAILY_LIMIT` caps the model calls per day.
+When the cap is reached, the browser falls back to the scripted answers until tomorrow.
+`/api/health` shows `talk`, `talk_used` and `talk_limit`.
+
+Every exchange is appended to `talk/log/<day>.jsonl` under the data dir (who, player,
+fallacy, role, text, verdict), so a parent can read what was said and how it was judged.
+
+The OpenAI key is a platform API key from platform.openai.com, billed per call; a ChatGPT
+subscription does not cover it. The server is the only thing that holds either key: the
+browser never sees them.
 
 ## Voices
 

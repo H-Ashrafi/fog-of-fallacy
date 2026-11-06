@@ -19,6 +19,13 @@
 //!                      right word. Unset: the server is CLOSED (every page is the gate),
 //!                      unless FOG_OPEN=1, which is for local play only.
 //!   FOG_OPEN           "1" opens the server to everyone (no passphrase). Never in production.
+//!   OPENAI_API_KEY     with ELEVENLABS_API_KEY, turns the scripted encounters into live
+//!                      conversations (POST /api/talk, see talk.rs)
+//!   FOG_OPENAI_MODEL   the model that plays the characters (default gpt-4o-mini)
+//!   FOG_TALK_DAILY_LIMIT  model calls allowed per UTC day (default 150), then the game
+//!                      falls back to the scripted answers until tomorrow
+//!   FOG_TALK_MAX_TURNS answers the child gets per conversation (default 4)
+//!   OPENAI_BASE_URL, ELEVENLABS_BASE_URL  override the API hosts (tests)
 
 use std::{
     collections::HashMap,
@@ -43,14 +50,18 @@ use sha2::Sha256;
 use subtle::ConstantTimeEq;
 use tower_http::services::{ServeDir, ServeFile};
 
-struct App {
+mod talk;
+
+pub struct App {
     data: PathBuf,
+    /// ELEVENLABS_API_KEY: recorded voices, and the listening half of conversations.
     key: Option<String>,
     voices: HashMap<String, String>,
     http: reqwest::Client,
     gate: Gate,
+    talk: talk::Talk,
 }
-type Shared = Arc<App>;
+pub type Shared = Arc<App>;
 
 /// Who may come in. See the `gate` section at the bottom.
 struct Gate {
@@ -85,12 +96,14 @@ async fn main() {
         eprintln!("warning: {} not found. Run from the repo root or set FOG_WEB_DIR.", index.display());
     }
 
+    let talk = talk::Talk::from_env(&data);
     let app: Shared = Arc::new(App {
         data,
         key,
         voices,
         http: reqwest::Client::builder().user_agent("fog-of-fallacy/0.2").build().expect("http client"),
         gate: gate_config,
+        talk,
     });
 
     let router = Router::new()
@@ -99,6 +112,8 @@ async fn main() {
         .route("/api/voice", get(voice))
         .route("/api/login", post(login))
         .route("/api/logout", post(logout))
+        .route("/api/talk", post(talk::start))
+        .route("/api/talk/:id", post(talk::reply))
         .fallback_service(ServeDir::new(&web).not_found_service(ServeFile::new(index)))
         // The gate runs inside cache_headers, so its answers get the no-store below.
         .layer(middleware::from_fn_with_state(app.clone(), gate))
@@ -114,6 +129,7 @@ async fn main() {
     println!("  web dir : {}", web.display());
     println!("  data dir: {}", app.data.display());
     println!("  voices  : {}", if app.key.is_some() { "ElevenLabs (cached on disk)" } else { "browser speech synthesis (set ELEVENLABS_API_KEY for recorded voices)" });
+    println!("  talk    : {}", if app.talk.enabled(app.key.is_some()) { format!("live conversations with {} ({} model calls a day, {} answers each)", app.talk.model, app.talk.daily_limit, app.talk.max_turns) } else { "scripted answers only (set OPENAI_API_KEY and ELEVENLABS_API_KEY for live conversations)".to_string() });
     println!("  gate    : {}", match (&app.gate.passphrase, app.gate.open) {
         (_, true) => "OPEN to everyone (FOG_OPEN=1; local play only)",
         (Some(_), false) => "locked; the secret word in FOG_PASSPHRASE lets players in",
@@ -197,7 +213,11 @@ fn load_voices(web: &std::path::Path) -> HashMap<String, String> {
 /* ------------------------------------------------------------------ health */
 
 async fn health(State(app): State<Shared>) -> Json<serde_json::Value> {
-    Json(serde_json::json!({ "ok": true, "voice": app.key.is_some(), "locked": app.gate.passphrase.is_some() && !app.gate.open }))
+    let mut v = serde_json::json!({ "ok": true, "voice": app.key.is_some(), "locked": app.gate.passphrase.is_some() && !app.gate.open });
+    if let (Some(obj), Some(talk)) = (v.as_object_mut(), app.talk.status(app.key.is_some()).as_object()) {
+        obj.extend(talk.clone());
+    }
+    Json(v)
 }
 
 /* -------------------------------------------------------------------- gate */
@@ -216,7 +236,7 @@ const MAX_FAILURES_PER_MINUTE: usize = 20;
 
 type HmacSha256 = Hmac<Sha256>;
 
-fn hex(bytes: &[u8]) -> String {
+pub fn hex(bytes: &[u8]) -> String {
     bytes.iter().map(|b| format!("{b:02x}")).collect()
 }
 
@@ -404,7 +424,7 @@ async fn voice(State(app): State<Shared>, Query(q): Query<VoiceQuery>) -> Respon
         return audio(Bytes::from(bytes));
     }
 
-    let url = format!("https://api.elevenlabs.io/v1/text-to-speech/{voice_id}?output_format=mp3_44100_64");
+    let url = format!("{}/v1/text-to-speech/{voice_id}?output_format=mp3_44100_64", app.talk.eleven_base);
     let body = serde_json::json!({
         "text": text,
         "model_id": "eleven_v3",

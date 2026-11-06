@@ -209,7 +209,7 @@ Answers that see through the trick sound like:
 Answers that fall for it sound like:
 {wrong}
 
-HOW TO TALK: Write in {language}. The child is six: use short, common words and short sentences. At most two sentences and thirty words per turn, except your final turn, which may be three sentences. Be warm and playful, never scary, never mean, never about violence, death, bodies, romance or money the child does not have in the game. End every non-final turn with a question that invites the child to answer. If what the child said is unclear or off the subject, answer it kindly in one short sentence and push your trick again in a new way.
+HOW TO TALK: Write in {language}. The child is six: use short, common words and short sentences. Name only people who appear in the scripted lines above (and the child); never invent other villagers, places or things. At most two sentences and thirty words per turn, except your final turn, which may be three sentences. Be warm and playful, never scary, never mean, never about violence, death, bodies, romance or money the child does not have in the game. End every non-final turn with a question that invites the child to answer. If what the child said is unclear or off the subject, answer it kindly in one short sentence and push your trick again in a new way.
 
 JUDGING: After each thing the child says, set \"verdict\":
 - \"spotted\" when the child questions the reasoning in any way: asks why, asks for proof or a reason, says that is not a reason, points out the flaw, or names the trick. Be generous: a six-year-old says it simply, and a plain \"no, why?\" counts.

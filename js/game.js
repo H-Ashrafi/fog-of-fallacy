@@ -317,6 +317,7 @@
     Inside.enter(s, {
       Wd, A, T, spec: mySpec,
       say: (lines, after) => runSteps(nar(lines).concat(after ? [{ fn: after }] : []), null),
+      picture: (img, caption, more, after) => runSteps([{ scene: img, text: caption }].concat(nar(more || []), after ? [{ fn: after }] : []), null),
       coins: n => { changeMoney(n); A.play('coins'); },
       flag: k => { S.flags[k] = true; save(); },
       hasFlag: k => !!S.flags[k],

@@ -27,6 +27,18 @@ window.Inside = (function () {
 
   let st = null;   // { s, room, label, api, x, y, fx, fy, tx, ty, moving, t, dir, walk, stepTick }
 
+  /* Pictures of the things in the rooms: img/rooms/index.json maps a thing's English line to its
+     file under img/rooms/. Loaded once, after the page; a thing with no picture gets its line only. */
+  let pictures = null;
+  async function loadPictures() {
+    if (pictures !== null) return pictures;
+    try { const r = await fetch('img/rooms/index.json', { cache: 'no-cache' }); pictures = r.ok ? await r.json() : {}; }
+    catch (e) { pictures = {}; }
+    return pictures;
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', loadPictures); else loadPictures();
+  const pictureFor = it => { const raw = it.raw || it.text; const f = pictures && raw && pictures[Array.isArray(raw) ? raw[0] : raw]; return f ? 'img/rooms/' + f : null; };
+
   function roomFor(s) {
     const R = window.FOG.ROOMS, byLabel = R.labels[s.label], base = R.kinds[(byLabel && byLabel.kind) || s.kind] || R.kinds.house;
     return Object.assign({}, base, byLabel || {});
@@ -85,14 +97,16 @@ window.Inside = (function () {
     }
   }
   function use(it) {
-    const api = st.api, lines = [].concat(it.text || []);
+    const api = st.api, lines = [].concat(it.text || []), img = pictureFor(it);
     if (it.sfx) api.A.play(it.sfx);
+    /* A picture of the thing, large, with its line as the caption; the line alone when there is no picture yet. */
+    const show = (more, after) => img ? api.picture(img, lines[0], more, after) : api.say(lines.concat(more || []), after);
     if (it.coins) {
       const key = 'room:' + st.label + ':' + it.kind + it.x + ',' + it.y + ':' + DAY();
-      if (!api.hasFlag(key)) { api.flag(key); api.say(lines.concat([api.T('You find {n} coins!', { n: it.coins })]), () => api.coins(it.coins)); return; }
-      api.say(lines.concat([api.T('Nothing more in there today.')])); return;
+      if (!api.hasFlag(key)) { api.flag(key); show([api.T('You find {n} coins!', { n: it.coins })], () => api.coins(it.coins)); return; }
+      show([api.T('Nothing more in there today.')]); return;
     }
-    if (lines.length) api.say(lines);
+    if (lines.length) show();
   }
 
   /* ================= drawing ================= */

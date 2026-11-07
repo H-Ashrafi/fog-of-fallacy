@@ -1445,5 +1445,10 @@ window.FOG_LANG.ar = {
   "{name}! You spotted the trick. I saw it from the sky.": "{name}! اكتشفت الخدعة. رأيتها من السماء.",
   "A trickster never says sorry. But you kept your head clear, and that is what counts.": "المحتال لا يعتذر أبدا. لكنك أبقيت رأسك صافيا، وهذا ما يهم.",
   "Take these coins from me. A clear head earns them.": "خذ هذه القطع مني. الرأس الصافي يستحقها.",
-  "The Simurgh says: you spotted it!": "السيمرغ تقول: اكتشفتها!"
+  "The Simurgh says: you spotted it!": "السيمرغ تقول: اكتشفتها!",
+  "Ask the Simurgh": "اسأل السيمرغ",
+  "Simurgh feathers": "ريش السيمرغ",
+  "Here I am, {name}. You burned a feather, so listen closely.": "ها أنا، {name}. أحرقت ريشة، فاسمع جيدا.",
+  "Now say it to them, in your own words.": "الآن قلها له بكلماتك أنت.",
+  "No feathers left here. They come back in the next part of the Valley.": "لم يبق ريش هنا. يعود في الجزء التالي من الوادي."
 };

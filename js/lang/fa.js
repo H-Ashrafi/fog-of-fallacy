@@ -1445,5 +1445,10 @@ window.FOG_LANG.fa = {
   "{name}! You spotted the trick. I saw it from the sky.": "{name}! حقه را فهمیدی. از آسمان دیدم.",
   "A trickster never says sorry. But you kept your head clear, and that is what counts.": "حقه‌باز هیچ وقت معذرت نمی‌خواهد. ولی تو سرت را روشن نگه داشتی، و همین مهم است.",
   "Take these coins from me. A clear head earns them.": "این سکه‌ها را از من بگیر. سر روشن آنها را به دست می‌آورد.",
-  "The Simurgh says: you spotted it!": "سیمرغ می‌گوید: فهمیدی!"
+  "The Simurgh says: you spotted it!": "سیمرغ می‌گوید: فهمیدی!",
+  "Ask the Simurgh": "از سیمرغ بپرس",
+  "Simurgh feathers": "پرهای سیمرغ",
+  "Here I am, {name}. You burned a feather, so listen closely.": "من اینجام، {name}. یک پر سوزاندی، پس خوب گوش کن.",
+  "Now say it to them, in your own words.": "حالا با کلمات خودت به او بگو.",
+  "No feathers left here. They come back in the next part of the Valley.": "اینجا دیگر پری نمانده. در قسمت بعدی دره برمی‌گردند."
 };

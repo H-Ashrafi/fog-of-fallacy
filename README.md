@@ -113,6 +113,17 @@ fogs and the refusals in `js/data-order.js`; the scenes' captions and the mini-g
 engine in `js/game.js`; sound and voice in `js/audio.js`; languages in `js/i18n.js` and
 `js/lang/`.
 
+## The Simurgh's feathers
+
+She has three of the Simurgh's feathers in every level, shown in the top bar, and they come
+back in the next level. While a trickster, a fogged expert, a refusal or a Grey City argument
+waits for her answer, a button at the foot of the dialogue lets her burn one: the feather
+lifts, catches fire from the quill, embers rise and a golden burst marks the moment the
+Simurgh hears. She flies in, says what the trick is and what to ask, in her own voice, and the
+question comes back for the child to answer herself (in a live conversation the character
+repeats the line and listens again). With no feathers left the button is dimmed and she says
+they come back in the next part of the Valley.
+
 ## Inside the buildings
 
 Press A at a building's door and you step inside: the roof lifts off and the room is drawn

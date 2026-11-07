@@ -378,6 +378,19 @@ Always answer with JSON: {{\"verdict\": \"none|spotted|fooled|insult\", \"say\":
         Ok(v["text"].as_str().unwrap_or("").trim().to_string())
     }
 
+    /// A one-word challenge is the whole lesson of the game, so it is settled here, not left to the
+    /// model: "why" on its own came back as "none" in two runs out of three on a small model.
+    fn is_challenge(heard: &str) -> bool {
+        let norm: String = heard.to_lowercase().chars().filter(|c| c.is_alphanumeric() || c.is_whitespace()).collect::<String>().split_whitespace().collect::<Vec<_>>().join(" ");
+        const CHALLENGES: &[&str] = &[
+            "why", "but why", "why not", "why though", "how", "how come", "how do you know", "says who", "so what", "prove it", "show me",
+            "no", "no way", "not a reason", "thats not a reason", "that is not a reason", "that isnt a reason", "that is not a real reason",
+            "why is it right", "why is that right", "why should i", "is it true", "is that true", "what does it do",
+            "چرا", "چرا نه", "از کجا میدانی", "ثابت کن", "نه", "لماذا", "لماذا لا", "كيف تعرف", "أثبت ذلك", "لا",
+        ];
+        CHALLENGES.contains(&norm.as_str())
+    }
+
     fn prune(convs: &mut HashMap<String, Conv>) {
         convs.retain(|_, c| c.started.elapsed() < Duration::from_secs(30 * 60));
     }
@@ -472,12 +485,17 @@ pub async fn reply(State(app): State<Shared>, Path(id): Path<String>, Query(q): 
         return fail(StatusCode::TOO_MANY_REQUESTS, "today's conversations are used up");
     }
     let last = turns + 1 >= talk.max_turns;
+    let challenged = Talk::is_challenge(&heard);
     let messages = {
         let mut convs = talk.convs.lock().expect("convs lock");
         let Some(c) = convs.get_mut(&id) else { return fail(StatusCode::NOT_FOUND, "that conversation is over") };
         let mut content = heard.clone();
-        if last {
+        if challenged {
+            content.push_str(&format!("\n\n(The child has challenged your reasoning. The verdict is \"spotted\", decided. Write only your closing line: give up the trick, say in one simple sentence that it was the trick called \"{}\" and what the child did right, in at most two sentences, and ask no question.)", seed.nick));
+        } else if last {
             content.push_str("\n\n(This was the child's last answer. Decide now: \"spotted\" or \"fooled\" (or \"insult\"), never \"none\", and end the scene in your final turn.)");
+        } else {
+            content.push_str(&format!("\n\n(Reminder: decide the verdict first. If it is \"spotted\" or \"fooled\", your line is a closing line that gives up the trick, names it \"{}\", and asks no question. Only with \"none\" do you keep pushing and end with a question.)", seed.nick));
         }
         c.messages.push(serde_json::json!({ "role": "user", "content": content }));
         c.messages.clone()
@@ -495,7 +513,9 @@ pub async fn reply(State(app): State<Shared>, Path(id): Path<String>, Query(q): 
         }
     };
     let mut verdict = turn.verdict;
-    if last && verdict == "none" {
+    if challenged {
+        verdict = "spotted".into();
+    } else if last && verdict == "none" {
         verdict = "fooled".into();
     }
     let done = verdict != "none";

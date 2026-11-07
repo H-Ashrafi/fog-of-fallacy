@@ -37,7 +37,14 @@ window.Inside = (function () {
     return pictures;
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', loadPictures); else loadPictures();
-  const pictureFor = it => { const raw = it.raw || it.text; const f = pictures && raw && pictures[Array.isArray(raw) ? raw[0] : raw]; return f ? 'img/rooms/' + f : null; };
+  /* index.json: { "<English line>": "img/rooms/x.webp", ..., "_kind": { "<kind>": "img/rooms/y.webp" } }. A value may
+     be a full path or a bare file name. The exact line wins; the kind is the fallback. */
+  const pictureFor = it => {
+    if (!pictures) return null;
+    const raw = it.raw || it.text, line = Array.isArray(raw) ? raw[0] : raw;
+    const f = (line && pictures[line]) || (pictures._kind && pictures._kind[it.kind]) || null;
+    return f ? (f.includes('/') ? f : 'img/rooms/' + f) : null;
+  };
 
   function roomFor(s) {
     const R = window.FOG.ROOMS, byLabel = R.labels[s.label], base = R.kinds[(byLabel && byLabel.kind) || s.kind] || R.kinds.house;

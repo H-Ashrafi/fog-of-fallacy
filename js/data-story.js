@@ -103,6 +103,12 @@
     },
 
     /* One-off visits the first time something happens. */
+    /* After a trick is spotted: the trickster sulks, and SHE is the one who praises, teaches and pays.
+       A trickster never praises the child; that is the Simurgh's job. */
+    spotted: {
+      say: ['{name}! You spotted the trick. I saw it from the sky.', 'A trickster never says sorry. But you kept your head clear, and that is what counts.'],
+      coins: 'Take these coins from me. A clear head earns them.'
+    },
     events: {
       ally: ['{name}, look! Your friend has a clear head now. Every fog is gone. That makes them a true ally.',
         'Nobody can fog a true ally again. Not a trickster, and not a preacher.',

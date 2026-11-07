@@ -225,6 +225,18 @@ impl Talk {
         }
     }
 
+    /// How the scene ends, by who the character is. A trickster is always a trickster: on a spotted
+    /// verdict he sulks and gives up for now, never praises, never explains the lesson and never pays
+    /// (the Simurgh does all that, in the game); on fooled he gloats and takes the coins. Everyone
+    /// else (an expert whose head clears, a citizen, a refusal) concedes honestly.
+    fn closing_rule(seed: &Seed) -> String {
+        if seed.kind == "trick" {
+            "When the verdict is \"spotted\": \"say\" is your closing line and you STAY A TRICKSTER: you grumble, sulk or shrug it off in character (\"Hmph. Keep your coins, then.\"), you stop pushing, you do NOT praise the child, do NOT say what the trick was, do NOT explain any lesson, do NOT offer coins, and ask no question. When \"fooled\": \"say\" gloats a little in character as you take what you wanted; no lesson, no explanation, no question.".to_string()
+        } else {
+            "When the verdict is \"spotted\": \"say\" is your closing line, in character and kind: you give up the bad reasoning, you do NOT argue for it any more, you say in one simple sentence that you see it now, and you ask no further question. When \"fooled\": \"say\" shows that you still believe the bad reasoning and the fog stays; no question.".to_string()
+        }
+    }
+
     /// The character, the scene and the rules, in one system message.
     fn system_prompt(&self, seed: &Seed) -> String {
         let aim = match seed.kind.as_str() {
@@ -260,11 +272,12 @@ JUDGING: After each thing the child says, set \"verdict\":
 - \"fooled\" when the child agrees, goes along, pays, or accepts the trick as a reason.
 - \"insult\" when the child only calls you names instead of answering.
 - \"none\" when you cannot tell yet. Then keep going.
-Decide the verdict first, then write \"say\" to match it. When the verdict is \"spotted\": \"say\" is your closing line, in character and kind: you give up the trick, you do NOT argue for it any more, you tell the child in one simple sentence what the trick was and what they did right, and you ask no further question. When \"fooled\": \"say\" reveals gently that it was a trick, says what the trick was, and what to ask next time; no further question. When \"insult\": \"say\" says that names are not an answer and asks the child to say why instead. In all three the conversation ends. Only with \"none\" do you keep pushing the trick and end with a question.
+Decide the verdict first, then write \"say\" to match it. {closing} When \"insult\": \"say\" says that names are not an answer and asks the child to say why instead. In all three the conversation ends. Only with \"none\" do you keep pushing the trick and end with a question.
 Every sentence must make plain sense on its own; never mash two ideas into one sentence.
 Always answer with JSON: {{\"verdict\": \"none|spotted|fooled|insult\", \"say\": \"...\"}}.",
             name = seed.name, player = seed.player, nick = seed.nick, fallacy = seed.fallacy, one = seed.one, spot = seed.spot,
             topic = topic, aim = aim, intro = intro, right = right, wrong = wrong, language = Self::language_name(&seed.lang),
+            closing = Self::closing_rule(seed),
         )
     }
 
@@ -491,11 +504,19 @@ pub async fn reply(State(app): State<Shared>, Path(id): Path<String>, Query(q): 
         let Some(c) = convs.get_mut(&id) else { return fail(StatusCode::NOT_FOUND, "that conversation is over") };
         let mut content = heard.clone();
         if challenged {
-            content.push_str(&format!("\n\n(The child has challenged your reasoning. The verdict is \"spotted\", decided. Write only your closing line: give up the trick, say in one simple sentence that it was the trick called \"{}\" and what the child did right, in at most two sentences, and ask no question.)", seed.nick));
+            if seed.kind == "trick" {
+                content.push_str("\n\n(The child has challenged your reasoning. The verdict is \"spotted\", decided. Write only your closing line, at most two sentences, and stay a trickster: grumble, sulk or shrug it off in character and stop pushing. Do not praise the child, do not say what the trick was, do not explain, do not offer coins, ask no question.)");
+            } else {
+                content.push_str("\n\n(The child has challenged your reasoning. The verdict is \"spotted\", decided. Write only your closing line, at most two sentences: give up the bad reasoning, say that you see it now, and ask no question.)");
+            }
         } else if last {
             content.push_str("\n\n(This was the child's last answer. Decide now: \"spotted\" or \"fooled\" (or \"insult\"), never \"none\", and end the scene in your final turn.)");
         } else {
-            content.push_str(&format!("\n\n(Reminder: decide the verdict first. If it is \"spotted\" or \"fooled\", your line is a closing line that gives up the trick, names it \"{}\", and asks no question. Only with \"none\" do you keep pushing and end with a question.)", seed.nick));
+            content.push_str(if seed.kind == "trick" {
+                "\n\n(Reminder: decide the verdict first. If it is \"spotted\", your line is a sulky closing line in character: no praise, no lesson, no coins, no question. If \"fooled\", you gloat and take what you wanted; no lesson, no question. Only with \"none\" do you keep pushing and end with a question.)"
+            } else {
+                "\n\n(Reminder: decide the verdict first. If it is \"spotted\" or \"fooled\", your line is a closing line with no question. Only with \"none\" do you keep pushing and end with a question.)"
+            });
         }
         c.messages.push(serde_json::json!({ "role": "user", "content": content }));
         c.messages.clone()

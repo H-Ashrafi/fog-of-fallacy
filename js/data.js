@@ -479,7 +479,7 @@ window.FOG = (function () {
       ok: [{ who: 'otto', text: 'Hmm. That\'s what they said too. But is everyone agreeing a reason?' }, { who: 'n', text: 'Otto looks sad. The fog around the square grows a little thicker.' }, { end: 'fail' }],
       oops: [{ who: 'otto', text: 'Calling them names doesn\'t answer them, child.' }, { end: 'oops' }] },
 
-    pipPebble: { fallacy: 'bandwagon', npc: 'pip', cost: 10, fromLevel: 2,
+    pipPebble: { fallacy: 'bandwagon', npc: 'pip', tip: 6, cost: 10, fromLevel: 2,
       intro: ['Psst! {name}! I sell lucky pebbles. They cost ten coins.', 'Everyone in the village bought one. Hana bought one. Idris bought one. The twins bought one. Everyone!', "You don't want to be the only one without a lucky pebble, do you?"],
       options: [
         { key: 'ok', text: "Everyone has one? Then I'd better have one too. Here's 10 coins, I don't want to be the odd one out." },
@@ -487,10 +487,10 @@ window.FOG = (function () {
         { key: 'oops', text: 'You are a little cheat, Pip, and everybody in this village knows it.' }
       ],
       ok: [{ who: 'n', text: 'You hand over 10 coins. Pip hands you a grey pebble.', money: -10, sfx: 'lose' }, { who: 'n', text: 'It\'s a pebble. Later, Idris tells you he never bought one. Hana didn\'t buy one either.' }, { scene: 'img/fail-bandwagon.jpg', text: 'You paid ten coins for a pebble. "Everyone" turned out to be nobody.' }, { end: 'fail' }],
-      right: [{ who: 'pip', text: 'It... um. It sits there. It sits there luckily.' }, { who: 'pip', text: "OK, nobody bought one. You were my first try. Take 6 coins for not falling for it. I'm being honest, see?", money: 6, sfx: 'coins' }, { end: 'win' }],
+      right: [{ who: 'pip', text: 'It... um. It sits there. It sits there luckily.' }, { who: 'pip', text: 'Hmph. Keep your coins, then. Somebody else will want a pebble.' }, { end: 'win' }],
       oops: [{ who: 'pip', text: 'I\'m not!' }, { who: 'n', text: 'Pip runs off. You still don\'t know what the pebble does.' }, { end: 'oops' }] },
 
-    dodgeCups: { fallacy: 'bandwagon', npc: 'dodge', cost: 15, fromLevel: 2,
+    dodgeCups: { fallacy: 'bandwagon', npc: 'dodge', tip: 6, cost: 15, fromLevel: 2,
       intro: ['I have three cups and one pea. You pay fifteen coins to play. You win thirty if you find the pea!', 'Everybody plays this game. All the kids played today. Everybody loves it. Come on, join everybody!'],
       options: [
         { key: 'ok', text: 'Everybody plays and everybody loves it, so it must be fair. Fine, 15 coins, shuffle them.' },
@@ -498,10 +498,10 @@ window.FOG = (function () {
         { key: 'oops', text: 'Cheaters like you should be run out of town on the back of a cart.' }
       ],
       ok: [{ who: 'n', text: 'You pay 15 coins. Dodge shuffles the cups so fast that they blur.', money: -15, sfx: 'lose' }, { who: 'n', text: 'You pick the middle cup. It is empty. The pea was never under any of them.' }, { scene: 'img/fail-bandwagon.jpg', text: 'Everybody played. Nobody won. A crowd doing something doesn\'t make it a good idea.' }, { end: 'fail' }],
-      right: [{ who: 'dodge', text: 'How many won? Er. About... none.' }, { who: 'dodge', text: "You're sharper than the others. Take 6 coins, and please don't tell Elder Otto.", money: 6, sfx: 'coins' }, { end: 'win' }],
+      right: [{ who: 'dodge', text: 'How many won? Er. About... none.' }, { who: 'dodge', text: "Shh! Don't go telling Elder Otto. Off you go." }, { end: 'win' }],
       oops: [{ who: 'dodge', text: 'Oi!' }, { who: 'n', text: 'Dodge packs up his cups. A crowd gathers to argue about who\'s a cheat. Nobody asks how many people won.' }, { end: 'oops' }] },
 
-    gusFerry: { fallacy: 'falseDilemma', npc: 'gus', cost: 30,
+    gusFerry: { fallacy: 'falseDilemma', npc: 'gus', tip: 15, cost: 30,
       intro: ['Do you want to see the other side of the river? It\'s simple.', 'Either you pay me 30 coins for the ferry, or you never see the other side. Ever.', 'You have two choices. That\'s all there is.'],
       options: [
         { key: 'ok', text: "If those are the only two choices, I suppose I have to pay. Here's 30 coins for the ferry." },
@@ -509,10 +509,10 @@ window.FOG = (function () {
         { key: 'oops', text: 'You greedy old goat, no wonder nobody likes you.' }
       ],
       ok: [{ who: 'n', text: 'You pay 30 coins. Gus rows you out, turns around halfway, and rows you back.', money: -30, sfx: 'lose' }, { who: 'gus', text: 'The trip across costs extra. You should have asked.' }, { scene: 'img/fail-falseDilemma.jpg', text: 'You paid thirty coins, and you are still on this side. Two doors were never the only doors.' }, { end: 'fail' }],
-      right: [{ who: 'gus', text: 'A... bridge.' }, { who: 'gus', text: 'Nobody ever says that. Here, take 15 coins. Call it a gift for when I retire.', money: 15, sfx: 'coins' }, { end: 'win' }],
+      right: [{ who: 'gus', text: 'A... bridge.' }, { who: 'gus', text: "A bridge. Pah. Go and build your bridge, then. I'll be here with my boat." }, { end: 'win' }],
       oops: [{ who: 'gus', text: 'You are the goat!' }, { who: 'n', text: 'You both stand on the bank and glare at each other. The river doesn\'t care.' }, { end: 'oops' }] },
 
-    louLotto: { fallacy: 'falseDilemma', npc: 'lou', cost: 12,
+    louLotto: { fallacy: 'falseDilemma', npc: 'lou', tip: 15, cost: 12,
       intro: ['I sell lotto tickets for 12 coins! The grand prize is 500!', 'Listen. In this life you are either a winner or a quitter.', 'Winners buy tickets. So which one are you?'],
       options: [
         { key: 'ok', text: "I'm no quitter, and 500 coins would fix everything. Give me a ticket, here's 12." },
@@ -520,10 +520,10 @@ window.FOG = (function () {
         { key: 'oops', text: 'Only losers sell lottery tickets, and only bigger losers buy them.' }
       ],
       ok: [{ who: 'n', text: 'You buy a ticket. Lou draws a number. It isn\'t yours.', money: -12, sfx: 'lose' }, { who: 'lou', text: 'You were so close! Winners try again.' }, { scene: 'img/fail-falseDilemma.jpg', text: 'Twelve coins are gone. "Winner or quitter" hid the real third door: keep your money.' }, { end: 'fail' }],
-      right: [{ who: 'lou', text: 'A person who keeps their coins. That option isn\'t on my sign.' }, { who: 'lou', text: 'To be honest, nobody has won yet. Take 15 coins for seeing the third door.', money: 15, sfx: 'coins' }, { end: 'win' }],
+      right: [{ who: 'lou', text: 'A person who keeps their coins. That option isn\'t on my sign.' }, { who: 'lou', text: "Hmph. My sign doesn't have room for that option. Move along." }, { end: 'win' }],
       oops: [{ who: 'lou', text: 'That\'s rude!' }, { who: 'n', text: 'Lou sells three tickets to the people who came to watch the argument.' }, { end: 'oops' }] },
 
-    twinsField: { fallacy: 'falseDilemma', npc: 'ren', tag: 'story',
+    twinsField: { fallacy: 'falseDilemma', npc: 'ren', tip: 15, tag: 'story',
       intro: [{ who: 'ren', text: '{name}! Please settle this for us. We should plant the big field with wheat. All wheat!' }, { who: 'rin', text: 'No! All beans! It\'s beans or wheat, one or the other, and Ren is wrong.' }, { who: 'ren', text: 'Well? Wheat or beans? Pick one!' }],
       options: [
         { key: 'ok', text: 'You have to pick one, so wheat. It sells better and everyone around here grows it.' },
@@ -531,10 +531,10 @@ window.FOG = (function () {
         { key: 'oops', text: "You two are the silliest farmers in the valley and I'm not surprised the crows visit." }
       ],
       ok: [{ who: 'rin', text: 'Wheat?! Fine. We plant wheat.' }, { who: 'n', text: 'The wheat catches a disease. The whole field is lost. Beans would have been fine in half of it.' }, { end: 'fail' }],
-      right: [{ who: 'ren', text: 'Half... and half.' }, { who: 'rin', text: 'We argued for five years. Five years!' }, { who: 'ren', text: 'Take 15 coins. You ended a war.', money: 15, sfx: 'coins' }, { end: 'win' }],
+      right: [{ who: 'ren', text: 'Half... and half.' }, { who: 'rin', text: 'We argued for five years. Five years!' }, { who: 'ren', text: "Fine. Half and half. But I'm not telling Rin it was your idea." }, { end: 'win' }],
       oops: [{ who: 'rin', text: 'Well, at least we agree that you are rude.' }, { end: 'oops' }] },
 
-    vellPuppy: { fallacy: 'emotion', npc: 'vell', cost: 20,
+    vellPuppy: { fallacy: 'emotion', npc: 'vell', tip: 15, cost: 20,
       intro: ['Please. Please. My puppy is starving. Look at my face. Look at it!', 'If you don\'t give me 20 coins right now, he won\'t eat tonight, and it will be your fault.', 'Do you want a puppy to starve? Do you?'],
       options: [
         { key: 'ok', text: "No! Don't let him starve, that would be awful. Here, take 20 coins and buy him something." },
@@ -542,10 +542,10 @@ window.FOG = (function () {
         { key: 'oops', text: 'Beggars are all liars.' }
       ],
       ok: [{ who: 'n', text: 'You hand over 20 coins. Vell nods sadly and walks into the Inn.', money: -20, sfx: 'lose' }, { who: 'n', text: 'Through the window, you see him order a pie. There\'s no puppy.' }, { scene: 'img/fail-emotion.jpg', text: 'You paid twenty coins for a sad face. Feelings are real, but they aren\'t reasons.' }, { end: 'fail' }],
-      right: [{ who: 'vell', text: "You want to feed him? He is, er, at my cousin's house. In another town." }, { who: 'vell', text: "Oh, all right. There's no puppy. You have a cool head. Take 15 coins, and I'll try honest work.", money: 15, sfx: 'coins' }, { end: 'win' }],
+      right: [{ who: 'vell', text: "You want to feed him? He is, er, at my cousin's house. In another town." }, { who: 'vell', text: "Fine. There's no puppy. Now go away before you scare off my real customers." }, { end: 'win' }],
       oops: [{ who: 'vell', text: 'How dare you!' }, { who: 'n', text: 'Now everyone is yelling. Nobody asks where the puppy is.' }, { end: 'oops' }] },
 
-    ziaCharm: { fallacy: 'postHoc', npc: 'zia', cost: 25,
+    ziaCharm: { fallacy: 'postHoc', npc: 'zia', tip: 15, cost: 25,
       intro: ['I sell good luck charms! They cost 25 coins, and I promise them!', 'The day I hung this charm on my stall, my sales doubled. They doubled on the very same day!', 'The charm caused it. Obviously. Buy one and double your coins.'],
       options: [
         { key: 'ok', text: "Sales doubled the very same day? That's proof enough for me. Sold, 25 coins." },
@@ -553,10 +553,10 @@ window.FOG = (function () {
         { key: 'oops', text: 'Charms are for idiots and people who believe in them deserve to lose their coins.' }
       ],
       ok: [{ who: 'n', text: 'You buy the charm and hang it on your pouch.', money: -25, sfx: 'lose' }, { who: 'n', text: 'Your coins don\'t double. You have 25 fewer.' }, { scene: 'img/fail-postHoc.jpg', text: 'The charm came first. Market day caused the sales. Coming first isn\'t the same as causing.' }, { end: 'fail' }],
-      right: [{ who: 'zia', text: 'What else changed? Well, that was the day I moved my stall next to the fountain.' }, { who: 'zia', text: 'Oh. Oh! The spot did it. Take 15 coins. You just saved me from buying twenty more charms.', money: 15, sfx: 'coins' }, { end: 'win' }],
+      right: [{ who: 'zia', text: 'What else changed? Well, that was the day I moved my stall next to the fountain.' }, { who: 'zia', text: 'The spot did it? Hmph. Charms are still prettier than spots. Go on.' }, { end: 'win' }],
       oops: [{ who: 'zia', text: 'Excuse me?!' }, { end: 'oops' }] },
 
-    magsFortune: { fallacy: 'postHoc', npc: 'mags', cost: 15,
+    magsFortune: { fallacy: 'postHoc', npc: 'mags', tip: 15, cost: 15,
       intro: ['I\'ll tell your fortune for 15 coins, dear. And listen, it works.', 'Last week I told a farmer he would find gold. The next day he found a gold coin in his field!', 'I said it, and then it happened. My words made it happen. Pay 15 coins and hear yours.'],
       options: [
         { key: 'ok', text: "You said it and then it happened, that can't be a chance. 15 coins, tell me mine." },
@@ -564,10 +564,10 @@ window.FOG = (function () {
         { key: 'oops', text: 'Fortune tellers are all frauds.' }
       ],
       ok: [{ who: 'n', text: 'You pay 15 coins. Mags peers at your palm.', money: -15, sfx: 'lose' }, { who: 'mags', text: 'You will spend money today. Ah! It has already come true!' }, { scene: 'img/fail-postHoc.jpg', text: 'You paid fifteen coins. She said it first, but saying a thing isn\'t causing it.' }, { end: 'fail' }],
-      right: [{ who: 'mags', text: 'Coins get lost in fields all the time. Yes. They do.' }, { who: 'mags', text: 'You have a clear eye, dear. Take 15 coins, and don\'t tell my customers.', money: 15, sfx: 'coins' }, { end: 'win' }],
+      right: [{ who: 'mags', text: 'Coins get lost in fields all the time. Yes. They do.' }, { who: 'mags', text: "A clear eye. Hmph. Clear eyes don't buy fortunes. Off with you." }, { end: 'win' }],
       oops: [{ who: 'mags', text: 'Frauds? I see a rude future for you.' }, { end: 'oops' }] },
 
-    bramAuction: { fallacy: 'emotion', npc: 'bram', cost: 30,
+    bramAuction: { fallacy: 'emotion', npc: 'bram', tip: 15, cost: 30,
       intro: ['Going once! I\'m selling this fine vase. It\'s only slightly cracked. It can be yours for 30 coins, friend!', 'My poor old mother painted it. She would weep to see it unsold. She would weep!', 'You wouldn\'t break an old woman\'s heart over 30 coins, would you?'],
       options: [
         { key: 'ok', text: "I couldn't break an old woman's heart over a few coins. Fine, 30 coins for the vase." },
@@ -575,10 +575,10 @@ window.FOG = (function () {
         { key: 'oops', text: 'Your mother probably can\'t paint, and neither can you sell.' }
       ],
       ok: [{ who: 'n', text: 'You pay 30 coins. The vase leaks.', money: -30, sfx: 'lose' }, { who: 'bram', text: 'My mother? Oh, she is fine. She never painted a thing in her life. Sold!' }, { scene: 'img/fail-emotion.jpg', text: 'You paid thirty coins for a cracked vase and a made-up heartbreak.' }, { end: 'fail' }],
-      right: [{ who: 'bram', text: 'Is it worth 30? No, it isn\'t, is it. It\'s worth about 3.' }, { who: 'bram', text: 'You judge fairly! Take 15 coins. The market needs more heads like yours.', money: 15, sfx: 'coins' }, { end: 'win' }],
+      right: [{ who: 'bram', text: 'Is it worth 30? No, it isn\'t, is it. It\'s worth about 3.' }, { who: 'bram', text: "Three coins! Hmph. Don't say that so loudly, you'll ruin the auction." }, { end: 'win' }],
       oops: [{ who: 'bram', text: 'Leave my mother out of this!' }, { end: 'oops' }] },
 
-    aceCards: { fallacy: 'gambler', npc: 'ace', cost: 40,
+    aceCards: { fallacy: 'gambler', npc: 'ace', tip: 20, cost: 40,
       intro: ['Pick red or black, friend. You bet 40 coins, and you win double if you guess right.', 'And listen to this. Red has come up five times in a row. Five!', 'Black is due. It\'s overdue! Bet on black and you can\'t lose.'],
       options: [
         { key: 'ok', text: 'Five reds in a row? Black is definitely due now. 40 coins on black, turn it over.' },
@@ -586,10 +586,10 @@ window.FOG = (function () {
         { key: 'oops', text: 'You are a filthy card cheat and everyone at this table knows it.' }
       ],
       ok: [{ who: 'n', text: 'You put 40 coins on black. Ace turns the card over.', money: -40, sfx: 'lose' }, { who: 'n', text: 'It\'s red. That makes six in a row. Ace shrugs.' }, { who: 'ace', text: 'Wow. Now black is really due. Do you want to bet another 40?' }, { end: 'fail' }],
-      right: [{ who: 'ace', text: "Cards don't remember. Well. You've spoiled my game." }, { who: 'ace', text: 'Take 20 coins for being honest. Most folk never work that out.', money: 20, sfx: 'coins' }, { end: 'win' }],
+      right: [{ who: 'ace', text: "Cards don't remember. Well. You've spoiled my game." }, { who: 'ace', text: "You've spoiled my game. Go and spoil somebody else's." }, { end: 'win' }],
       oops: [{ who: 'ace', text: 'A cheat? Prove it.' }, { who: 'n', text: 'You can\'t prove it. Nobody talks about whether black was really "due".' }, { end: 'oops' }] },
 
-    sterlingShares: { fallacy: 'sunkCost', npc: 'sterling', cost: 50,
+    sterlingShares: { fallacy: 'sunkCost', npc: 'sterling', tip: 20, cost: 50,
       intro: ['I sell shares in the Dry Gulch shaft for just 20 coins! I promise there is silver down there.', 'What do you say? You pay a small stake for a big future.'],
       options: [
         { key: 'stage2', text: 'All right, a small stake for a big future. 20 coins for a share.' },
@@ -603,10 +603,10 @@ window.FOG = (function () {
       ] }],
       ok2: [{ who: 'n', text: 'You pay 30 more coins.', money: -30, sfx: 'lose' }, { who: 'sterling', text: 'Splendid. Oh dear, the pump broke. Can you spare another 40?' }, { who: 'n', text: 'You dropped fifty coins into a dry hole. Money you already spent is gone. It never buys the next coin back.' }, { end: 'fail' }],
       right2: [{ who: 'sterling', text: 'The 20 is gone either way. Yes. Yes, it is.' }, { who: 'sterling', text: 'Most people pay the 30. Then they pay the 40. Take your 20 back, and 20 more for the lesson.', money: 40, sfx: 'coins' }, { end: 'win' }],
-      right: [{ who: 'sterling', text: 'You want to see the silver? Ah. The silver is, um, still in the ground.' }, { who: 'sterling', text: 'You are a careful investor. That\'s rare. Take 20 coins. Call it a dividend.', money: 20, sfx: 'coins' }, { end: 'win' }],
+      right: [{ who: 'sterling', text: 'You want to see the silver? Ah. The silver is, um, still in the ground.' }, { who: 'sterling', text: 'Still in the ground, yes. Where it is perfectly safe. Good day.' }, { end: 'win' }],
       oops: [{ who: 'sterling', text: 'Crooks! Nobody has ever insulted me so badly before lunch.' }, { end: 'oops' }] },
 
-    gritDale: { fallacy: 'hastyGen', npc: 'grit', cost: 35,
+    gritDale: { fallacy: 'hastyGen', npc: 'grit', tip: 20, cost: 35,
       intro: ['Do you need tools? Buy them from me. Never buy from Dale, up the hill.', 'A fellow from Dale sold me a cracked pick once. One fellow. So all Dale folk are cheats.', 'My picks cost 35 coins. Theirs cost 15. But theirs are Dale picks.'],
       options: [
         { key: 'ok', text: "If a Dale man cheated you, the rest can't be trusted either. 35 coins for yours, then." },
@@ -614,10 +614,10 @@ window.FOG = (function () {
         { key: 'oops', text: 'You are the cheat here, old man.' }
       ],
       ok: [{ who: 'n', text: 'You pay 35 coins for a pick that looks exactly like the 15-coin one.', money: -35, sfx: 'lose' }, { scene: 'img/fail-hastyGen.jpg', text: 'You wasted twenty coins. One person from a place isn\'t everyone from that place.' }, { end: 'fail' }],
-      right: [{ who: 'grit', text: 'Judge each pick by itself. Hm. That\'s fair.' }, { who: 'grit', text: 'I blamed a whole town for one fellow. Take 20 coins, and buy a good pick wherever it comes from.', money: 20, sfx: 'coins' }, { end: 'win' }],
+      right: [{ who: 'grit', text: 'Judge each pick by itself. Hm. That\'s fair.' }, { who: 'grit', text: 'Hmph. One fellow. Fine. Buy your pick wherever you like, then.' }, { end: 'win' }],
       oops: [{ who: 'grit', text: 'Old man?! I\'m barely seventy!' }, { end: 'oops' }] },
 
-    coyleStorm: { fallacy: 'authority', npc: 'coyle', cost: 40,
+    coyleStorm: { fallacy: 'authority', npc: 'coyle', tip: 25, cost: 40,
       intro: ['So you want a lighthouse? The Guild Master says bright lights attract storms.', 'He is the Guild Master. He wears the gold chain. So it must be true.', 'Luckily, I sell storm-charms. Pay 40 coins and your lighthouse will be safe.'],
       options: [
         { key: 'ok', text: 'If the Guild Master says so, who am I to argue? 40 coins for a storm-charm, to be safe.' },
@@ -625,10 +625,10 @@ window.FOG = (function () {
         { key: 'oops', text: 'The Guild Master is a pompous fool.' }
       ],
       ok: [{ who: 'n', text: 'You buy a storm-charm. It\'s a shell on a string.', money: -40, sfx: 'lose' }, { who: 'n', text: 'Storms arrive exactly as often as before. Important people need reasons too.' }, { end: 'fail' }],
-      right: [{ who: 'coyle', text: 'His proof? He... said it at a dinner.' }, { who: 'coyle', text: 'You ask hard questions. Take 25 coins and build your light. I won\'t tell the Guild.', money: 25, sfx: 'coins' }, { end: 'win' }],
+      right: [{ who: 'coyle', text: 'His proof? He... said it at a dinner.' }, { who: 'coyle', text: "At a dinner! That's where important things get said. Hmph. Build your light, then." }, { end: 'win' }],
       oops: [{ who: 'coyle', text: 'I shall report that remark.' }, { end: 'oops' }] },
 
-    boSlope: { fallacy: 'slipperySlope', npc: 'bo', cost: 30,
+    boSlope: { fallacy: 'slipperySlope', npc: 'bo', tip: 25, cost: 30,
       intro: ['You want to build a lighthouse? Are you mad?', 'If you build a lighthouse, more ships will come. More ships will bring pirates. Pirates will burn the town. The town will be ash. Ash!', 'Unless you buy my pirate insurance. It costs 30 coins.'],
       options: [
         { key: 'ok', text: "I don't want the town to burn, and that does sound like how it goes. 30 coins for insurance." },
@@ -636,10 +636,10 @@ window.FOG = (function () {
         { key: 'oops', text: 'You are a coward, Bo.' }
       ],
       ok: [{ who: 'n', text: 'You buy pirate insurance. It\'s a napkin with "INSURANCE" written on it.', money: -30, sfx: 'lose' }, { who: 'n', text: 'No pirates come. You spent thirty coins on a slide that was never real.' }, { end: 'fail' }],
-      right: [{ who: 'bo', text: "Each step needs its own proof. I did run the steps together, didn't I?" }, { who: 'bo', text: 'Take 25 coins. Nobody ever stops me at step two.', money: 25, sfx: 'coins' }, { end: 'win' }],
+      right: [{ who: 'bo', text: "Each step needs its own proof. I did run the steps together, didn't I?" }, { who: 'bo', text: 'Step two. Nobody ever stops me at step two. Hmph.' }, { end: 'win' }],
       oops: [{ who: 'bo', text: 'A coward?! I have sailed through three gales!' }, { end: 'oops' }] },
 
-    vanceStraw: { fallacy: 'strawMan', npc: 'vance', cost: 35,
+    vanceStraw: { fallacy: 'strawMan', npc: 'vance', tip: 25, cost: 35,
       intro: [{ who: 'vance', text: 'You want a lighthouse at the end of the pier, yes?' }, { who: 'you', text: 'Yes. I want to stop the wrecks.' }, { who: 'vance', text: 'So you are saying that every ship must be forced to dock here and pay you. You want a toll on the whole sea!' }, { who: 'vance', text: 'That\'s too much. Luckily, I sell "free sea" permits. Pay 35 coins and I\'ll tell nobody about your sea-toll.' }],
       options: [
         { key: 'ok', text: "I don't want people thinking I'd tax the sea. 35 coins for the permit, and please keep quiet." },
@@ -647,10 +647,10 @@ window.FOG = (function () {
         { key: 'oops', text: 'You lying weasel merchant.' }
       ],
       ok: [{ who: 'n', text: 'You buy a permit for a plan you never had.', money: -35, sfx: 'lose' }, { scene: 'img/fail-strawMan.jpg', text: 'You paid thirty-five coins to defend a scarecrow. Nobody said "sea toll" except Vance.' }, { end: 'fail' }],
-      right: [{ who: 'vance', text: 'That isn\'t what you said. No. It isn\'t.' }, { who: 'vance', text: 'It\'s an old habit. I twist your words, and then I sell you the untwisting. Take 25 coins. You are hard to twist.', money: 25, sfx: 'coins' }, { end: 'win' }],
+      right: [{ who: 'vance', text: 'That isn\'t what you said. No. It isn\'t.' }, { who: 'vance', text: "Hard to twist, aren't you. Hmph. Mind the door on your way out." }, { end: 'win' }],
       oops: [{ who: 'vance', text: 'A weasel? I\'m a merchant!' }, { end: 'oops' }] },
 
-    haleFires: { fallacy: 'tradition', npc: 'hale', cost: 45,
+    haleFires: { fallacy: 'tradition', npc: 'hale', tip: 25, cost: 45,
       intro: ['A lighthouse? Bah. We have lit bonfires on the cliff for two hundred years.', 'Two hundred years! That\'s how we do it, so that is the best way to do it.', 'Give 45 coins to the bonfire fund instead, like every captain before you did.'],
       options: [
         { key: 'ok', text: "Two hundred years of captains can't all be wrong. 45 coins for the bonfires, as always." },
@@ -658,10 +658,10 @@ window.FOG = (function () {
         { key: 'oops', text: 'Old sailors are too stubborn to think.' }
       ],
       ok: [{ who: 'n', text: 'You give 45 coins. The bonfire blows out in the first wind, just as it has for two hundred years.', money: -45, sfx: 'lose' }, { who: 'n', text: 'They always did it this way. Ships always wrecked.' }, { end: 'fail' }],
-      right: [{ who: 'hale', text: 'How many wrecked? Still plenty. Aye. Twelve wrecked last winter.' }, { who: 'hale', text: 'Two hundred years, and I never counted. Take 25 coins for the lamp. Make it bright.', money: 25, sfx: 'coins' }, { end: 'win' }],
+      right: [{ who: 'hale', text: 'How many wrecked? Still plenty. Aye. Twelve wrecked last winter.' }, { who: 'hale', text: 'Twelve wrecked. Hmph. Two hundred years, and now a child counts. Make your lamp, then.' }, { end: 'win' }],
       oops: [{ who: 'hale', text: 'Stubborn? I\'ll show you stubborn.' }, { end: 'oops' }] },
 
-    rookInsult: { fallacy: 'adHominem', npc: 'rook', cost: 30,
+    rookInsult: { fallacy: 'adHominem', npc: 'rook', tip: 25, cost: 30,
       intro: ['You want Iva the Smith to forge your lamp? Her?', 'She talks funny. She comes from up the coast. She is short. You can\'t trust a lamp from someone like that.', 'Buy a lamp from my cousin instead. Pay 30 coins as a deposit, today only.'],
       options: [
         { key: 'ok', text: "If she's not the reliable type, I'd rather not risk it. 30 coins for your cousin's lamp." },
@@ -669,10 +669,10 @@ window.FOG = (function () {
         { key: 'oops', text: 'You are the not reliable one, ugly.' }
       ],
       ok: [{ who: 'n', text: 'You pay 30 coins. The cousin doesn\'t exist.', money: -30, sfx: 'lose' }, { scene: 'img/fail-adHominem.jpg', text: 'You lost thirty coins because someone insulted a smith. Who says a thing doesn\'t make it right or wrong.' }, { end: 'fail' }],
-      right: [{ who: 'rook', text: 'Has any of her lamps failed? No. Not one.' }, { who: 'rook', text: 'I was just being nasty. Take 25 coins, and get your lamp from Iva.', money: 25, sfx: 'coins' }, { end: 'win' }],
+      right: [{ who: 'rook', text: 'Has any of her lamps failed? No. Not one.' }, { who: 'rook', text: "Fine. Get your lamp from Iva. And don't tell her I said so." }, { end: 'win' }],
       oops: [{ who: 'rook', text: 'Ugly?!' }, { who: 'n', text: 'Now two people are insulting each other. Nobody talks about lamps.' }, { end: 'oops' }] },
 
-    orlaHerring: { fallacy: 'redHerring', npc: 'orla', tag: 'story',
+    orlaHerring: { fallacy: 'redHerring', npc: 'orla', tip: 25, tag: 'story',
       intro: [{ who: 'you', text: 'Orla, the harbour fund is short by 50 coins. The ledger says you took them out.' }, { who: 'orla', text: 'The fund? Oh, look at that sunset! Have you ever seen colours like that? And look at the gulls!' }, { who: 'orla', text: 'You know what, let me tell you about the time a gull stole my hat.' }],
       options: [
         { key: 'ok', text: 'That IS a lovely sunset. Go on then, tell me about the gull and your hat.' },
@@ -680,7 +680,7 @@ window.FOG = (function () {
         { key: 'oops', text: 'Thief! You are a thief and everybody on this quay should know it!' }
       ],
       ok: [{ who: 'n', text: 'The gull story lasts twenty minutes. The sun sets. The fund is still short.' }, { scene: 'img/fail-redHerring.jpg', text: 'Your question never got an answer. That was the whole point of the sunset.' }, { end: 'fail' }],
-      right: [{ who: 'orla', text: 'Yes. I took them to fix my boat. I was going to put them back.' }, { who: 'orla', text: 'Here are 25 of them now. I\'ll pay the rest next week. Thank you for not letting me wriggle away.', money: 25, sfx: 'coins' }, { end: 'win' }],
+      right: [{ who: 'orla', text: 'Yes. I took them to fix my boat. I was going to put them back.' }, { who: 'orla', text: "Fine. Fine! I'll put them back. Next week. Don't look at me like that." }, { end: 'win' }],
       oops: [{ who: 'orla', text: 'A thief?! After all I have done for this quay?' }, { who: 'n', text: 'Now you are arguing about her character. Your question is still without an answer.' }, { end: 'oops' }] }
   };
 

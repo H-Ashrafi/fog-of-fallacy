@@ -794,10 +794,9 @@
   async function runTrick(id) {
     const tr = D.TRICKS[id];
     const seed = seedFor('trick', tr.npc, tr.fallacy, tr, { cost: tr.cost || 0 });
-    const tip = stepMoney(tr.right);
     if (await tryTalk(seed, (verdict, heard) => {
       const correct = seed.right[0] || null;
-      if (verdict === 'spotted') { if (tip) changeMoney(tip); A.play('coins'); S.tricks[id] = 'won'; save(); lessonWin(tr.fallacy, null, null, heard); }
+      if (verdict === 'spotted') { S.tricks[id] = 'won'; save(); simurghPraise(tr, heard); }
       else if (verdict === 'fooled') { if (tr.cost) { changeMoney(-tr.cost); A.play('lose'); } lessonFail(tr.fallacy, null, null, heard, correct); simEvent('fooled'); }
       else lessonOops(null, heard, correct);
     })) return;
@@ -810,11 +809,22 @@
     const correct = c && c.shown ? c.shown.find(isRight) : null;
     return { chosen, correct: correct ? fill(correct.text) : null };
   }
+  /* A spotted trick: the trickster has sulked off; the Simurgh flies in, praises, says the lesson and
+     gives the coins (a trickster never pays or praises). Then the lesson card, as hers. */
+  function simurghPraise(tr, chosen) {
+    const f = fallacy(tr.fallacy), P = D.SIMURGH.spotted, tip = tr.tip || 0;
+    bird = { x: player.x + (player.dir === 'left' ? -1 : 1), y: player.y - 1, t0: performance.now(), out: 0 };
+    A.play('simurgh');
+    const steps = P.say.map(text => ({ who: 'simurgh', text })).concat([{ who: 'simurgh', text: f.spot }]);
+    if (tip) steps.push({ who: 'simurgh', text: P.coins, money: tip, sfx: 'coins' });
+    steps.push({ end: 'x' });
+    runSteps(steps, { finish: () => { mode = baseMode(); if (bird && !bird.out) bird.out = performance.now(); lessonWin(tr.fallacy, T('The Simurgh says: you spotted it!'), null, chosen); } });
+  }
   function finishTrick(id, kind, c) {
     const tr = D.TRICKS[id];
     const { chosen, correct } = answerTexts(c, o => /^right/.test(o.key));
     mode = baseMode();
-    if (kind === 'win') { S.tricks[id] = 'won'; save(); lessonWin(tr.fallacy, null, null, chosen); }
+    if (kind === 'win') { S.tricks[id] = 'won'; save(); simurghPraise(tr, chosen); }
     else if (kind === 'fail') { lessonFail(tr.fallacy, null, null, chosen, correct); simEvent('fooled'); }
     else lessonOops(null, chosen, correct);
   }

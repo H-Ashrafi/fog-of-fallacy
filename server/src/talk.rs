@@ -305,9 +305,24 @@ Always answer with JSON: {{\"verdict\": \"none|spotted|fooled|insult\", \"say\":
         Ok(ModelTurn { say: turn.say.trim().to_string(), verdict: turn.verdict })
     }
 
+    /// One pool per scene: the character, the trick, the language AND the scripted lines, so a
+    /// test seed or a rewritten scene never feeds its openings to a different scene.
     fn pool_path(&self, seed: &Seed) -> PathBuf {
         let clean = |s: &str| s.chars().filter(|c| c.is_ascii_alphanumeric()).collect::<String>();
-        self.dir.join("openings").join(format!("{}-{}-{}.json", clean(&seed.who), clean(&seed.fallacy), clean(&seed.lang)))
+        let scene = crate::fnv1a(&format!("{}|{}|{}", seed.topic.as_deref().unwrap_or(""), seed.intro.join("\n"), seed.cost.unwrap_or(0)));
+        self.dir.join("openings").join(format!("{}-{}-{}-{scene:016x}.json", clean(&seed.who), clean(&seed.fallacy), clean(&seed.lang)))
+    }
+
+    /// A closing line must not end on a question the child cannot answer any more: when the
+    /// scene is over and the line has several sentences, a final question is dropped.
+    fn close_line(say: &str) -> String {
+        let t = say.trim();
+        if !t.ends_with('?') && !t.ends_with('؟') { return t.to_string(); }
+        let cut = t.trim_end_matches(['?', '؟']).rfind(|c| c == '.' || c == '!' || c == '؟' || c == '?');
+        match cut {
+            Some(i) if i + 1 < t.len() => t[..=i].trim().to_string(),
+            _ => t.to_string(),
+        }
     }
 
     /// An opening line: from the pool once it has six, else freshly written and pooled.
@@ -484,6 +499,7 @@ pub async fn reply(State(app): State<Shared>, Path(id): Path<String>, Query(q): 
         verdict = "fooled".into();
     }
     let done = verdict != "none";
+    let turn = ModelTurn { say: if done { Talk::close_line(&turn.say) } else { turn.say }, verdict: verdict.clone() };
     {
         let mut convs = talk.convs.lock().expect("convs lock");
         if let Some(c) = convs.get_mut(&id) {

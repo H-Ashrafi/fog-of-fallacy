@@ -400,7 +400,7 @@ struct VoiceQuery {
     text: String,
 }
 
-fn fnv1a(s: &str) -> u64 {
+pub fn fnv1a(s: &str) -> u64 {
     let mut h: u64 = 0xcbf2_9ce4_8422_2325;
     for b in s.as_bytes() {
         h ^= *b as u64;

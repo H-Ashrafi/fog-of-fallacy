@@ -21,8 +21,10 @@
 //!   FOG_OPEN           "1" opens the server to everyone (no passphrase). Never in production.
 //!   OPENAI_API_KEY     with ELEVENLABS_API_KEY, turns the scripted encounters into live
 //!                      conversations (POST /api/talk, see talk.rs)
-//!   FOG_OPENAI_MODEL   the model that plays the characters (default gpt-4.1-nano)
-//!   FOG_TALK_DAILY_LIMIT  model calls allowed per UTC day (default 150), then the game
+//!   FOG_OPENAI_MODEL   the model that plays the characters; probed at startup, then gpt-4o-mini,
+//!                      gpt-5-mini, gpt-4.1-mini, gpt-5-nano are tried in turn. /api/health shows
+//!                      talk_model and talk_error
+//!   FOG_TALK_DAILY_LIMIT  model calls allowed per UTC day (default 250), then the game
 //!                      falls back to the scripted answers until tomorrow
 //!   FOG_TALK_MAX_TURNS answers the child gets per conversation (default 4)
 //!   FOG_ELEVEN_MODEL   the ElevenLabs model for live lines in Latin script (default eleven_flash_v2_5,
@@ -131,7 +133,11 @@ async fn main() {
     println!("  web dir : {}", web.display());
     println!("  data dir: {}", app.data.display());
     println!("  voices  : {}", if app.key.is_some() { "ElevenLabs (cached on disk)" } else { "browser speech synthesis (set ELEVENLABS_API_KEY for recorded voices)" });
-    println!("  talk    : {}", if app.talk.enabled(app.key.is_some()) { format!("live conversations with {} ({} model calls a day, {} answers each)", app.talk.model, app.talk.daily_limit, app.talk.max_turns) } else { "scripted answers only (set OPENAI_API_KEY and ELEVENLABS_API_KEY for live conversations)".to_string() });
+    if app.talk.openai_key.is_some() && app.key.is_some() {
+        app.talk.pick_model(&app.http, None).await;   // prints the talk line itself
+    } else {
+        println!("  talk    : scripted answers only (set OPENAI_API_KEY and ELEVENLABS_API_KEY for live conversations)");
+    }
     println!("  gate    : {}", match (&app.gate.passphrase, app.gate.open) {
         (_, true) => "OPEN to everyone (FOG_OPEN=1; local play only)",
         (Some(_), false) => "locked; the secret word in FOG_PASSPHRASE lets players in",
@@ -394,7 +400,7 @@ struct VoiceQuery {
     text: String,
 }
 
-fn fnv1a(s: &str) -> u64 {
+pub fn fnv1a(s: &str) -> u64 {
     let mut h: u64 = 0xcbf2_9ce4_8422_2325;
     for b in s.as_bytes() {
         h ^= *b as u64;

@@ -170,9 +170,9 @@ Environment variables:
 | `FOG_PASSPHRASE` | unset | the family's secret word. Every page and API call needs the cookie `POST /api/login` sets; without the word a visitor only ever sees the gate page. Unset and not `FOG_OPEN`: the server is closed |
 | `FOG_OPEN` | unset | `1` opens the server to everyone. `run.ps1` sets it for local play when no passphrase is given; never set it in production |
 | `OPENAI_API_KEY` | unset | with `ELEVENLABS_API_KEY`, turns the scripted encounters into live conversations (below) |
-| `FOG_OPENAI_MODEL` | `gpt-4.1-nano` | the model that plays the characters (the cheapest that writes well; any chat model name works, the gpt-5 family included) |
+| `FOG_OPENAI_MODEL` | probed | the model that plays the characters. At startup the server asks OpenAI which it still serves: this one first, then `gpt-4o-mini`, `gpt-5-mini`, `gpt-4.1-mini`, `gpt-5-nano`. Models get retired without warning (`gpt-4.1-nano` went in November 2026 and every conversation failed silently), so a retired one is skipped, a turn that hits a retirement re-probes, and `/api/health` shows `talk_model` and `talk_error` |
 | `FOG_ELEVEN_MODEL` | `eleven_flash_v2_5` | the ElevenLabs model for live lines in Latin script: fast, so the character answers in under a second. Persian and Arabic lines always use `eleven_v3`, which Flash does not cover |
-| `FOG_TALK_DAILY_LIMIT` | `150` | model calls allowed per UTC day; past it the game falls back to the scripted answers until tomorrow |
+| `FOG_TALK_DAILY_LIMIT` | `250` | model calls allowed per UTC day; past it the game falls back to the scripted answers until tomorrow |
 | `FOG_TALK_MAX_TURNS` | `4` | answers the child gets per conversation before the character decides |
 
 ### The gate

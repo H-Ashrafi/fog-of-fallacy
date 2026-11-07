@@ -129,7 +129,7 @@ impl Talk {
             eleven_base: env("ELEVENLABS_BASE_URL").unwrap_or_else(|| "https://api.elevenlabs.io".into()).trim_end_matches('/').to_string(),
             eleven_model: env("FOG_ELEVEN_MODEL").unwrap_or_else(|| "eleven_flash_v2_5".into()),
             dir,
-            daily_limit: env("FOG_TALK_DAILY_LIMIT").and_then(|v| v.parse().ok()).unwrap_or(150),
+            daily_limit: env("FOG_TALK_DAILY_LIMIT").and_then(|v| v.parse().ok()).unwrap_or(250),
             max_turns: env("FOG_TALK_MAX_TURNS").and_then(|v| v.parse().ok()).unwrap_or(4),
             convs: Mutex::new(HashMap::new()),
         }
@@ -231,7 +231,7 @@ impl Talk {
     /// else (an expert whose head clears, a citizen, a refusal) concedes honestly.
     fn closing_rule(seed: &Seed) -> String {
         if seed.kind == "trick" {
-            "When the verdict is \"spotted\": \"say\" is your closing line and you STAY A TRICKSTER: you grumble, sulk or shrug it off in character (\"Hmph. Keep your coins, then.\"), you stop pushing, you do NOT praise the child, do NOT say what the trick was, do NOT explain any lesson, do NOT offer coins, and ask no question. When \"fooled\": \"say\" gloats a little in character as you take what you wanted; no lesson, no explanation, no question.".to_string()
+            "When the verdict is \"spotted\": \"say\" is your closing line and you STAY A TRICKSTER: you grumble, sulk, shrug it off, make a feeble excuse or pretend you were joking, in your own words and differently every time (never the same sentence twice; do not copy any example), you stop pushing, you do NOT praise the child, do NOT say what the trick was, do NOT explain any lesson, do NOT offer coins, and ask no question. When \"fooled\": \"say\" gloats a little in character as you take what you wanted; no lesson, no explanation, no question.".to_string()
         } else {
             "When the verdict is \"spotted\": \"say\" is your closing line, in character and kind: you give up the bad reasoning, you do NOT argue for it any more, you say in one simple sentence that you see it now, and you ask no further question. When \"fooled\": \"say\" shows that you still believe the bad reasoning and the fog stays; no question.".to_string()
         }
@@ -505,7 +505,7 @@ pub async fn reply(State(app): State<Shared>, Path(id): Path<String>, Query(q): 
         let mut content = heard.clone();
         if challenged {
             if seed.kind == "trick" {
-                content.push_str("\n\n(The child has challenged your reasoning. The verdict is \"spotted\", decided. Write only your closing line, at most two sentences, and stay a trickster: grumble, sulk or shrug it off in character and stop pushing. Do not praise the child, do not say what the trick was, do not explain, do not offer coins, ask no question.)");
+                content.push_str("\n\n(The child has challenged your reasoning. The verdict is \"spotted\", decided. Write only your closing line, at most two sentences, and stay a trickster: grumble, sulk, shrug it off, make a feeble excuse or pretend you were joking, in your own words and in a fresh way (do not repeat a line you have used before), and stop pushing. Do not praise the child, do not say what the trick was, do not explain, do not offer coins, ask no question.)");
             } else {
                 content.push_str("\n\n(The child has challenged your reasoning. The verdict is \"spotted\", decided. Write only your closing line, at most two sentences: give up the bad reasoning, say that you see it now, and ask no question.)");
             }

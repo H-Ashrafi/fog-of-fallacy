@@ -24,7 +24,7 @@
 //!   FOG_OPENAI_MODEL   the model that plays the characters; probed at startup, then gpt-4o-mini,
 //!                      gpt-5-mini, gpt-4.1-mini, gpt-5-nano are tried in turn. /api/health shows
 //!                      talk_model and talk_error
-//!   FOG_TALK_DAILY_LIMIT  model calls allowed per UTC day (default 150), then the game
+//!   FOG_TALK_DAILY_LIMIT  model calls allowed per UTC day (default 250), then the game
 //!                      falls back to the scripted answers until tomorrow
 //!   FOG_TALK_MAX_TURNS answers the child gets per conversation (default 4)
 //!   FOG_ELEVEN_MODEL   the ElevenLabs model for live lines in Latin script (default eleven_flash_v2_5,

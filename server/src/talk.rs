@@ -40,7 +40,12 @@ use crate::Shared;
 pub struct Talk {
     pub openai_key: Option<String>,
     pub openai_base: String,
-    pub model: String,
+    /// The model that plays the characters: the first of `candidates` that OpenAI still serves
+    /// (probed at startup, and again when a turn answers model_not_found). See pick_model.
+    model: Mutex<String>,
+    candidates: Vec<String>,
+    /// Why conversations are off although the keys are present (no candidate answered).
+    model_error: Mutex<Option<String>>,
     pub eleven_base: String,
     pub eleven_model: String,
     pub dir: PathBuf,
@@ -114,7 +119,13 @@ impl Talk {
         Talk {
             openai_key: env("OPENAI_API_KEY"),
             openai_base: env("OPENAI_BASE_URL").unwrap_or_else(|| "https://api.openai.com/v1".into()).trim_end_matches('/').to_string(),
-            model: env("FOG_OPENAI_MODEL").unwrap_or_else(|| "gpt-4.1-nano".into()),
+            model: Mutex::new(String::new()),
+            candidates: {
+                let mut c: Vec<String> = env("FOG_OPENAI_MODEL").into_iter().collect();
+                for m in ["gpt-4o-mini", "gpt-5-mini", "gpt-4.1-mini", "gpt-5-nano"] { if !c.iter().any(|x| x == m) { c.push(m.into()); } }
+                c
+            },
+            model_error: Mutex::new(Some("model not probed yet".into())),
             eleven_base: env("ELEVENLABS_BASE_URL").unwrap_or_else(|| "https://api.elevenlabs.io".into()).trim_end_matches('/').to_string(),
             eleven_model: env("FOG_ELEVEN_MODEL").unwrap_or_else(|| "eleven_flash_v2_5".into()),
             dir,
@@ -126,7 +137,10 @@ impl Talk {
 
     /// Conversations need the model for the talking and ElevenLabs for the listening.
     pub fn enabled(&self, eleven_key: bool) -> bool {
-        self.openai_key.is_some() && eleven_key
+        self.openai_key.is_some() && eleven_key && self.model_error.lock().expect("model lock").is_none()
+    }
+    pub fn model(&self) -> String {
+        self.model.lock().expect("model lock").clone()
     }
 
     pub fn status(&self, eleven_key: bool) -> serde_json::Value {
@@ -135,7 +149,35 @@ impl Talk {
             "talk": self.enabled(eleven_key) && used < self.daily_limit,
             "talk_used": used,
             "talk_limit": self.daily_limit,
+            "talk_model": self.model(),
+            "talk_error": self.model_error.lock().expect("model lock").clone(),
         })
+    }
+
+    /// Ask OpenAI which of the candidate models it still serves and use the first one. Models get
+    /// deprecated without warning (gpt-4.1-nano went in November 2026, and every conversation then
+    /// failed silently), so this runs at startup and again when a turn answers model_not_found.
+    /// `skip` is a model that just failed, so a stale probe cannot pick it again.
+    pub async fn pick_model(&self, http: &reqwest::Client, skip: Option<&str>) {
+        let Some(key) = self.openai_key.as_deref() else { return };
+        let mut errors = Vec::new();
+        for m in &self.candidates {
+            if Some(m.as_str()) == skip { continue; }
+            let url = format!("{}/models/{}", self.openai_base, m);
+            match http.get(&url).bearer_auth(key).send().await {
+                Ok(r) if r.status().is_success() => {
+                    *self.model.lock().expect("model lock") = m.clone();
+                    *self.model_error.lock().expect("model lock") = None;
+                    println!("  talk    : live conversations with {m} ({} model calls a day, {} answers each)", self.daily_limit, self.max_turns);
+                    return;
+                }
+                Ok(r) => errors.push(format!("{m}: {}", r.status())),
+                Err(e) => errors.push(format!("{m}: {e}")),
+            }
+        }
+        let msg = format!("no usable OpenAI model ({})", errors.join("; "));
+        eprintln!("  talk    : OFF, {msg}; scripted answers until a model answers (set FOG_OPENAI_MODEL)");
+        *self.model_error.lock().expect("model lock") = Some(msg);
     }
 
     fn day() -> u64 {
@@ -227,8 +269,9 @@ Always answer with JSON: {{\"say\": \"...\", \"verdict\": \"none|spotted|fooled|
 
     async fn model_turn(&self, http: &reqwest::Client, messages: &[serde_json::Value]) -> Result<ModelTurn, String> {
         let key = self.openai_key.as_deref().ok_or("no OPENAI_API_KEY")?;
+        let model = self.model();
         let mut body = serde_json::json!({
-            "model": self.model,
+            "model": model,
             "messages": messages,
             "max_completion_tokens": 220,
             "response_format": { "type": "json_schema", "json_schema": { "name": "turn", "strict": true, "schema": {
@@ -241,7 +284,7 @@ Always answer with JSON: {{\"say\": \"...\", \"verdict\": \"none|spotted|fooled|
             } } }
         });
         // The reasoning models (gpt-5 family, o-series) refuse a temperature; the others like some variety.
-        if !(self.model.starts_with("gpt-5") || self.model.starts_with('o')) {
+        if !(model.starts_with("gpt-5") || model.starts_with('o')) {
             body["temperature"] = serde_json::json!(0.9);
         }
         let url = format!("{}/chat/completions", self.openai_base);
@@ -249,6 +292,10 @@ Always answer with JSON: {{\"say\": \"...\", \"verdict\": \"none|spotted|fooled|
         let status = resp.status();
         let text = resp.text().await.map_err(|e| format!("model answer unreadable: {e}"))?;
         if !status.is_success() {
+            if text.contains("model_not_found") {
+                // The model was retired under us: find another and let the caller retry.
+                self.pick_model(http, Some(&model)).await;
+            }
             return Err(format!("model answered {status}: {}", text.chars().take(300).collect::<String>()));
         }
         let v: serde_json::Value = serde_json::from_str(&text).map_err(|e| format!("model answer is not JSON: {e}"))?;
@@ -278,7 +325,11 @@ Always answer with JSON: {{\"say\": \"...\", \"verdict\": \"none|spotted|fooled|
             serde_json::json!({ "role": "system", "content": self.system_prompt(seed) }),
             serde_json::json!({ "role": "user", "content": format!("(The child walks up to you.) Start the scene: greet {} by name and begin your trick in your own words, ending with a question. Verdict is \"none\".", seed.player) }),
         ];
-        let turn = self.model_turn(http, &messages).await?;
+        let turn = match self.model_turn(http, &messages).await {
+            Ok(t) => t,
+            Err(e) if e.contains("model_not_found") && self.model_error.lock().expect("model lock").is_none() => self.model_turn(http, &messages).await?,
+            Err(e) => return Err(e),
+        };
         let say = turn.say;
         let pooled = say.replace(&seed.player, "{name}");
         if !say.is_empty() && !pool.contains(&pooled) {
@@ -415,8 +466,13 @@ pub async fn reply(State(app): State<Shared>, Path(id): Path<String>, Query(q): 
         c.messages.push(serde_json::json!({ "role": "user", "content": content }));
         c.messages.clone()
     };
-    let turn = match talk.model_turn(&app.http, &messages).await {
+    let first = talk.model_turn(&app.http, &messages).await;
+    let turn = match first {
         Ok(t) => t,
+        Err(e) if e.contains("model_not_found") && talk.model_error.lock().expect("model lock").is_none() => match talk.model_turn(&app.http, &messages).await {
+            Ok(t) => t,
+            Err(e) => { eprintln!("talk reply failed after re-pick: {e}"); return fail(StatusCode::BAD_GATEWAY, "the character lost their words"); }
+        },
         Err(e) => {
             eprintln!("talk reply failed: {e}");
             return fail(StatusCode::BAD_GATEWAY, "the character lost their words");

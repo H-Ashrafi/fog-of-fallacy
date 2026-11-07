@@ -823,20 +823,12 @@
     const e = ex(n.id), fogs = n.expert.fog;
     if (S.refog[n.id]) { runHardFog(n); return; }
     if (!e.crew) { runFog(n, 0); return; }
-    const opts = [];
-    if (e.cleared < fogs.length) opts.push({ key: 'fog', text: T('Ask about: {topic}', { topic: fogs[e.cleared].topic || T('what is on your mind') }) });
-    opts.push({ key: 'why', text: T("Why aren't you working yet?") });
-    opts.push({ key: 'work', text: T('Tell me about your craft.') });
-    opts.push({ key: 'bye', text: T('Never mind.') });
+    /* No menu to pick from: an expert with fog left talks about it straight away; one with a clear
+       head says why they are or are not working, then a word about their craft. */
+    if (e.cleared < fogs.length) { runFog(n, e.cleared); return; }
     const lvl = exLevel(n.id), role = roleName(n.expert.role);
-    runSteps([{ choice: opts, menu: true, speaker: n.id, prompt: T('What do you want to talk about?') }], {
-      branch: o => {
-        if (o.key === 'fog') return [{ fn: () => runFog(n, e.cleared), stop: true }];
-        if (o.key === 'why') return whyNotWorking(n).map(text => ({ who: n.id, text }));
-        if (o.key === 'work') return [{ who: n.id, text: (n.expert.crew || [T('Ready to work.')])[0] }, { fn: () => toast(`${D.ROLES[n.expert.role].icon} ${role} ${stars(lvl)} · ${T('fee {n}', { n: n.expert.fee })} · ${T('fog cleared {a}/{b}', { a: e.cleared, b: fogs.length })}`, 'good') }];
-        return [{ who: n.id, text: T('Right you are.') }];
-      }
-    });
+    runSteps(whyNotWorking(n).map(text => ({ who: n.id, text })).concat(
+      [{ who: n.id, text: (n.expert.crew || [T('Ready to work.')])[0] }, { fn: () => toast(`${D.ROLES[n.expert.role].icon} ${role} ${stars(lvl)} · ${T('fee {n}', { n: n.expert.fee })} · ${T('fog cleared {a}/{b}', { a: e.cleared, b: fogs.length })}`, 'good') }]), null);
   }
   /* Every line here is fixed text so it can be recorded in the expert's own voice; numbers live in the HUD. */
   function whyNotWorking(n) {
@@ -1359,25 +1351,29 @@
   }
 
   /* ================= the Grey City: everybody is fogged; convince one person and the monster falls ================= */
-  function talkCity(n) {
+  async function talkCity(n) {
     const c = n.city;
     if (!c.gauntlet || S.throne) { runSteps(normalize(S.throne ? (c.after || n.talk) : n.talk, n.id), null); return; }
     const st = S.city[n.id] || (S.city[n.id] = { step: 0 });
     const q = c.gauntlet[st.step];
+    const settle = (result, chosen, correct) => {
+      mode = baseMode();
+      if (result === 'oops') { lessonOops(null, chosen, correct); return; }
+      if (result === 'win') {
+        st.step++; save();
+        if (st.step >= c.gauntlet.length) lessonWin(q.fallacy, T('{name} is convinced!', { name: n.name }), () => crowned(n), chosen);
+        else lessonWin(q.fallacy, T('{name} is listening. {a} of {b} done.', { name: n.name, a: st.step, b: c.gauntlet.length }), () => talkCity(n), chosen);
+      } else { st.step = 0; save(); lessonFail(q.fallacy, T('{name} laughs at you. Start again.', { name: n.name }), null, chosen, correct); }
+    };
+    const intro = (st.step === 0 ? normalize(c.intro || [], n.id) : []).concat(normalize(q.intro, n.id));
+    // The Grey City's people talk too: the scene's intro (the city's greeting on the first step) is the seed.
+    const seed = seedFor('trick', n.id, q.fallacy, { intro, options: q.options, topic: q.topic }, { cost: 0 });
+    if (await tryTalk(seed, (verdict, heard) => settle(verdict === 'spotted' ? 'win' : verdict === 'fooled' ? 'fail' : 'oops', heard, seed.right[0] || null))) return;
     let result = 'fail';
     const cx = {
       branch: o => { result = o.right ? 'win' : 'fail'; return normalize(o.right ? q.right : q.wrong, n.id).concat([{ end: 'x' }]); },
-      finish: () => {
-        const { chosen, correct } = answerTexts(cx, o => !!o.right);
-        mode = baseMode();
-        if (result === 'win') {
-          st.step++; save();
-          if (st.step >= c.gauntlet.length) lessonWin(q.fallacy, T('{name} is convinced!', { name: n.name }), () => crowned(n), chosen);
-          else lessonWin(q.fallacy, T('{name} is listening. {a} of {b} done.', { name: n.name, a: st.step, b: c.gauntlet.length }), () => talkCity(n), chosen);
-        } else { st.step = 0; save(); lessonFail(q.fallacy, T('{name} laughs at you. Start again.', { name: n.name }), null, chosen, correct); }
-      }
+      finish: () => { const { chosen, correct } = answerTexts(cx, o => !!o.right); settle(result, chosen, correct); }
     };
-    const intro = (st.step === 0 ? normalize(c.intro || [], n.id) : []).concat(normalize(q.intro, n.id));
     runSteps(intro.concat([{ choice: q.options }]), cx);
   }
   function placePlayer(x, y, dir) {

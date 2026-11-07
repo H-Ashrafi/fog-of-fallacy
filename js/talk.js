@@ -62,8 +62,10 @@ window.Talk = (function () {
     const type = mimeType();
     const rec = type ? new MediaRecorder(stream, { mimeType: type }) : new MediaRecorder(stream);
     rec.addEventListener('dataavailable', e => { if (e.data && e.data.size) chunks.push(e.data); });
+    const mine = conv;
     rec.addEventListener('stop', () => {
       stream.getTracks().forEach(t => t.stop());
+      if (conv !== mine) return;   // the conversation ended while recording: nothing to send
       conv.recorder = null; conv.stream = null;
       const blob = new Blob(chunks, { type: rec.mimeType || type || 'audio/webm' });
       send(blob, null);
@@ -172,7 +174,8 @@ window.Talk = (function () {
   /* Start a conversation for a scripted scene. Resolves true when the character has spoken
      (the dialogue is now live), false when the scripted scene should run instead. */
   async function run(seed, hooks) {
-    if (!available() || conv) return false;
+    if (!available()) return false;
+    if (conv) stop();   // a conversation left behind by a panel or the title screen must not block the next one
     let j;
     try {
       const r = await fetch('/api/talk', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(seed) });

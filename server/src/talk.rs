@@ -260,8 +260,9 @@ JUDGING: After each thing the child says, set \"verdict\":
 - \"fooled\" when the child agrees, goes along, pays, or accepts the trick as a reason.
 - \"insult\" when the child only calls you names instead of answering.
 - \"none\" when you cannot tell yet. Then keep going.
-When the verdict is \"spotted\": in \"say\", admit it in character, kindly, and tell the child in one simple sentence what the trick was and what they did right. When \"fooled\": in \"say\", reveal gently that it was a trick, say what the trick was, and what to ask next time. When \"insult\": in \"say\", say that names are not an answer and ask the child to say why instead. In all three the conversation ends.
-Always answer with JSON: {{\"say\": \"...\", \"verdict\": \"none|spotted|fooled|insult\"}}.",
+Decide the verdict first, then write \"say\" to match it. When the verdict is \"spotted\": \"say\" is your closing line, in character and kind: you give up the trick, you do NOT argue for it any more, you tell the child in one simple sentence what the trick was and what they did right, and you ask no further question. When \"fooled\": \"say\" reveals gently that it was a trick, says what the trick was, and what to ask next time; no further question. When \"insult\": \"say\" says that names are not an answer and asks the child to say why instead. In all three the conversation ends. Only with \"none\" do you keep pushing the trick and end with a question.
+Every sentence must make plain sense on its own; never mash two ideas into one sentence.
+Always answer with JSON: {{\"verdict\": \"none|spotted|fooled|insult\", \"say\": \"...\"}}.",
             name = seed.name, player = seed.player, nick = seed.nick, fallacy = seed.fallacy, one = seed.one, spot = seed.spot,
             topic = topic, aim = aim, intro = intro, right = right, wrong = wrong, language = Self::language_name(&seed.lang),
         )
@@ -277,10 +278,10 @@ Always answer with JSON: {{\"say\": \"...\", \"verdict\": \"none|spotted|fooled|
             "response_format": { "type": "json_schema", "json_schema": { "name": "turn", "strict": true, "schema": {
                 "type": "object", "additionalProperties": false,
                 "properties": {
-                    "say": { "type": "string" },
-                    "verdict": { "type": "string", "enum": ["none", "spotted", "fooled", "insult"] }
+                    "verdict": { "type": "string", "enum": ["none", "spotted", "fooled", "insult"] },
+                    "say": { "type": "string" }
                 },
-                "required": ["say", "verdict"]
+                "required": ["verdict", "say"]
             } } }
         });
         // The reasoning models (gpt-5 family, o-series) refuse a temperature; the others like some variety.
@@ -392,7 +393,7 @@ pub async fn start(State(app): State<Shared>, Json(seed): Json<Seed>) -> Respons
     talk.log(&id, &seed, "character", &say, None);
     let messages = vec![
         serde_json::json!({ "role": "system", "content": talk.system_prompt(&seed) }),
-        serde_json::json!({ "role": "assistant", "content": serde_json::json!({ "say": say, "verdict": "none" }).to_string() }),
+        serde_json::json!({ "role": "assistant", "content": serde_json::json!({ "verdict": "none", "say": say }).to_string() }),
     ];
     {
         let mut convs = talk.convs.lock().expect("convs lock");
@@ -487,7 +488,7 @@ pub async fn reply(State(app): State<Shared>, Path(id): Path<String>, Query(q): 
         let mut convs = talk.convs.lock().expect("convs lock");
         if let Some(c) = convs.get_mut(&id) {
             c.turns += 1;
-            c.messages.push(serde_json::json!({ "role": "assistant", "content": serde_json::json!({ "say": turn.say, "verdict": verdict }).to_string() }));
+            c.messages.push(serde_json::json!({ "role": "assistant", "content": serde_json::json!({ "verdict": verdict, "say": turn.say }).to_string() }));
         }
         if done {
             convs.remove(&id);

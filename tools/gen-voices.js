@@ -57,6 +57,8 @@ Object.entries(D.REFUSE).forEach(([id, r]) => { steps(r.intro, id); steps(r.righ
 Object.values(D.SIMURGH.levels).forEach(l => { steps(l.say, 'simurgh'); l.steps.forEach(s => { steps(s.say, 'simurgh'); steps(s.praise, 'simurgh'); }); });
 Object.values(D.SIMURGH.events).forEach(e => steps(e, 'simurgh')); steps(D.SIMURGH.ending, 'simurgh');
 steps(D.SIMURGH.spotted.say, 'simurgh'); add('simurgh', D.SIMURGH.spotted.coins);   // her praise after a spotted trick
+steps(D.SIMURGH.feather.say, 'simurgh'); add('simurgh', D.SIMURGH.feather.hint);   // a burnt feather
+D.FALLACIES.forEach(f => { add('simurgh', f.one); add('simurgh', f.spot); });   // what the trick is, in her voice
 steps(D.CITY.lift, 'n'); steps(D.CITY.sit, 'n'); add('n', D.STATUE.flavor);
 // inside the buildings: every room's welcome and every thing's line, the shut doors, the hints (js/data-rooms.js)
 [...Object.values(D.ROOMS.kinds), ...Object.values(D.ROOMS.labels)].forEach(r => { steps(r.intro, 'n'); (r.items || []).forEach(it => steps([].concat(it.text || []), 'n')); });

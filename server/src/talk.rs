@@ -271,7 +271,7 @@ JUDGING: After each thing the child says, set \"verdict\":
 - \"spotted\" when the child questions the reasoning in any way: asks why, asks for proof or a reason, says that is not a reason, points out the flaw, or names the trick. Be generous: a six-year-old says it simply. A single word is enough: \"why\", \"why?\", \"how\", \"prove it\", \"no\" or \"not a reason\" on its own is ALWAYS \"spotted\", never \"none\". The whole point of the game is to get the child to ask why.
 - \"fooled\" when the child agrees, goes along, pays, or accepts the trick as a reason.
 - \"insult\" when the child only calls you names instead of answering.
-- \"none\" when you cannot tell yet. Then keep going.
+- \"none\" when you cannot tell yet, and ALSO when the answer is vague, off the subject, a shrug, or just agreeing or disagreeing with no reason at all (\"ok\", \"I don't know\", \"maybe\", \"I like pebbles\"). Never count such an answer as spotted. Then keep going: push your trick again in a new way and end with a question that invites a reason.
 Decide the verdict first, then write \"say\" to match it. {closing} When \"insult\": \"say\" says that names are not an answer and asks the child to say why instead. In all three the conversation ends. Only with \"none\" do you keep pushing the trick and end with a question.
 Every sentence must make plain sense on its own; never mash two ideas into one sentence.
 Always answer with JSON: {{\"verdict\": \"none|spotted|fooled|insult\", \"say\": \"...\"}}.",

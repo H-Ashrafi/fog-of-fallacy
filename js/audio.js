@@ -40,6 +40,13 @@ window.Audio2 = (function () {
     coin: t => { tone(1760, t, 0.14, { type: 'triangle', vol: 0.08 }); tone(2349, t + 0.05, 0.16, { type: 'triangle', vol: 0.06 }); },
     lose: t => { tone(330, t, 0.25, { type: 'sawtooth', vol: 0.08, slide: -120 }); tone(220, t + 0.18, 0.4, { type: 'sawtooth', vol: 0.07, slide: -90 }); },
     good: t => { tone(523, t, 0.16, { vol: 0.1 }); tone(784, t + 0.1, 0.24, { vol: 0.1 }); },
+    /* A feather burns: a soft whoosh as it lifts, a crackle as the flame takes it, then a rising chime as the Simurgh answers. */
+    feather: t => {
+      noise(t, 0.5, { vol: 0.05, hp: 500, lp: 2500 }); noise(t + 0.3, 0.6, { vol: 0.04, hp: 1500, lp: 6000 });
+      for (let i = 0; i < 10; i++) noise(t + 0.7 + i * 0.09, 0.03, { vol: 0.05, hp: 2500, lp: 9000 });
+      [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, t + 1.5 + i * 0.09, 0.5, { type: 'triangle', vol: 0.07 }));
+      tone(2093, t + 2.0, 0.9, { type: 'sine', vol: 0.05 });
+    },
     bad: t => { tone(220, t, 0.2, { type: 'sawtooth', vol: 0.08 }); tone(170, t + 0.16, 0.3, { type: 'sawtooth', vol: 0.08 }); },
     badge: t => [523, 659, 784, 1046].forEach((f, i) => tone(f, t + i * 0.12, 0.3, { vol: 0.1 })),
     fanfare: t => { [392, 523, 659, 784, 1046, 1318].forEach((f, i) => tone(f, t + i * 0.11, 0.35, { type: 'triangle', vol: 0.1 })); [523, 659, 784].forEach(f => tone(f, t + 0.75, 0.9, { type: 'triangle', vol: 0.07 })); },

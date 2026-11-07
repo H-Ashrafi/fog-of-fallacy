@@ -48,6 +48,15 @@ small { display: block; font-size: .82rem; color: var(--ink-soft); line-height: 
 .pill { display: inline-flex; align-items: center; gap: .35rem; font-size: .85rem; font-weight: 700; padding: .25rem .7rem; border-radius: 999px; background: var(--pine-3); color: var(--paper); white-space: nowrap; }
 .pill-lantern { background: rgba(246, 181, 68, .18); color: var(--lantern); }
 .pill-mint { background: rgba(191, 235, 214, .16); color: var(--mint); }
+.pill-feather { background: rgba(246, 181, 68, .12); color: var(--lantern); letter-spacing: .1em; font-size: 1rem; }
+.pill-feather .used { opacity: .25; filter: grayscale(1); }
+/* The feather that calls the Simurgh: a warm button at the foot of the dialogue, and the burning canvas over the stage. */
+.feather-btn { align-self: center; display: inline-flex; align-items: center; gap: 8px; margin-top: 6px; padding: 8px 16px; border-radius: 999px; border: 2px solid var(--lantern); background: rgba(246, 181, 68, .18); color: var(--ink); font-family: "Baloo 2", system-ui, sans-serif; font-weight: 700; font-size: .95rem; box-shadow: 0 0 0 0 rgba(246, 181, 68, .5); animation: featherGlow 2.2s ease-in-out infinite; }
+.feather-btn .fq { font-size: 1.3rem; }
+.feather-btn.none { animation: none; opacity: .45; border-style: dashed; }
+.feather-btn:active { transform: translateY(2px); }
+@keyframes featherGlow { 0%, 100% { box-shadow: 0 0 0 0 rgba(246, 181, 68, .45); } 50% { box-shadow: 0 0 18px 4px rgba(246, 181, 68, .35); } }
+.feather-fx { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
 .iconbtn { width: 38px; height: 38px; border-radius: 12px; background: var(--pine-2); border: 1px solid rgba(255, 255, 255, .08); font-size: 1.1rem; display: grid; place-items: center; flex: none; }
 .input { width: 100%; background: var(--paper); color: var(--ink); border: 2px solid transparent; border-radius: 14px; padding: 10px 14px; font-size: 1.1rem; }
 .input:focus { outline: none; border-color: var(--lantern); }

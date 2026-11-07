@@ -109,6 +109,13 @@
       say: ['{name}! You spotted the trick. I saw it from the sky.', 'A trickster never says sorry. But you kept your head clear, and that is what counts.'],
       coins: 'Take these coins from me. A clear head earns them.'
     },
+    /* A burnt feather calls her in the middle of a trick: she says what the trick is and what to ask,
+       then the child answers for herself. Three feathers per level; they come back in the next level. */
+    feather: {
+      say: ['Here I am, {name}. You burned a feather, so listen closely.'],
+      hint: 'Now say it to them, in your own words.',
+      none: 'No feathers left here. They come back in the next part of the Valley.'
+    },
     events: {
       ally: ['{name}, look! Your friend has a clear head now. Every fog is gone. That makes them a true ally.',
         'Nobody can fog a true ally again. Not a trickster, and not a preacher.',

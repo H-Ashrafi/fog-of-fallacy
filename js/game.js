@@ -22,11 +22,13 @@
     spotted: {}, fails: {}, tricks: {}, tasks: {}, jobs: {}, experts: {}, missions: {}, flags: {},
     sound: true, voice: true, savedAt: 0, ended: false, stats: { earned: 0, lost: 0 }, npcPos: {}, carry: null,
     preachers: [], refog: {}, refuse: {}, statues: {}, lastPreach: 0, orderSince: 0, orderStats: { fogged: 0, cleared: 0 },
-    lesson: null, simSeen: {}, zoom: false, errands: {}, allyShares: {}, allyLog: [], lastErrand: 0, city: {}, throne: false, games: {}
+    lesson: null, simSeen: {}, zoom: false, errands: {}, allyShares: {}, allyLog: [], lastErrand: 0, city: {}, throne: false, games: {},
+    feathersUsed: {}   // feathers burnt per level (region index)
   });
   /* Older saves: the lighthouse used to end the game, now it opens the Grey City. Saves from before
      the Simurgh start her lessons at the level they reached. */
   function migrate(s) {
+    s.feathersUsed = s.feathersUsed || {};
     if (s.ended && !s.throne && (s.missions.lighthouse || {}).status === 'built') { s.ended = false; s.unlocked = Math.max(s.unlocked, 6); }
     if (!s.lesson) s.lesson = { level: Math.min(s.unlocked, D.LEVELS.length) - 1, step: 0, intro: false };
     return s;
@@ -196,6 +198,7 @@
   function updateHud() {
     $('hud-money').textContent = S.money;
     $('hud-insight').textContent = spottedCount() + ' / ' + D.FALLACIES.length;
+    $('hud-feathers').innerHTML = Array.from({ length: FEATHERS }, (_, i) => `<span class="${i < feathersLeft() ? '' : 'used'}">🪶</span>`).join('');
     $('hud-sound').textContent = S.sound ? '🔔' : '🔕';
     $('hud-voice').textContent = S.voice ? '🗣️' : '🤐';
     $('hud-voice').hidden = !voiceAvailable();
@@ -592,7 +595,7 @@
   function loop(t) {
     const dt = Math.min(50, t - lastTime); lastTime = t;
     update(dt, t);
-    if (mode !== 'title') { render(t, dt); if (mode === 'dialog') drawPortrait(t); if (mode === 'modal') drawModal(t); if (!$('minimap-box').hidden && Math.floor(t / 250) !== Math.floor((t - dt) / 250)) renderMini(); }
+    if (mode !== 'title') { render(t, dt); syncFeather(); if (mode === 'dialog') drawPortrait(t); if (mode === 'modal') drawModal(t); if (!$('minimap-box').hidden && Math.floor(t / 250) !== Math.floor((t - dt) / 250)) renderMini(); }
     requestAnimationFrame(loop);
   }
 
@@ -693,7 +696,7 @@
     A.say(text, 'n', 'narrator', raw || text);
   }
 
-  function endDialog() { $('dlg').hidden = true; $('scene').hidden = true; script = null; npcAnim = null; mode = baseMode(); A.stop(); if (bird && !bird.out) bird.out = performance.now(); updateHud(); }
+  function endDialog() { $('dlg').hidden = true; $('scene').hidden = true; script = null; npcAnim = null; mode = baseMode(); A.stop(); if (!featherBusy) askFallacy = null; if (bird && !bird.out) bird.out = performance.now(); updateHud(); }
 
   /* ================= cards (lesson pop-ups) ================= */
   function card(opts) {
@@ -761,6 +764,92 @@
     runSteps(normalize(lines, n.id), null);
   }
 
+  /* ---- the Simurgh's feathers ----
+     Three per level. While a trick, a fog, a refusal or a Grey City argument waits for her answer, she can
+     burn one: the feather burns on screen, the Simurgh flies in, says what the trick is and what to ask,
+     and the question comes back for her to answer herself. Used feathers come back in the next level. */
+  const FEATHERS = 3;
+  const featherRegion = () => Math.max(0, Wd.regionAt(player.x, player.y));
+  const feathersLeft = () => Math.max(0, FEATHERS - (S.feathersUsed[featherRegion()] || 0));
+  let askFallacy = null, featherBusy = false;   // the fallacy of the argument on screen, while one waits for an answer
+  function syncFeather() {
+    const b = $('feather-btn');
+    const waiting = mode === 'dialog' && askFallacy && !featherBusy && (!$('dlg-choices').hidden || (window.Talk && Talk.active() && Talk.canAsk()));
+    b.hidden = !waiting;
+    if (waiting) b.classList.toggle('none', feathersLeft() === 0);
+  }
+  function burnFeather() {
+    if (!askFallacy || featherBusy || mode !== 'dialog') return;
+    if (feathersLeft() === 0) { toast(fill(D.SIMURGH.feather.none), 'warn', 2600); A.play('bad'); return; }
+    featherBusy = true; $('feather-btn').hidden = true;
+    const r = featherRegion(); S.feathersUsed[r] = (S.feathersUsed[r] || 0) + 1; save(); updateHud();
+    const f = fallacy(askFallacy), P = D.SIMURGH.feather;
+    const saved = script, wasTalk = !!(window.Talk && Talk.active());
+    if (wasTalk) Talk.pause(); else { $('dlg-choices').hidden = true; }
+    A.stop(); A.play('feather');
+    featherFx(() => {
+      bird = { x: player.x + (player.dir === 'left' ? -1 : 1), y: player.y - 1, t0: performance.now(), out: 0 };
+      A.play('simurgh');
+      const lines = P.say.concat([f.one, f.spot, P.hint]).map(text => ({ who: 'simurgh', text }));
+      runSteps(lines.concat([{ end: 'x' }]), { finish: () => {
+        if (bird && !bird.out) bird.out = performance.now();
+        featherBusy = false; mode = 'dialog'; $('dlg').hidden = false;
+        if (wasTalk) Talk.resume(); else { script = saved; script.i--; next(); }
+      } });
+    });
+  }
+  /* The feather burns on a canvas over the stage: it floats up, the flame takes it from the quill, embers
+     rise, and a golden burst marks the moment she hears. About two and a half seconds, then `then`. */
+  function featherFx(then) {
+    const c = $('feather-fx'), stage = c.parentElement, r = stage.getBoundingClientRect();
+    c.width = Math.round(r.width * dpr); c.height = Math.round(r.height * dpr); c.hidden = false;
+    const g = c.getContext('2d'), W = c.width, H = c.height, s = Math.min(W, H) / 400, t0 = performance.now(), DUR = 2500;
+    const embers = Array.from({ length: 40 }, (_, i) => ({ a: Math.random() * Math.PI * 2, v: 0.4 + Math.random() * 0.9, s: 0.3 + Math.random() * 0.7, d: 0.2 + Math.random() * 0.6 }));
+    const sparks = Array.from({ length: 60 }, () => ({ a: Math.random() * Math.PI * 2, v: 0.5 + Math.random(), w: 0.5 + Math.random() }));
+    function feather(x, y, len, burnt, rot) {
+      g.save(); g.translate(x, y); g.rotate(rot);
+      const top = -len * (1 - burnt);   // the unburnt part, from the quill upwards
+      g.strokeStyle = 'rgba(120,90,40,.9)'; g.lineWidth = 2.5 * s; g.beginPath(); g.moveTo(0, 0); g.lineTo(0, top); g.stroke();
+      for (let i = 0; i < 18; i++) {
+        const p = i / 18, yy = -len * p; if (yy < top) break;
+        const wd = len * 0.32 * Math.sin(Math.PI * Math.min(1, p * 1.15)) * (0.6 + 0.4 * (1 - p));
+        g.strokeStyle = p > 0.85 ? 'rgba(246,181,68,.95)' : 'rgba(250,236,205,.95)'; g.lineWidth = 3 * s;
+        g.beginPath(); g.moveTo(0, yy); g.quadraticCurveTo(-wd * 0.6, yy - 6 * s, -wd, yy + 2 * s); g.stroke();
+        g.beginPath(); g.moveTo(0, yy); g.quadraticCurveTo(wd * 0.6, yy - 6 * s, wd, yy + 2 * s); g.stroke();
+      }
+      g.restore();
+    }
+    function frame(now) {
+      const p = Math.min(1, (now - t0) / DUR);
+      g.clearRect(0, 0, W, H);
+      const cx = W / 2, len = 110 * s;
+      const rise = Math.min(1, p / 0.45), ease = 1 - Math.pow(1 - rise, 3);
+      const y = H * 0.92 - ease * H * 0.42 + Math.sin(now / 300) * 4 * s, rot = Math.sin(now / 500) * 0.12 - 0.15;
+      const burn = p < 0.3 ? 0 : Math.min(1, (p - 0.3) / 0.55);
+      // glow
+      const gl = g.createRadialGradient(cx, y - len * 0.5, 0, cx, y - len * 0.5, len * (1 + burn));
+      gl.addColorStop(0, 'rgba(255,200,90,' + (0.25 + 0.35 * burn) + ')'); gl.addColorStop(1, 'rgba(255,160,60,0)');
+      g.fillStyle = gl; g.fillRect(0, 0, W, H);
+      if (burn < 1) feather(cx, y, len, burn, rot);
+      // flame at the burning edge
+      if (burn > 0 && burn < 1) {
+        const fy = y - len * burn;
+        for (let i = 0; i < 7; i++) { const f = (now / 90 + i) % 1, w = (10 + i * 2) * s; g.fillStyle = i % 2 ? 'rgba(255,120,60,' + (0.8 - f * 0.6) + ')' : 'rgba(255,210,90,' + (0.9 - f * 0.6) + ')'; g.beginPath(); g.ellipse(cx + Math.sin(now / 70 + i) * 6 * s, fy - f * 30 * s, w * (1 - f * 0.6), w * 1.6 * (1 - f * 0.3), 0, 0, Math.PI * 2); g.fill(); }
+      }
+      // embers
+      if (burn > 0) embers.forEach(e => { const life = ((now - t0) / 1000 * e.v + e.d) % 1.2; if (life > 1) return; g.fillStyle = 'rgba(255,' + Math.round(140 + 80 * (1 - life)) + ',60,' + (1 - life) + ')'; g.beginPath(); g.arc(cx + Math.cos(e.a) * 30 * s * life * 3, y - len * burn - life * 140 * s, (2.5 * e.s) * s * (1 - life * 0.5), 0, Math.PI * 2); g.fill(); });
+      // the golden burst when she hears
+      if (p > 0.72) {
+        const q = (p - 0.72) / 0.28;
+        g.fillStyle = 'rgba(255,240,200,' + (0.5 * (1 - q)) + ')'; g.beginPath(); g.arc(cx, y - len * 0.5, (40 + q * 220) * s, 0, Math.PI * 2); g.fill();
+        sparks.forEach(sp => { const d = q * (60 + sp.v * 160) * s; g.fillStyle = 'rgba(246,181,68,' + (1 - q) + ')'; g.beginPath(); g.arc(cx + Math.cos(sp.a) * d, y - len * 0.5 + Math.sin(sp.a) * d, 2.5 * sp.w * s * (1 - q * 0.5), 0, Math.PI * 2); g.fill(); });
+      }
+      if (p < 1) requestAnimationFrame(frame); else { g.clearRect(0, 0, W, H); c.hidden = true; then(); }
+    }
+    requestAnimationFrame(frame);
+  }
+  $('feather-btn').addEventListener('click', () => { A.unlock(); burnFeather(); });
+
   /* ---- live conversations (js/talk.js) ----
      Every scripted scene (trick, expert fog, harder fog, refusal) first offers itself to Talk
      as a seed: the character, the fallacy, the scripted lines and answers. When the server
@@ -780,6 +869,7 @@
   }
   /* Resolves true when the live conversation took over the dialogue box. */
   function tryTalk(seed, settle) {
+    askFallacy = seed.fallacy;
     if (!window.Talk || !Talk.available()) return Promise.resolve(false);
     A.stop(); hidePreview(); script = null; mode = 'dialog';
     $('dlg').hidden = false; $('scene').hidden = true;
@@ -823,7 +913,7 @@
   function finishTrick(id, kind, c) {
     const tr = D.TRICKS[id];
     const { chosen, correct } = answerTexts(c, o => /^right/.test(o.key));
-    mode = baseMode();
+    mode = baseMode(); askFallacy = null;
     if (kind === 'win') { S.tricks[id] = 'won'; save(); simurghPraise(tr, chosen); }
     else if (kind === 'fail') { lessonFail(tr.fallacy, null, null, chosen, correct); simEvent('fooled'); }
     else lessonOops(null, chosen, correct);
@@ -1625,10 +1715,11 @@
 
   /* ================= input ================= */
   function pressA() {
+    if (!$('feather-fx').hidden) return;   // a feather is burning: nothing else moves until the Simurgh arrives
     if (mode === 'modal') { modalPress(); return; }
     if (mode === 'world') interact();
     else if (mode === 'inside') Inside.press();
-    else if (mode === 'dialog') { if (window.Talk && Talk.active()) { Talk.press(); return; } if (!$('dlg-choices').hidden) return; if ($('scene').hidden) next(); else { $('scene').hidden = true; next(); } }
+    else if (mode === 'dialog') { if (window.Talk && Talk.active() && !Talk.paused()) { Talk.press(); return; } if (!$('dlg-choices').hidden) return; if ($('scene').hidden) next(); else { $('scene').hidden = true; next(); } }
     else if (mode === 'panel' && !$('card').hidden) closeCard();
   }
 

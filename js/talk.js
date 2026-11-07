@@ -57,7 +57,7 @@ window.Talk = (function () {
     let stream;
     try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); micGranted = true; }
     catch (e) { micGranted = false; render('idle'); status(T('I need the microphone to hear you. You can type instead.'), 'warn'); return; }
-    if (!conv || conv.recorder) { stream.getTracks().forEach(t => t.stop()); return; }
+    if (!conv || conv.recorder || conv.paused) { stream.getTracks().forEach(t => t.stop()); return; }   // ended, already recording, or the Simurgh stepped in meanwhile
     const chunks = [];
     const type = mimeType();
     const rec = type ? new MediaRecorder(stream, { mimeType: type }) : new MediaRecorder(stream);
@@ -65,7 +65,7 @@ window.Talk = (function () {
     const mine = conv;
     rec.addEventListener('stop', () => {
       stream.getTracks().forEach(t => t.stop());
-      if (conv !== mine) return;   // the conversation ended while recording: nothing to send
+      if (conv !== mine || mine.paused) { if (conv === mine) { conv.recorder = null; conv.stream = null; } return; }   // ended, or paused for the Simurgh: nothing to send
       conv.recorder = null; conv.stream = null;
       const blob = new Blob(chunks, { type: rec.mimeType || type || 'audio/webm' });
       send(blob, null);
@@ -114,7 +114,7 @@ window.Talk = (function () {
     render('speaking'); status(T('Listen…'), 'live');
     const a = A2();
     const wait = setInterval(() => {
-      if (conv !== mine) { clearInterval(wait); return; }
+      if (conv !== mine || mine.paused) { clearInterval(wait); return; }
       if (a && a.isBusy && a.isBusy() && performance.now() - mine.spokeAt < 20000) return;   // 20 s: longer than any line, in case a clip never ends
       clearInterval(wait);
       then();
@@ -139,7 +139,7 @@ window.Talk = (function () {
     $('talk-heard').innerHTML = '<small>' + esc(T('You said')) + '</small>' + esc(j.heard);
     $('talk-heard').hidden = false;
     conv.turnsLeft = j.turns_left;
-    if (j.say) { conv.spokeAt = performance.now(); conv.hooks.line(conv.seed.who, j.say); }
+    if (j.say) { conv.spokeAt = performance.now(); conv.lastSay = j.say; conv.hooks.line(conv.seed.who, j.say); }
     if (j.done) {
       conv.finalSay = j.say; conv.verdict = j.verdict; conv.heard = j.heard;
       afterSpeech(() => { render('done'); status(''); conv.autoNext = setTimeout(() => { if (conv && conv.verdict) finish(); }, 1500); });
@@ -183,7 +183,7 @@ window.Talk = (function () {
       j = await r.json();
     } catch (e) { return false; }
     if (!j || !j.id || !j.say) return false;
-    conv = { id: j.id, seed, hooks, turnsLeft: j.turns_left, recorder: null, stream: null, timer: null, busy: false, spokeAt: performance.now() };
+    conv = { id: j.id, seed, hooks, turnsLeft: j.turns_left, recorder: null, stream: null, timer: null, busy: false, spokeAt: performance.now(), lastSay: j.say };
     hooks.line(seed.who, j.say);
     afterSpeech(() => { render('idle'); status(''); if (micGranted) startRecording(); });
     return true;
@@ -205,8 +205,25 @@ window.Talk = (function () {
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire); else wire();
   prime();
 
+  /* The Simurgh steps in (a burnt feather): the box goes quiet, a recording in progress is dropped. */
+  function pause() {
+    if (!conv) return;
+    conv.paused = true; clearInterval(conv.timer); conv.timer = null;
+    if (conv.meterStop) { conv.meterStop(); conv.meterStop = null; }
+    if (conv.recorder) { try { conv.recorder.stop(); } catch (e) { conv.recorder = null; } }
+    hideBox(); status('');
+  }
+  /* She has spoken: the character says the line again and listens, as before. */
+  function resume() {
+    if (!conv) return;
+    conv.paused = false; conv.spokeAt = performance.now();
+    conv.hooks.line(conv.seed.who, conv.lastSay);
+    afterSpeech(() => { render('idle'); status(''); if (micGranted) startRecording(); });
+  }
   return {
-    prime, available, run,
+    prime, available, run, pause, resume,
+    canAsk: () => !!(conv && !conv.verdict && !conv.busy && !conv.paused),
+    paused: () => !!(conv && conv.paused),
     active: () => !!conv,
     /* The A button / Enter while a conversation is on screen: advance when the scene is over, else toggle the microphone. */
     press: () => { if (!conv) return; if (conv.verdict) { if (!$('talk-next').hidden) finish(); } else if (conv.recorder) stopRecording(); else if (!conv.busy && !$('talk-mic').disabled && hasMic()) startRecording(); },
